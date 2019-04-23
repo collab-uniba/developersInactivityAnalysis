@@ -41,7 +41,7 @@ for i in range(START_FROM, len(p_names)):
     #Read Commit Table
     commit_table = pandas.read_csv('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+project_name+'/commit_table.csv') 
     project_start=min(commit_table.columns[1:])
-    project_end=max(commit_table.columns[1:])
+    project_end='2019-01-01' #max(commit_table.columns[1:])
 
     #Read Breaks Table
     with open('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
@@ -73,7 +73,7 @@ for i in range(START_FROM, len(p_names)):
     num_all_users = len(inactivity_intervals_data)
     num_active_users = len(active_users_df)
     
-    logging.basicConfig(filename='Analyzer.log',level=logging.INFO)
+    logging.basicConfig(filename='C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/Analyzer.log',level=logging.INFO)
     logging.info('Project: '+project_name+' PID: '+project_id+' Start: '+project_start+ ' End: '+project_end)
     logging.info('All Users: '+str(num_all_users)+' Breaks_Threshold/Sliding_Window: '+str(SLIDE_WIN_SIZE)+' Active Users: '+str(num_active_users))
 
@@ -89,8 +89,9 @@ for i in range(START_FROM, len(p_names)):
     n=0
     for index, row in active_users_df.iterrows():
         user_id=int(row['durations'][0])
-        row['durations'] = row['durations'][1:-6]
-        row['datelimits'] = row['datelimits'][1:]
+        last_commit_day=util.getLastCommitDay(commit_table, user_id)
+        row['durations'] = row['durations'][1:-6].append(util.days_between(last_commit_day, project_end))
+        row['datelimits'] = row['datelimits'][1:].append(last_commit_day, project_end)
         
         path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Activities_Plots/"+str(user_id))
         os.makedirs(path, exist_ok=True) 

@@ -38,6 +38,10 @@ def get_username(cursor, user_id):
     username = res[0]
     return username
 
+def getLastCommitDay(commit_table, user_id):
+    date='ciao'
+    return date
+
 def days_between(d1, d2):
     from datetime import datetime
     d1 = datetime.strptime(d1, "%Y-%m-%d")
@@ -542,8 +546,6 @@ def printProjectsDurationsLog(project_names, path):
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
-def processLastBreak(window, longer_breaks, ):
-    
 #import mysql.connector
 #import config as cfg
 #

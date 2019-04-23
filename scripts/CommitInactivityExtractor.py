@@ -29,7 +29,7 @@ for i in range(0, len(p_names)):
 
     project_id = util.getProjectId(cursor, project_name, partial_project_url)
     
-    logging.basicConfig(filename='CommitExtraction.log',level=logging.INFO)
+    logging.basicConfig(filename='C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/CommitExtraction.log',level=logging.INFO)
     logging.info('Project: '+project_name+' PID: '+project_id+' Started')
     
     query = ("SELECT created_at AS date FROM projects "+
