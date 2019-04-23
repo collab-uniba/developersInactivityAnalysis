@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Apr  3 16:33:09 2019
-
-@author: Pepp_
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 15 10:48:38 2019
-
-@author: Pepp_
-"""
 import mysql.connector
 import utilities as util
 import pandas, csv, os
@@ -89,9 +76,15 @@ for i in range(START_FROM, len(p_names)):
     n=0
     for index, row in active_users_df.iterrows():
         user_id=int(row['durations'][0])
+        
         last_commit_day=util.getLastCommitDay(commit_table, user_id)
-        row['durations'] = row['durations'][1:-6].append(util.days_between(last_commit_day, project_end))
-        row['datelimits'] = row['datelimits'][1:].append(last_commit_day, project_end)
+        last_break_length=util.days_between(last_commit_day, project_end)
+        last_break_interval=last_commit_day+'/'+project_end
+        
+        row['durations'] = row['durations'][1:-6]
+        row['durations'].append(last_break_length)
+        row['datelimits'] = row['datelimits'][1:]
+        row['datelimits'].append(last_break_interval)
         
         path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Activities_Plots/"+str(user_id))
         os.makedirs(path, exist_ok=True) 
@@ -121,7 +114,7 @@ for i in range(START_FROM, len(p_names)):
             # COMPUTE WONDOW THRESHOLD (Far Out Values)
             threshold = util.getFarOutThreshold(row['durations'][w_start:w_end])
         
-            for j in range(w_start,w_end):
+            for j in range(w_start,w_end+1):
                 duration = row['durations'][j]
                 date_range = row['datelimits'][j]
                 if((duration>threshold) & (date_range not in longer_breaks.datelimits.tolist())):
@@ -151,35 +144,25 @@ for i in range(START_FROM, len(p_names)):
                     # entire_active_columns = all_brake_actions.columns[is_activity_day]
                     
                     if(len(brake_actions)>0):
-                        aedr.plot_activities(brake_actions, path+"/"+break_range[0]+"_"+break_range[1]) #PLOT CAREFUL!!!
-                        #current_sleepy_durations.append(duration)
-                        #current_sleepy_periods.append(date_range)
+                        #aedr.plot_activities(brake_actions, path+"/"+break_range[0]+"_"+break_range[1]) #PLOT CAREFUL!!!
+                        
                         sleepy_period_detail=util.refineSleepingPeriod(duration, date_range, action_days, threshold)
                         current_sleepy_periods_details.append(sleepy_period_detail)
                         
                         current_sleepings_only=util.getSleepingsFromSleepingDetail(sleepy_period_detail)
                         current_user_sleepy_periods_df=pandas.concat([current_user_sleepy_periods_df, current_sleepings_only])
-                        #util.add(current_user_sleepy_periods_df, [duration, date_range])
 
                         other_current_hibernations_df = util.getHibernationsFromSleepingDetail(sleepy_period_detail)
                         current_user_hibernation_periods_df = pandas.concat([current_user_hibernation_periods_df, other_current_hibernations_df])
                         
                         other_current_deads_df = util.getDeadsFromSleepingDetail(sleepy_period_detail)
                         current_user_dead_periods_df = pandas.concat([current_user_dead_periods_df, other_current_deads_df])
-                        # current_hibernation_durations += other_current_hibernations_df['durations'].tolist()
-                        # current_hibernation_periods += other_current_hibernations_df['datelimits'].tolist()
                     else:##ELIF HAS ACTIVITIES IN THE FORK
                         #The whole period goes in the HYBERNATED ones
                         if(duration>dead_th):
                             util.add(current_user_dead_periods_df, [duration,date_range])
                         else:
-                            util.add(current_user_hibernation_periods_df, [duration,date_range])
-                        #current_hibernation_durations.append(duration)
-                        #current_hibernation_periods.append(date_range)              
-                        
-        
-        ### PROCESS LAST BREAK
-        
+                            util.add(current_user_hibernation_periods_df, [duration,date_range])                  
         
         active_users_longer_intervals.append(longer_breaks)
         
@@ -191,10 +174,7 @@ for i in range(START_FROM, len(p_names)):
                 writer = csv.writer(outcsv, quoting=csv.QUOTE_ALL, quotechar='"')
                 for row in current_sleepy_periods_details:
                     writer.writerow(row)
-        
-        #current_user_sleepy_periods_df=pandas.DataFrame({'durations': current_sleepy_durations, 'datelimits': current_sleepy_periods})
-        #current_user_hibernation_periods_df=pandas.DataFrame({'durations': current_hibernation_durations, 'datelimits': current_hibernation_periods})
-        
+              
         current_user_sleepings = [user_id]
         current_user_hibernations = [user_id]
         current_user_deads = [user_id]

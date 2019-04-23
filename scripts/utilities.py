@@ -39,7 +39,11 @@ def get_username(cursor, user_id):
     return username
 
 def getLastCommitDay(commit_table, user_id):
-    date='ciao'
+    user_row=commit_table.loc[commit_table['user_id'] == user_id]
+    is_commit_day = (user_row != 0).any() #List Of Columns With at least a Non-Zero Value
+    commit_days = is_commit_day.index[is_commit_day].tolist() #List Of Columns NAMES Having Column Names at least a Non-Zero Value
+                    
+    date=commit_days[-1]
     return date
 
 def days_between(d1, d2):
@@ -352,32 +356,47 @@ def countDevTransitions(path, project, breaks_list, cursor):
                                 else:
                                     DtoS_count += 1
                             prev_status = status
+                            if b[i+1].replace('[','').split(',')[2].replace('\'','').split('/')[1]=='2019-01-01':
+                                print("Broken Here ".join(b))
+                                break;
                     else:
                         status = b[1].replace('[','').split(',')[0].replace('\'','')
-                        if(status=='sot'):
+                        if((status=='sot') & (b[1].replace('[','').split(',')[2].replace('\'','').split('/')[1]!='2019-01-01')):
                             AtoS_count += 1 
                             StoA_count += 1
+                        elif (b[1].replace('[','').split(',')[2].replace('\'','').split('/')[1]=='2019-01-01'):              
+                            print("Single Last Status ".join(b))
 
         #Check in Hibernated Directory
         name=dev+'_'+username+'.csv'
         if name in os.listdir(hibernated_dir):
             with open(hibernated_dir+'/'+name, 'r') as f:  #opens PW file
                 breaks = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
-                AtoH_count += len(breaks)-1
-                HtoA_count += len(breaks)-1
+                for b in breaks[1:]:
+                    end_date = b[1].split('/')[1]
+                    if end_date!='2019-01-01':
+                        AtoH_count += 1
+                        HtoA_count += 1
+                    else:
+                        print("Ongoing Hibernation ".join(b))
         #Check in Dead Directory
         name=dev+'_'+username+'.csv'
         if name in os.listdir(hibernated_dir):
             with open(hibernated_dir+'/'+name, 'r') as f:  #opens PW file
                 breaks = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
-                AtoD_count += len(breaks)-1
-                DtoA_count += len(breaks)-1
+                for b in breaks[1:]:
+                    end_date = b[1].split('/')[1]
+                    if end_date!='2019-01-01':
+                        AtoD_count += len(breaks)-1
+                        DtoA_count += len(breaks)-1
+                    else:
+                        print("Ongoing Dead ".join(b))
         
         life, num_breaks = getLife(dev, breaks_list)
         factor=life/365
         current_dev_stats=[dev, username, num_breaks/factor, AtoS_count/factor, StoA_count/factor, AtoH_count/factor, HtoA_count/factor, StoH_count/factor, HtoS_count/factor, AtoD_count/factor, DtoA_count/factor, StoD_count/factor, DtoS_count/factor]
         
-        printDevsStats(plot_path, current_dev_stats, labels)
+        #printDevsStats(plot_path, current_dev_stats, labels)
         add(transitions_df, current_dev_stats)              
     
     transitions_df.to_csv(path+'/'+project+'/transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
@@ -459,7 +478,7 @@ def reportDevsBreaksLengthDistribution(project, path, cursor):
         
         current_dev_stats=[dev, username, sleepings_durations, hibernations_durations, dead_durations]
         
-        printDevsDurations(plot_path, current_dev_stats, labels)
+        #printDevsDurations(plot_path, current_dev_stats, labels)
         add(durations_df, current_dev_stats)              
     
     durations_df.to_csv(path+'/'+project+'/statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
