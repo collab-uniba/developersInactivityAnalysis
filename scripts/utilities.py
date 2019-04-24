@@ -163,7 +163,13 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
                 counts_perYear.append(BpY)
                 add(breaks_lifetime, [BpY, num_days])
         projects_counts.append(counts_perYear)
-        
+    
+    labels=[]
+    for name in project_names:
+        if name=='framework':
+            labels.append('laravel')
+        else:
+            labels.append(name)
     plt.boxplot(projects_counts)
     plt.xticks(numpy.arange(1,len(project_names)+1), project_names)
     plt.ylabel("Breaks per Year")
@@ -565,6 +571,49 @@ def printProjectsDurationsLog(project_names, path):
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
+def tableCumulativeTransitions(p_names, path):
+    import pandas
+    
+    START_FROM = 0
+    
+    ### START Supports For One Function Section
+    labels = ['Project','#breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','A_to_D','D_to_A','S_to_D','D_to_S']
+    
+    cumulative_table=pandas.DataFrame(columns=labels)
+    ### END Supports For One Function Section
+    
+    for i in range(START_FROM, len(p_names)):
+        
+        chosen_project = i # FROM 0 TO n-1  
+        project_name =  p_names[chosen_project]
+        
+    ### START One Function Section
+        current_table=pandas.read_csv(path+'/'+project_name+'/transitions.csv', sep=';')
+        sums = current_table.sum(skipna = True)
+        if project_name=='framework':
+            line=['laravel']+sums.tolist()[2:]
+        else:
+            line=[project_name]+sums.tolist()[2:]
+        add(cumulative_table, line)
+    cumulative_table.to_csv(path+'/cumulative_transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    ### END One Function Section
+
+def tableTransitionsPercentages(p_names, path):
+    import pandas
+    transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
+    
+    for proj in transitions_table:
+        matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernated', 'Dead'])
+        row=['Active', proj['#breaks']-(proj['A_to_S']+proj['A_to_H']+proj['A_to_D']), proj['A_to_S'], proj['A_to_H'], proj['A_to_D']]
+        add(matrix, row)
+        row=['Sleeping', proj['S_to_A'], (proj['A_to_S']+proj['H_to_S']+proj['D_to_S'])-(proj['S_to_A']+proj['S_to_H']), proj['S_to_H'], proj['S_to_D']]
+        add(matrix, row)
+        row=['Hibernated', proj['H_to_A'], proj['H_to_S'], (proj['A_to_H']+proj['S_to_H'])-(proj['H_to_A']+proj['H_to_S']+proj['H_to_D']), proj['A_to_D']+proj['S_to_D']]
+        add(matrix, row)
+        row=['Dead', proj['D_to_A'], proj['D_to_S'], '-', (proj['A_to_D']+proj['S_to_D'])-(proj['D_to_A']+proj['D_to_S'])]
+        add(matrix, row)
+        matrix.to_csv(path+'/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    
 #import mysql.connector
 #import config as cfg
 #
