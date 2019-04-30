@@ -302,7 +302,7 @@ def countDevTransitions(path, project, breaks_list, cursor):
     
     analyzed_devs = list(set(sleeping_devs).union(hibernated_devs)) #for more than 2 lists is list(set().union(l1,l2,l3))
     
-    labels = ['dev','username','breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','A_to_D','D_to_A','S_to_D','D_to_S']
+    labels = ['dev','username','breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','H_to_D','D_to_A','D_to_S']
     transitions_df = pandas.DataFrame(columns=labels)
     
     sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users/Details'
@@ -315,15 +315,14 @@ def countDevTransitions(path, project, breaks_list, cursor):
         os.makedirs(plot_path, exist_ok=True) 
         
         AtoS_count=0
-        StoA_count=0
         AtoH_count=0
-        HtoA_count=0
+        StoA_count=0
         StoH_count=0
+        HtoA_count=0
         HtoS_count=0
-        AtoD_count=0
-        StoD_count=0
+        HtoD_count=0
         DtoA_count=0
-        DtoS_count=0
+        DtoS_count=0        
         
         name = dev+'.csv'
         #Check in Sleeping Directory
@@ -352,12 +351,15 @@ def countDevTransitions(path, project, breaks_list, cursor):
                             elif (status=='sot') & (next_status=='d'):
                                 if(prev_status=='u'):
                                     AtoS_count += 1 
-                                    StoD_count += 1
+                                    StoH_count += 1
+                                    HtoD_count += 1
                                 else:
-                                    StoD_count += 1
+                                    StoH_count += 1
+                                    HtoD_count += 1
                             elif (status=='d') & (next_status=='sot'):
                                 if(prev_status=='u'):
-                                    AtoD_count += 1
+                                    AtoH_count += 1
+                                    HtoD_count += 1
                                     DtoS_count += 1
                                 else:
                                     DtoS_count += 1
@@ -393,14 +395,15 @@ def countDevTransitions(path, project, breaks_list, cursor):
                 for b in breaks[1:]:
                     end_date = b[1].split('/')[1]
                     if end_date!='2019-01-01':
-                        AtoD_count += len(breaks)-1
+                        AtoH_count += len(breaks)-1
+                        HtoD_count += len(breaks)-1
                         DtoA_count += len(breaks)-1
                     else:
                         print("Ongoing Dead ".join(b))
         
         life, num_breaks = getLife(dev, breaks_list)
         factor=life/365
-        current_dev_stats=[dev, username, num_breaks/factor, AtoS_count/factor, StoA_count/factor, AtoH_count/factor, HtoA_count/factor, StoH_count/factor, HtoS_count/factor, AtoD_count/factor, DtoA_count/factor, StoD_count/factor, DtoS_count/factor]
+        current_dev_stats=[dev, username, num_breaks/factor, AtoS_count/factor, StoA_count/factor, AtoH_count/factor, HtoA_count/factor, StoH_count/factor, HtoS_count/factor, HtoD_count/factor, DtoA_count/factor, DtoS_count/factor]
         
         #printDevsStats(plot_path, current_dev_stats, labels)
         add(transitions_df, current_dev_stats)              
@@ -577,7 +580,7 @@ def tableCumulativeTransitions(p_names, path):
     START_FROM = 0
     
     ### START Supports For One Function Section
-    labels = ['Project','#breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','A_to_D','D_to_A','S_to_D','D_to_S']
+    labels = ['Project','#breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','H_to_D','D_to_A','D_to_S']
     
     cumulative_table=pandas.DataFrame(columns=labels)
     ### END Supports For One Function Section
@@ -602,18 +605,50 @@ def tableTransitionsPercentages(p_names, path):
     import pandas
     transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
     
-    for proj in transitions_table:
+    for index, proj in transitions_table.iterrows():
+        in_D = proj['H_to_D']
+        out_D = (proj['D_to_A']+proj['D_to_S'])
+        
+        if(in_D>0):
+            DtoA = proj['D_to_A']/in_D*100
+            DtoS = proj['D_to_S']/in_D*100
+            DtoD = (1-out_D/in_D)*100
+        else:
+            DtoA = 0
+            DtoS = 0
+            DtoD = 0
+        
+        in_H = (proj['A_to_H']+proj['S_to_H'])
+        out_H =(proj['H_to_A']+proj['H_to_S']+proj['H_to_D'])
+        HtoA = proj['H_to_A']/in_H*100
+        HtoS = proj['H_to_S']/in_H*100
+        HtoH = (1-out_H/in_H)*100
+        HtoD = proj['H_to_D']/in_H*100
+        
+        in_S = (proj['A_to_S']+proj['H_to_S']+proj['D_to_S'])
+        out_S = (proj['S_to_A']+proj['S_to_H'])
+        StoA = proj['S_to_A']/in_S*100
+        StoS = (1-out_S/in_S)*100
+        StoH = proj['S_to_H']/in_S*100
+        
+        in_A = proj['#breaks']
+        out_A = proj['A_to_S']+proj['A_to_H']
+        
+        AtoA = (1-out_A/in_A)*100
+        AtoS = proj['A_to_S']/in_A*100
+        AtoH = proj['A_to_H']/in_A*100
+        
         matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernated', 'Dead'])
-        row=['Active', proj['#breaks']-(proj['A_to_S']+proj['A_to_H']+proj['A_to_D']), proj['A_to_S'], proj['A_to_H'], proj['A_to_D']]
+        row=['Active', AtoA, AtoS, AtoH, '-']
         add(matrix, row)
-        row=['Sleeping', proj['S_to_A'], (proj['A_to_S']+proj['H_to_S']+proj['D_to_S'])-(proj['S_to_A']+proj['S_to_H']), proj['S_to_H'], proj['S_to_D']]
+        row=['Sleeping', StoA, StoS, StoH, '-']
         add(matrix, row)
-        row=['Hibernated', proj['H_to_A'], proj['H_to_S'], (proj['A_to_H']+proj['S_to_H'])-(proj['H_to_A']+proj['H_to_S']+proj['H_to_D']), proj['A_to_D']+proj['S_to_D']]
+        row=['Hibernated', HtoA, HtoS, HtoH, HtoD]
         add(matrix, row)
-        row=['Dead', proj['D_to_A'], proj['D_to_S'], '-', (proj['A_to_D']+proj['S_to_D'])-(proj['D_to_A']+proj['D_to_S'])]
+        row=['Dead', DtoA, DtoS, '-', DtoD]
         add(matrix, row)
         matrix.to_csv(path+'/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-    
+
 #import mysql.connector
 #import config as cfg
 #
