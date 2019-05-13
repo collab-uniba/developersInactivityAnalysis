@@ -4,8 +4,10 @@ Created on Fri Mar 15 10:53:40 2019
 
 @author: Pepp_
 """
+import config as cfg
+super_path = cfg.super_path
 
-def existsFileStartingWith(directory, string):
+def existsFileStartingWith(directory, string): # checks if in the 'directory' exists a file staring with 'string'
     import os
     
     file_list = os.listdir(directory)
@@ -14,7 +16,7 @@ def existsFileStartingWith(directory, string):
             return name
     return False
 
-def getProjectId(cursor, project_name, partial_project_url):
+def getProjectId(cursor, project_name, partial_project_url): # gets the id of a project
     q_get_project_id = ("SELECT id, created_at FROM projects "+
                         "WHERE name='"+project_name+"' "+
                         "AND url LIKE '%"+partial_project_url+"'")
@@ -22,7 +24,7 @@ def getProjectId(cursor, project_name, partial_project_url):
     res = cursor.fetchone()
     return str(res[0])
 
-def getLife(dev, breaks_list):
+def getLife(dev, breaks_list): #gets the life in days of a developer in the project
     dev=float(dev)
     for b in breaks_list:
         d_id=b[0]
@@ -30,7 +32,7 @@ def getLife(dev, breaks_list):
             return int(b[-6]), (len(b)-7)
     return -1, -1
 
-def get_username(cursor, user_id):
+def get_username(cursor, user_id): #gets the username of a developer
     # Get Username
     q_get_username = ("SELECT login FROM users WHERE id='"+user_id+"'")
     cursor.execute(q_get_username)
@@ -38,7 +40,7 @@ def get_username(cursor, user_id):
     username = res[0]
     return username
 
-def getLastCommitDay(commit_table, user_id):
+def getLastCommitDay(commit_table, user_id): #gets the last day when a developer committed
     user_row=commit_table.loc[commit_table['user_id'] == user_id]
     is_commit_day = (user_row != 0).any() #List Of Columns With at least a Non-Zero Value
     commit_days = is_commit_day.index[is_commit_day].tolist() #List Of Columns NAMES Having Column Names at least a Non-Zero Value
@@ -46,7 +48,7 @@ def getLastCommitDay(commit_table, user_id):
     date=commit_days[-1]
     return date
 
-def days_between(d1, d2):
+def days_between(d1, d2): # gets the number of days between two dates
     from datetime import datetime
     d1 = datetime.strptime(d1, "%Y-%m-%d")
     d2 = datetime.strptime(d2, "%Y-%m-%d")
@@ -59,7 +61,7 @@ def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days+2)):
         yield start_date + timedelta(n)
         
-def add(dataframe, row):
+def add(dataframe, row): #adds a row to a dataframe
     dataframe.loc[-1] = row  # adding a row
     dataframe.index = dataframe.index + 1  # shifting index
     dataframe.sort_index(inplace=True)
@@ -649,6 +651,120 @@ def tableTransitionsPercentages(p_names, path):
         add(matrix, row)
         matrix.to_csv(path+'/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
+def tableCumulativeTransitionsPercentages(path):
+    import pandas
+    transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
+    sums = transitions_table.sum(skipna = True)
+    
+    in_D = sums['H_to_D']
+    out_D = (sums['D_to_A']+sums['D_to_S'])
+    
+    if(in_D>0):
+        DtoA = sums['D_to_A']/in_D*100
+        DtoS = sums['D_to_S']/in_D*100
+        DtoD = (1-out_D/in_D)*100
+    else:
+        DtoA = 0
+        DtoS = 0
+        DtoD = 0
+    
+    in_H = (sums['A_to_H']+sums['S_to_H'])
+    out_H =(sums['H_to_A']+sums['H_to_S']+sums['H_to_D'])
+    HtoA = sums['H_to_A']/in_H*100
+    HtoS = sums['H_to_S']/in_H*100
+    HtoH = (1-out_H/in_H)*100
+    HtoD = sums['H_to_D']/in_H*100
+    
+    in_S = (sums['A_to_S']+sums['H_to_S']+sums['D_to_S'])
+    out_S = (sums['S_to_A']+sums['S_to_H'])
+    StoA = sums['S_to_A']/in_S*100
+    StoS = (1-out_S/in_S)*100
+    StoH = sums['S_to_H']/in_S*100
+    
+    in_A = sums['#breaks']
+    out_A = sums['A_to_S']+sums['A_to_H']
+    
+    AtoA = (1-out_A/in_A)*100
+    AtoS = sums['A_to_S']/in_A*100
+    AtoH = sums['A_to_H']/in_A*100
+    
+    matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernated', 'Dead'])
+    row=['Active', AtoA, AtoS, AtoH, '-']
+    add(matrix, row)
+    row=['Sleeping', StoA, StoS, StoH, '-']
+    add(matrix, row)
+    row=['Hibernated', HtoA, HtoS, HtoH, HtoD]
+    add(matrix, row)
+    row=['Dead', DtoA, DtoS, '-', DtoD]
+    add(matrix, row)
+    matrix.to_csv(path+'/cumulative_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+
+def getProjectInactivities(project): #returns the list of developers each with its number of sleepings, hibernations and deads
+    import csv, pandas
+    
+    durations_df = pandas.read_csv(super_path+'/'+project+'/statuses_durations.csv', sep=';')
+    #Read Breaks Table
+    with open(super_path+'/'+project+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+        #reader = csv.reader(f)
+        breaks_list = [list(map(float,rec)) for rec in csv.reader(f, delimiter=',')]
+    
+    labels=['dev','project','sleepings','hibernations','deads']
+    inactivities_df=pandas.DataFrame(columns=labels)
+
+    for index, dev_row in durations_df.iterrows():
+        dev_life, dummy=getLife(dev_row['dev'], breaks_list)
+        dev_years=dev_life/365
+        
+        sleepings = dev_row['sleepings'][1:-1]
+        if(sleepings!=''):
+            sleepings_perYear=len(sleepings.split(','))/dev_years
+        else:
+            sleepings_perYear=0
+            
+        hibernations = dev_row['hibernations'][1:-1]
+        if(hibernations!=''):
+            hibernations_perYear=len(hibernations.split(','))/dev_years
+        else:
+            hibernations_perYear=0
+            
+        deads = dev_row['deads'][1:-1]
+        if(deads!=''):
+            deads_perYear=len(deads.split(','))/dev_years
+        else:
+            deads_perYear=0
+            
+        if(project=='framework'):
+            add(inactivities_df, [dev_row['dev'], 'laravel', sleepings_perYear, hibernations_perYear, deads_perYear])
+        else:
+            add(inactivities_df, [dev_row['dev'], project, sleepings_perYear, hibernations_perYear, deads_perYear])
+
+    return inactivities_df
+
+def plotAllProjectInactivities(p_names):
+    import pandas
+    import seaborn as sns
+    
+    dataframes=[]
+    for i in range(0, len(p_names)):
+        chosen_project = i # FROM 0 TO n-1
+        
+        project_name =  p_names[chosen_project]
+        dataframes.append(getProjectInactivities(project_name))
+    aggregated_data = pandas.concat(dataframes)
+    
+    data = pandas.DataFrame(columns=['project', 'status', 'occurrences'])
+    for index, dev_row in aggregated_data.iterrows():
+        if(dev_row['sleepings']>0):
+            add(data, [dev_row['project'], 'sleeping', dev_row['sleepings']])
+        if(dev_row['hibernations']>0):
+            add(data, [dev_row['project'], 'hibernated', dev_row['hibernations']])
+        if(dev_row['deads']>0):
+            add(data, [dev_row['project'], 'dead', dev_row['deads']])
+        
+    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", data=data, palette='Set2')
+    sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
+    
+plotAllProjectInactivities(cfg.p_names)
 #import mysql.connector
 #import config as cfg
 #

@@ -20,6 +20,7 @@ p_urls=cfg.p_urls
 
 cnx = mysql.connector.connect(**config)
 cursor = cnx.cursor(buffered=True)
+super_path = cfg.super_path
 
 for i in range(0, len(p_names)):
     chosen_project = i # FROM 0 TO n-1
@@ -29,7 +30,7 @@ for i in range(0, len(p_names)):
 
     project_id = util.getProjectId(cursor, project_name, partial_project_url)
     
-    logging.basicConfig(filename='C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/CommitExtraction.log',level=logging.INFO)
+    logging.basicConfig(filename=super_path+'/CommitExtraction.log',level=logging.INFO)
     logging.info('Project: '+project_name+' PID: '+project_id+' Started')
     
     query = ("SELECT created_at AS date FROM projects "+
@@ -37,7 +38,7 @@ for i in range(0, len(p_names)):
     cursor.execute(query)
     project_start=cursor.fetchone()[0].strftime('%Y-%m-%d %H:%M:%S')
     
-    path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name)
+    path = (super_path+'/'+project_name)
     os.makedirs(path, exist_ok=True)  
 
     query = ("SELECT id, author_id, created_at AS date FROM commits "+

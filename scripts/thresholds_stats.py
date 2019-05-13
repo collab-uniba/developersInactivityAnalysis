@@ -7,7 +7,7 @@ config = cfg.config
 p_names=cfg.p_names
 p_urls=cfg.p_urls
 thresholds=[10,20,30,40,50,60,70,80]
-super_path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/")
+super_path = cfg.super_path
 
 ths_table=pandas.DataFrame(columns=['Project', 'Developers']+[str(th) for th in thresholds])
 for i in range(0, len(p_names)):

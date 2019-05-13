@@ -10,6 +10,7 @@ config = cfg.config
 
 p_names=cfg.p_names
 p_urls=cfg.p_urls
+super_path = cfg.super_path
 
 START_FROM = 0
 projects_stats=pandas.DataFrame(columns=['Project','Contributors','Sampled_Contributors','Sleeping','Hibernated','Dead'])
@@ -26,17 +27,17 @@ for i in range(START_FROM, len(p_names)):
     project_id = util.getProjectId(cursor, project_name, partial_project_url)
     
     #Read Commit Table
-    commit_table = pandas.read_csv('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+project_name+'/commit_table.csv') 
+    commit_table = pandas.read_csv(super_path+'/'+project_name+'/commit_table.csv') 
     project_start=min(commit_table.columns[1:])
     project_end='2019-01-01' #max(commit_table.columns[1:])
 
     #Read Breaks Table
-    with open('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+    with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
         reader = csv.reader(f)
         inactivity_intervals_data = [list(map(float,rec)) for rec in csv.reader(f, delimiter=',')]
     
     #Read Break Dates Table
-    with open('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+project_name+'/break_dates_list.csv', 'r') as f:
+    with open(super_path+'/'+project_name+'/break_dates_list.csv', 'r') as f:
         reader = csv.reader(f)
         break_dates_data = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
     
@@ -47,7 +48,7 @@ for i in range(START_FROM, len(p_names)):
 
     active_users_df = pandas.DataFrame(columns=['durations','datelimits'])
     
-    path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name)
+    path = (super_path+'/'+project_name)
     util.reportPlotProjectBreaksDistribution(breaks_df['durations'], project_name, path)
     
     for index, row in breaks_df.iterrows():
@@ -60,11 +61,11 @@ for i in range(START_FROM, len(p_names)):
     num_all_users = len(inactivity_intervals_data)
     num_active_users = len(active_users_df)
     
-    logging.basicConfig(filename='C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/Analyzer.log',level=logging.INFO)
+    logging.basicConfig(filename=super_path+'/Analyzer.log',level=logging.INFO)
     logging.info('Project: '+project_name+' PID: '+project_id+' Start: '+project_start+ ' End: '+project_end)
     logging.info('All Users: '+str(num_all_users)+' Breaks_Threshold/Sliding_Window: '+str(SLIDE_WIN_SIZE)+' Active Users: '+str(num_active_users))
 
-    path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Activities_Plots")
+    path = (super_path+'/'+project_name+"/Activities_Plots")
     os.makedirs(path, exist_ok=True) 
     
     active_users_longer_intervals=[]
@@ -86,7 +87,7 @@ for i in range(START_FROM, len(p_names)):
         row['datelimits'] = row['datelimits'][1:]
         row['datelimits'].append(last_break_interval)
         
-        path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Activities_Plots/"+str(user_id))
+        path = (super_path+'/'+project_name+'/Activities_Plots/'+str(user_id))
         os.makedirs(path, exist_ok=True) 
         
         if 'actions_table.csv' in os.listdir(path):
@@ -166,7 +167,7 @@ for i in range(START_FROM, len(p_names)):
         
         active_users_longer_intervals.append(longer_breaks)
         
-        path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Sleeping&Awaken_Users/Details")
+        path = (super_path+'/'+project_name+"/Sleeping&Awaken_Users/Details")
         os.makedirs(path, exist_ok=True) 
         
         if(len(current_sleepy_periods_details)>0):
@@ -193,18 +194,17 @@ for i in range(START_FROM, len(p_names)):
         print('Complete '+str(user_id)+': Developer '+str(n)+' of '+str(num_active_users)+' Index is '+str(index))
     
     num_sleeping_users = len(active_devs_sleeping_intervals_df)
-    path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Sleeping&Awaken_Users")
+    path = (super_path+'/'+project_name+"/Sleeping&Awaken_Users")
     util.writeUsersCSV_byItem(cursor, active_devs_sleeping_intervals_df, path)
     
     num_hibernation_users = len(active_devs_hibernation_intervals_df)
-    path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Hibernated&Unfrozen_Users")
+    path = (super_path+'/'+project_name+"/Hibernated&Unfrozen_Users")
     util.writeUsersCSV_byItem(cursor, active_devs_hibernation_intervals_df, path)
     
     num_dead_users = len(active_devs_dead_intervals_df)
-    path = ("C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"+project_name+"/Dead&Resurrected_Users")
+    path = (super_path+'/'+project_name+"/Dead&Resurrected_Users")
     util.writeUsersCSV_byItem(cursor, active_devs_dead_intervals_df, path)
     
-    super_path="C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/"
     full_sleepings_list = util.getSleepingsList(super_path, project_name)
     full_hibernated_list = util.getHibernationsList(super_path, project_name) # Includes Deads because they have been Hibernated before
     full_dead_list = util.getDeadsList(super_path, project_name)
@@ -212,8 +212,8 @@ for i in range(START_FROM, len(p_names)):
     project_transitions=util.countDevTransitions(super_path, project_name, breaks_df['durations'], cursor)
     durations = util.reportDevsBreaksLengthDistribution(project_name, super_path, cursor)
     durations.to_csv(super_path+'/dev_statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-
     cnx.close()
     
 # Write Final Table
 projects_stats.to_csv(super_path+'/projects_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+util.tableCumulativeTransitionsPercentages(super_path)
