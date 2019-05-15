@@ -93,7 +93,7 @@ def getBreaksNumberThreshold(inactivityData):
     th = numpy.percentile(avgList,90)
     return th
 
-def writeUsersCSV_byItem(cursor, dataframe, path,):
+def writeUsersCSV_byItem(cursor, dataframe, path):
     import os
     os.makedirs(path, exist_ok=True) 
     for item in dataframe:
@@ -308,7 +308,8 @@ def countDevTransitions(path, project, breaks_list, cursor):
     transitions_df = pandas.DataFrame(columns=labels)
     
     sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users/Details'
-    hibernated_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
+    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
     
     for dev in analyzed_devs:
         username = get_username(cursor, dev)
@@ -328,6 +329,8 @@ def countDevTransitions(path, project, breaks_list, cursor):
         
         name = dev+'.csv'
         #Check in Sleeping Directory
+        Hfound=[]
+        Dfound=[]
         if name in os.listdir(sleeping_dir):
             with open(sleeping_dir+'/'+name, 'r') as f:  #opens PW file
                 breaks = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
@@ -344,12 +347,14 @@ def countDevTransitions(path, project, breaks_list, cursor):
                                     StoH_count += 1
                                 else:
                                     StoH_count += 1
+                                Hfound.append(b[i+1].replace(']','').split(',')[2].replace('\'','').strip())#Adds Hibernation to a list to check after for hubernation counts
                             elif (status=='h') & (next_status=='sot'):
                                 if(prev_status=='u'):
                                     AtoH_count += 1
                                     HtoS_count += 1
                                 else:
                                     HtoS_count += 1
+                                Hfound.append(b[i].replace(']','').split(',')[2].replace('\'',''))#Adds Hibernation to a list to check after for hubernation counts
                             elif (status=='sot') & (next_status=='d'):
                                 if(prev_status=='u'):
                                     AtoS_count += 1 
@@ -358,6 +363,7 @@ def countDevTransitions(path, project, breaks_list, cursor):
                                 else:
                                     StoH_count += 1
                                     HtoD_count += 1
+                                Dfound.append(b[i+1].replace(']','').split(',')[2].replace('\'',''))#Adds Dead to a list to check after for dead counts
                             elif (status=='d') & (next_status=='sot'):
                                 if(prev_status=='u'):
                                     AtoH_count += 1
@@ -365,6 +371,7 @@ def countDevTransitions(path, project, breaks_list, cursor):
                                     DtoS_count += 1
                                 else:
                                     DtoS_count += 1
+                                Dfound.append(b[i].replace(']','').split(',')[2].replace('\'',''))#Adds Dead to a list to check after for dead counts
                             prev_status = status
                             if b[i+1].replace('[','').split(',')[2].replace('\'','').split('/')[1]=='2019-01-01':
                                 print("Broken Here ".join(b))
@@ -383,26 +390,34 @@ def countDevTransitions(path, project, breaks_list, cursor):
             with open(hibernated_dir+'/'+name, 'r') as f:  #opens PW file
                 breaks = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
                 for b in breaks[1:]:
-                    end_date = b[1].split('/')[1]
-                    if end_date!='2019-01-01':
-                        AtoH_count += 1
-                        HtoA_count += 1
+                    if(b[1] not in Hfound):
+                        end_date = b[1].split('/')[1]
+                        if end_date!='2019-01-01':
+                            AtoH_count += 1
+                            HtoA_count += 1
+                        else:
+                            AtoH_count += 1
+                            print("Ongoing Hibernation ".join(b))
                     else:
-                        print("Ongoing Hibernation ".join(b))
+                        print("Hibernation Already Counted ".join(b))
         #Check in Dead Directory
         name=dev+'_'+username+'.csv'
-        if name in os.listdir(hibernated_dir):
-            with open(hibernated_dir+'/'+name, 'r') as f:  #opens PW file
+        if name in os.listdir(dead_dir):
+            with open(dead_dir+'/'+name, 'r') as f:  #opens PW file
                 breaks = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
                 for b in breaks[1:]:
-                    end_date = b[1].split('/')[1]
-                    if end_date!='2019-01-01':
-                        AtoH_count += len(breaks)-1
-                        HtoD_count += len(breaks)-1
-                        DtoA_count += len(breaks)-1
+                    if(b[1] not in Hfound):
+                        end_date = b[1].split('/')[1]
+                        if end_date!='2019-01-01':
+                            AtoH_count += len(breaks)-1
+                            HtoD_count += len(breaks)-1
+                            DtoA_count += len(breaks)-1
+                        else:
+                            AtoH_count += len(breaks)-1
+                            HtoD_count += len(breaks)-1
+                            print("Ongoing Dead or Already Counted".join(b))
                     else:
-                        print("Ongoing Dead ".join(b))
-        
+                        print("Dead Already Counted ".join(b))
         life, num_breaks = getLife(dev, breaks_list)
         factor=life/365
         current_dev_stats=[dev, username, num_breaks/factor, AtoS_count/factor, StoA_count/factor, AtoH_count/factor, HtoA_count/factor, StoH_count/factor, HtoS_count/factor, HtoD_count/factor, DtoA_count/factor, DtoS_count/factor]
@@ -764,7 +779,7 @@ def plotAllProjectInactivities(p_names):
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", data=data, palette='Set2')
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     
-plotAllProjectInactivities(cfg.p_names)
+#plotAllProjectInactivities(cfg.p_names)
 #import mysql.connector
 #import config as cfg
 #
