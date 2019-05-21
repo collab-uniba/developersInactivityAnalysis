@@ -588,7 +588,7 @@ def printProjectsDurationsLog(project_names, path):
                     hibernation_avg=numpy.log1p(numpy.mean(l))
                     add(data, [project_name, 'hibernation', hibernation_avg])
             
-        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
+        sns_plot = sns.boxplot(x='project', y='average_duration (log)', hue="status", data=data, palette='Set2')
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
 def tableCumulativeTransitions(p_names, path):
@@ -664,7 +664,7 @@ def tableTransitionsPercentages(p_names, path):
         add(matrix, row)
         row=['Dead', DtoA, DtoS, '-', DtoD]
         add(matrix, row)
-        matrix.to_csv(path+'/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+        matrix.to_csv(path+'/Chains/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
 def tableCumulativeTransitionsPercentages(path):
     import pandas
@@ -779,6 +779,12 @@ def plotAllProjectInactivities(p_names):
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", data=data, palette='Set2')
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     
+#tableTransitionsPercentages(cfg.p_names, cfg.super_path)
+#tableCumulativeTransitions(cfg.p_names, cfg.super_path)
+#tableCumulativeTransitionsPercentages(cfg.super_path)
+#printProjectsDurationsLog(cfg.p_names, cfg.super_path)
+#printProjectsDurations(cfg.p_names, cfg.super_path)
+
 #plotAllProjectInactivities(cfg.p_names)
 #import mysql.connector
 #import config as cfg
