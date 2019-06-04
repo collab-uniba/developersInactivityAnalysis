@@ -172,8 +172,12 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
             labels.append('laravel')
         else:
             labels.append(name)
+    plt.clf()
     plt.boxplot(projects_counts)
-    plt.xticks(numpy.arange(1,len(project_names)+1), labels)
+    plt.xticks(numpy.arange(1,len(project_names)+1), labels, rotation=30)
+    # Pad margins so that markers don't get clipped by the axes: plt.margins(0.2)
+    # Tweak spacing to prevent clipping of tick-label: plt.subplots_adjust(bottom=0.15)
+    plt.grid(False)
     plt.ylabel("Pauses per Year")
     plt.savefig(path+"/BreaksDistribution", dpi=600)
     plt.clf()
@@ -541,7 +545,6 @@ def getDeadsFromSleepingDetail(period_detail):
     return others_deads_df
 
 def printProjectsDurations(project_names, path):
-        from matplotlib import pyplot as plt
         import numpy, pandas
         import seaborn as sns
         
@@ -574,6 +577,7 @@ def printProjectsDurations(project_names, path):
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
+        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
 
 def printProjectsDurationsLog(project_names, path):
@@ -605,6 +609,7 @@ def printProjectsDurationsLog(project_names, path):
                         add(data, [project_name, 'hibernation', hibernation_avg])
             
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2') #fliersize=5 (Default)
+        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
 def tableCumulativeTransitions(p_names, path):
@@ -612,18 +617,15 @@ def tableCumulativeTransitions(p_names, path):
     
     START_FROM = 0
     
-    ### START Supports For One Function Section
     labels = ['Project','#breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','H_to_D','D_to_A','D_to_S']
     
     cumulative_table=pandas.DataFrame(columns=labels)
-    ### END Supports For One Function Section
     
     for i in range(START_FROM, len(p_names)):
         
         chosen_project = i # FROM 0 TO n-1  
         project_name =  p_names[chosen_project]
         
-    ### START One Function Section
         current_table=pandas.read_csv(path+'/'+project_name+'/transitions.csv', sep=';')
         sums = current_table.sum(skipna = True)
         if project_name=='framework':
@@ -632,7 +634,56 @@ def tableCumulativeTransitions(p_names, path):
             line=[project_name]+sums.tolist()[2:]
         add(cumulative_table, line)
     cumulative_table.to_csv(path+'/cumulative_transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-    ### END One Function Section
+
+def tableTransitionsPercentagesProjectList(p_names, path):
+    import pandas
+    transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
+    
+    labels = ['Project', 'AtoA', 'AtoS', 'AtoH',
+              'StoA', 'StoS', 'StoH', 
+              'HtoA', 'HtoS', 'HtoH', 'HtoD', 
+              'DtoA', 'DtoS', 'DtoD']
+    projects_table=pandas.DataFrame(columns=labels)
+    
+    for index, proj in transitions_table.iterrows():
+        in_D = proj['H_to_D']
+        out_D = (proj['D_to_A']+proj['D_to_S'])
+        
+        if(in_D>0):
+            DtoA = proj['D_to_A']/in_D*100
+            DtoS = proj['D_to_S']/in_D*100
+            DtoD = (1-out_D/in_D)*100
+        else:
+            DtoA = 0
+            DtoS = 0
+            DtoD = 0
+        
+        in_H = (proj['A_to_H']+proj['S_to_H'])
+        out_H =(proj['H_to_A']+proj['H_to_S']+proj['H_to_D'])
+        HtoA = proj['H_to_A']/in_H*100
+        HtoS = proj['H_to_S']/in_H*100
+        HtoH = (1-out_H/in_H)*100
+        HtoD = proj['H_to_D']/in_H*100
+        
+        in_S = (proj['A_to_S']+proj['H_to_S']+proj['D_to_S'])
+        out_S = (proj['S_to_A']+proj['S_to_H'])
+        StoA = proj['S_to_A']/in_S*100
+        StoS = (1-out_S/in_S)*100
+        StoH = proj['S_to_H']/in_S*100
+        
+        in_A = proj['#breaks']
+        out_A = proj['A_to_S']+proj['A_to_H']
+        
+        AtoA = (1-out_A/in_A)*100
+        AtoS = proj['A_to_S']/in_A*100
+        AtoH = proj['A_to_H']/in_A*100
+    
+        add(projects_table, [proj['Project'], AtoA, AtoS, AtoH,
+                                             StoA, StoS, StoH, 
+                                             HtoA, HtoS, HtoH, HtoD, 
+                                             DtoA, DtoS, DtoD])
+        
+    projects_table.to_csv(path+'/transitions_percentages_projects.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
 def tableTransitionsPercentages(p_names, path):
     import pandas, os
@@ -794,6 +845,7 @@ def plotAllProjectInactivities(p_names):
             add(data, [dev_row['project'], 'dead', dev_row['deads']])
         
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", data=data, palette='Set2')
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     
 #reportPlotAllProjectBreaksDistribution(cfg.p_names, cfg.super_path)
