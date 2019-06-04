@@ -152,7 +152,7 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
         breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
         
         #Read Breaks Table
-        with open('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+        with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
             breaks_list = [list(map(float,rec)) for rec in csv.reader(f, delimiter=',')]
         
         counts_perYear=[]
@@ -173,8 +173,8 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
         else:
             labels.append(name)
     plt.boxplot(projects_counts)
-    plt.xticks(numpy.arange(1,len(project_names)+1), project_names)
-    plt.ylabel("Breaks per Year")
+    plt.xticks(numpy.arange(1,len(project_names)+1), labels)
+    plt.ylabel("Pauses per Year")
     plt.savefig(path+"/BreaksDistribution", dpi=600)
     plt.clf()
      
@@ -219,6 +219,11 @@ def refineSleepingPeriod(break_duration, break_limits, action_days, th):
     break_range=break_limits.split('/')
     action_days.insert(0, break_range[0])
     action_days.append(break_range[1])
+    
+#    if(break_limits=='2015-09-10/2015-12-12'):
+#        print(break_limits+" THRESHOLD IS "+str(th))
+#    if(break_limits=='2017-11-02/2018-01-28'):
+#        print(break_limits+" THRESHOLD IS "+str(th))
     
     for i in range(0, len(action_days)-1):
         if(status=='n'):
@@ -553,20 +558,25 @@ def printProjectsDurations(project_names, path):
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     sleeping_avg=numpy.mean(l)
                     s_avg_list.append(sleeping_avg)
-                    add(data, [project_name, 'sleeping', sleeping_avg])
+                    if(project_name=='framework'):
+                        add(data, ['laravel', 'sleeping', sleeping_avg])
+                    else:
+                        add(data, [project_name, 'sleeping', sleeping_avg])
             for l in current_project_df['hibernations'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     hibernation_avg=numpy.mean(l)
                     h_avg_list.append(hibernation_avg)
-                    add(data, [project_name, 'hibernation', hibernation_avg])
+                    if(project_name=='framework'):
+                        add(data, ['laravel', 'hibernation', hibernation_avg])
+                    else:
+                        add(data, [project_name, 'hibernation', hibernation_avg])
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
 
 def printProjectsDurationsLog(project_names, path):
-        from matplotlib import pyplot as plt
         import numpy, pandas
         import seaborn as sns
         
@@ -581,14 +591,20 @@ def printProjectsDurationsLog(project_names, path):
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     sleeping_avg=numpy.log1p(numpy.mean(l))
-                    add(data, [project_name, 'sleeping', sleeping_avg])
+                    if(project_name=='framework'):
+                        add(data, ['laravel', 'sleeping', sleeping_avg])
+                    else:
+                        add(data, [project_name, 'sleeping', sleeping_avg])
             for l in current_project_df['hibernations'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     hibernation_avg=numpy.log1p(numpy.mean(l))
-                    add(data, [project_name, 'hibernation', hibernation_avg])
+                    if(project_name=='framework'):
+                        add(data, ['laravel', 'hibernation', hibernation_avg])
+                    else:
+                        add(data, [project_name, 'hibernation', hibernation_avg])
             
-        sns_plot = sns.boxplot(x='project', y='average_duration (log)', hue="status", data=data, palette='Set2')
+        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2') #fliersize=5 (Default)
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
 def tableCumulativeTransitions(p_names, path):
@@ -619,7 +635,7 @@ def tableCumulativeTransitions(p_names, path):
     ### END One Function Section
 
 def tableTransitionsPercentages(p_names, path):
-    import pandas
+    import pandas, os
     transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
     
     for index, proj in transitions_table.iterrows():
@@ -664,6 +680,7 @@ def tableTransitionsPercentages(p_names, path):
         add(matrix, row)
         row=['Dead', DtoA, DtoS, '-', DtoD]
         add(matrix, row)
+        os.makedirs(path+'/Chains/', exist_ok=True) 
         matrix.to_csv(path+'/Chains/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
 def tableCumulativeTransitionsPercentages(path):
@@ -779,6 +796,7 @@ def plotAllProjectInactivities(p_names):
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", data=data, palette='Set2')
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     
+#reportPlotAllProjectBreaksDistribution(cfg.p_names, cfg.super_path)
 #tableTransitionsPercentages(cfg.p_names, cfg.super_path)
 #tableCumulativeTransitions(cfg.p_names, cfg.super_path)
 #tableCumulativeTransitionsPercentages(cfg.super_path)

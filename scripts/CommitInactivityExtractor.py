@@ -20,7 +20,7 @@ p_urls=cfg.p_urls
 
 cnx = mysql.connector.connect(**config)
 cursor = cnx.cursor(buffered=True)
-super_path = cfg.super_path
+super_path = '../'
 
 for i in range(0, len(p_names)):
     chosen_project = i # FROM 0 TO n-1
@@ -68,12 +68,12 @@ for i in range(0, len(p_names)):
                 cur_user_data.append(date_commit_count[pandas.to_datetime(d).date()])
             except Exception: # add "as name_given_to_exception" before ":" to get info 
                 cur_user_data.append(0)
-        print("finished user", u)
+        #print("finished user", u)
         u_data.append(cur_user_data)
     
     commit_table=pandas.DataFrame(u_data,columns=column_names)
-    commit_table.to_csv(project_name+'/commit_table.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-    print("CSV Written")
+    commit_table.to_csv(super_path+'/'+project_name+'/commit_table.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    print("Commit CSV Written: ", project_name)
 
     #commit_table = pandas.read_csv('C:/Users/Pepp_/SpyderWorkspace/Commit_Analysis/'+PROJECT_NAME+'/commit_table.csv') 
     
@@ -92,13 +92,14 @@ for i in range(0, len(p_names)):
             if(period>1):
                 row.append(period)
                 current_break_dates.append(commit_dates[i]+"/"+commit_dates[i+1])
-        print('Last User Done: ', row[0])
+        #print('Last User Done: ', row[0])
         inactivity_intervals_data.append(row)
         break_dates.append(current_break_dates)
         user_lifespan = util.days_between(commit_dates[0], commit_dates[len(commit_dates)-1])+1
         commit_frequency = len(commit_dates)/user_lifespan
         row.append(user_lifespan)
         row.append(commit_frequency)
+    print('Inactivity Computation Done: ', project_name)
 
     # Python program to get average of a list 
     for row in inactivity_intervals_data:
@@ -118,14 +119,14 @@ for i in range(0, len(p_names)):
         row.append(avg_inactivity_interval)
         row.append(stdev_inactivity_interval)
 
-    with open(project_name+'/inactivity_interval_list.csv', 'w', newline='') as outcsv:   
+    with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'w', newline='') as outcsv:   
         #configure writer to write standard csv file
         writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, quotechar='"')
         for r in inactivity_intervals_data:
             #Write item to outcsv
             writer.writerow(r)
         
-    with open(project_name+'/break_dates_list.csv', 'w', newline='') as outcsv:   
+    with open(super_path+'/'+project_name+'/break_dates_list.csv', 'w', newline='') as outcsv:   
         #configure writer to write standard csv file
         writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, quotechar='"')
         for r in break_dates:

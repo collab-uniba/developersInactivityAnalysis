@@ -104,7 +104,7 @@ for i in range(START_FROM, len(p_names)):
         current_user_hibernation_periods_df = pandas.DataFrame(columns=['durations', 'datelimits'])
         current_user_sleepy_periods_df = pandas.DataFrame(columns=['durations', 'datelimits'])
         current_user_dead_periods_df=pandas.DataFrame(columns=['durations', 'datelimits'])
-        dead_th=18*30 #18 months
+        dead_th=365 #12 months
 
         current_sleepy_periods_details=[]
         
@@ -216,4 +216,9 @@ for i in range(START_FROM, len(p_names)):
     
 # Write Final Table
 projects_stats.to_csv(super_path+'/projects_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+util.tableCumulativeTransitions(cfg.p_names, cfg.super_path)
 util.tableCumulativeTransitionsPercentages(super_path)
+util.reportPlotAllProjectBreaksDistribution(cfg.p_names, cfg.super_path)
+util.tableTransitionsPercentages(cfg.p_names, cfg.super_path)
+util.printProjectsDurationsLog(cfg.p_names, cfg.super_path)
+util.printProjectsDurations(cfg.p_names, cfg.super_path)
