@@ -468,7 +468,7 @@ def reportDevsBreaksLengthDistribution(project, path, cursor):
     
     analyzed_devs = list(set(sleeping_devs).union(hibernated_devs)) #for more than 2 lists is list(set().union(l1,l2,l3))
     
-    labels=['dev','username','sleepings','hibernations','deads']
+    labels=['dev','username','sleepings','hibernatings','deads']
     durations_df = pandas.DataFrame(columns=labels)
     
     sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users'
@@ -565,15 +565,15 @@ def printProjectsDurations(project_names, path):
                         add(data, ['laravel', 'sleeping', sleeping_avg])
                     else:
                         add(data, [project_name, 'sleeping', sleeping_avg])
-            for l in current_project_df['hibernations'].tolist():
+            for l in current_project_df['hibernatings'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     hibernation_avg=numpy.mean(l)
                     h_avg_list.append(hibernation_avg)
                     if(project_name=='framework'):
-                        add(data, ['laravel', 'hibernation', hibernation_avg])
+                        add(data, ['laravel', 'hibernating', hibernation_avg])
                     else:
-                        add(data, [project_name, 'hibernation', hibernation_avg])
+                        add(data, [project_name, 'hibernating', hibernation_avg])
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
@@ -599,14 +599,14 @@ def printProjectsDurationsLog(project_names, path):
                         add(data, ['laravel', 'sleeping', sleeping_avg])
                     else:
                         add(data, [project_name, 'sleeping', sleeping_avg])
-            for l in current_project_df['hibernations'].tolist():
+            for l in current_project_df['hibernatings'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     hibernation_avg=numpy.log1p(numpy.mean(l))
                     if(project_name=='framework'):
-                        add(data, ['laravel', 'hibernation', hibernation_avg])
+                        add(data, ['laravel', 'hibernating', hibernation_avg])
                     else:
-                        add(data, [project_name, 'hibernation', hibernation_avg])
+                        add(data, [project_name, 'hibernating', hibernation_avg])
             
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2') #fliersize=5 (Default)
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
@@ -722,12 +722,12 @@ def tableTransitionsPercentages(p_names, path):
         AtoS = proj['A_to_S']/in_A*100
         AtoH = proj['A_to_H']/in_A*100
         
-        matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernated', 'Dead'])
+        matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernating', 'Dead'])
         row=['Active', AtoA, AtoS, AtoH, '-']
         add(matrix, row)
         row=['Sleeping', StoA, StoS, StoH, '-']
         add(matrix, row)
-        row=['Hibernated', HtoA, HtoS, HtoH, HtoD]
+        row=['Hibernating', HtoA, HtoS, HtoH, HtoD]
         add(matrix, row)
         row=['Dead', DtoA, DtoS, '-', DtoD]
         add(matrix, row)
@@ -771,12 +771,12 @@ def tableCumulativeTransitionsPercentages(path):
     AtoS = sums['A_to_S']/in_A*100
     AtoH = sums['A_to_H']/in_A*100
     
-    matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernated', 'Dead'])
+    matrix = pandas.DataFrame(columns=['to', 'Active', 'Sleeping', 'Hibernating', 'Dead'])
     row=['Active', AtoA, AtoS, AtoH, '-']
     add(matrix, row)
     row=['Sleeping', StoA, StoS, StoH, '-']
     add(matrix, row)
-    row=['Hibernated', HtoA, HtoS, HtoH, HtoD]
+    row=['Hibernating', HtoA, HtoS, HtoH, HtoD]
     add(matrix, row)
     row=['Dead', DtoA, DtoS, '-', DtoD]
     add(matrix, row)
@@ -791,7 +791,7 @@ def getProjectInactivities(project): #returns the list of developers each with i
         #reader = csv.reader(f)
         breaks_list = [list(map(float,rec)) for rec in csv.reader(f, delimiter=',')]
     
-    labels=['dev','project','sleepings','hibernations','deads']
+    labels=['dev','project','sleepings','hibernatings','deads']
     inactivities_df=pandas.DataFrame(columns=labels)
 
     for index, dev_row in durations_df.iterrows():
@@ -804,7 +804,7 @@ def getProjectInactivities(project): #returns the list of developers each with i
         else:
             sleepings_perYear=0
             
-        hibernations = dev_row['hibernations'][1:-1]
+        hibernations = dev_row['hibernatings'][1:-1]
         if(hibernations!=''):
             hibernations_perYear=len(hibernations.split(','))/dev_years
         else:
@@ -839,12 +839,12 @@ def plotAllProjectInactivities(p_names):
     for index, dev_row in aggregated_data.iterrows():
         if(dev_row['sleepings']>0):
             add(data, [dev_row['project'], 'sleeping', dev_row['sleepings']])
-        if(dev_row['hibernations']>0):
-            add(data, [dev_row['project'], 'hibernated', dev_row['hibernations']])
+        if(dev_row['hibernatings']>0):
+            add(data, [dev_row['project'], 'hibernating', dev_row['hibernatings']])
         if(dev_row['deads']>0):
             add(data, [dev_row['project'], 'dead', dev_row['deads']])
         
-    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", data=data, palette='Set2')
+    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['sleeping','hibernating','dead'], data=data, palette='Set2')
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     
