@@ -214,7 +214,7 @@ def refineSleepingPeriod(break_duration, break_limits, action_days, th):
     FINAL REPRESENTATION --> Row: Total_duration,date/date; status1,duration1,date/date1; status2,duration2,date/date2; ...
     
     """
-    d_th=18*30
+    d_th=cfg.dead_threshold
     period_detail=[[break_duration, break_limits]]
 
     status='n' # n: Null - h: hibernation - sot: sleeping - ut: sleeping under threshold.

@@ -104,7 +104,7 @@ for i in range(START_FROM, len(p_names)):
         current_user_hibernation_periods_df = pandas.DataFrame(columns=['durations', 'datelimits'])
         current_user_sleepy_periods_df = pandas.DataFrame(columns=['durations', 'datelimits'])
         current_user_dead_periods_df=pandas.DataFrame(columns=['durations', 'datelimits'])
-        dead_th=365 #12 months
+        dead_th = cfg.dead_threshold
 
         current_sleepy_periods_details=[]
         

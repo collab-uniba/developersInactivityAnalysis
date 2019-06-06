@@ -1,11 +1,11 @@
 Project;Contributors;Sampled_Contributors;Sleeping;Hibernated;Dead
-rails;2484;66;65;57;20
-node;1966;65;63;7;0
+rails;2484;66;65;57;25
+node;1966;65;63;7;1
 framework;1503;15;14;10;1
-react;1076;23;22;14;2
+react;1076;23;22;14;5
 elixir;681;17;15;10;0
 linguist;395;12;12;8;3
 flutter;307;44;39;23;1
-atom;276;33;30;27;5
+atom;276;33;30;27;8
 ionic;145;8;8;5;0
 jabref;139;17;17;12;3
