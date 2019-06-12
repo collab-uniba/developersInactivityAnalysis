@@ -102,47 +102,48 @@ def writeUsersCSV_byItem(cursor, dataframe, path):
         item[1].to_csv(path+"/"+user_id+"_"+username+'.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
         print(user_id+" CSV Written")
         
-def reportPlotProjectBreaksDistribution(breaks_list, project, path):
-    import matplotlib.pyplot as plt
-    import numpy, csv, pandas
-    
-    breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
-
-    counts_perYear=[]
-    for row in breaks_list:
-        num_breaks = len(row)-7
-        num_days = row[-6]
-        years=num_days / 365
-        BpY=num_breaks/years
-        counts_perYear.append(BpY)
-        add(breaks_lifetime, [BpY, num_days])
-    
-    avg = numpy.mean(counts_perYear)
-    st_dev = numpy.std(counts_perYear)
-    var = numpy.var(counts_perYear)
-    median = numpy.median(counts_perYear)
-    corr = numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])
-    with open(path+'/breaks_stats.csv', 'w', newline='') as outcsv:   
-        #configure writer to write standard csv file
-        writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, quotechar='"')
-        writer.writerow(["Average;St.Dev.;Variance;Median;Breaks/Life Correlation"])
-        writer.writerow([str(avg)+";"+str(st_dev)+";"+str(var)+";"+str(median)+";"+str(corr[0][1])])
-    plt.clf()
-    plt.scatter(breaks_lifetime['BpY'], breaks_lifetime['life'])
-    plt.ylabel("Breaks per Year")
-    plt.ylabel("Lifetime (Days)")
-    plt.savefig(path+"/"+project+"_BreaksLifetimeScatter", dpi=600)
-    plt.clf()
-    plt.boxplot(counts_perYear)
-    plt.xticks([1], [project])
-    plt.ylabel("Breaks per Year")
-    plt.savefig(path+"/"+project+"_BreaksDistribution", dpi=600)
-    plt.clf()
+#def reportPlotProjectBreaksDistribution(breaks_list, project, path):
+#    import matplotlib.pyplot as plt
+#    import numpy, csv, pandas
+#    
+#    breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
+#
+#    counts_perYear=[]
+#    for row in breaks_list:
+#        num_breaks = len(row)-7
+#        num_days = row[-6]
+#        years=num_days / 365
+#        BpY=num_breaks/years
+#        counts_perYear.append(BpY)
+#        add(breaks_lifetime, [BpY, num_days])
+#    
+#    avg = numpy.mean(counts_perYear)
+#    st_dev = numpy.std(counts_perYear)
+#    var = numpy.var(counts_perYear)
+#    median = numpy.median(counts_perYear)
+#    corr = numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])
+#    with open(path+'/breaks_stats.csv', 'w', newline='') as outcsv:   
+#        #configure writer to write standard csv file
+#        writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, quotechar='"')
+#        writer.writerow(["Average;St.Dev.;Variance;Median;Breaks/Life Correlation"])
+#        writer.writerow([str(avg)+";"+str(st_dev)+";"+str(var)+";"+str(median)+";"+str(corr[0][1])])
+#    plt.clf()
+#    plt.scatter(breaks_lifetime['BpY'], breaks_lifetime['life'])
+#    plt.ylabel("Breaks per Year")
+#    plt.ylabel("Lifetime (Days)")
+#    plt.savefig(path+"/"+project+"_BreaksLifetimeScatter", dpi=600)
+#    plt.clf()
+#    plt.boxplot(counts_perYear)
+#    plt.xticks([1], [project])
+#    plt.ylabel("Breaks per Year")
+#    plt.savefig(path+"/"+project+"_BreaksDistribution", dpi=600)
+#    plt.clf()
 
 def reportPlotAllProjectBreaksDistribution(project_names, path):
     import matplotlib.pyplot as plt
     import numpy, csv, pandas
     
+    breaks_stats=pandas.DataFrame(columns=['project','mean','st_dev','var','median','breaks_devlife_corr'])
     projects_counts=[]
     for i in range(0, len(project_names)):
         chosen_project = i # FROM 0 TO n-1
@@ -150,7 +151,7 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
         project_name =  project_names[chosen_project]
     
         breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
-        
+
         #Read Breaks Table
         with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
             breaks_list = [list(map(float,rec)) for rec in csv.reader(f, delimiter=',')]
@@ -165,6 +166,14 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
                 counts_perYear.append(BpY)
                 add(breaks_lifetime, [BpY, num_days])
         projects_counts.append(counts_perYear)
+        add(breaks_stats, [project_name,
+                           numpy.mean(counts_perYear), 
+                           numpy.std(counts_perYear), 
+                           numpy.var(counts_perYear),
+                           numpy.median(counts_perYear),
+                           numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])[1][0]])
+    
+    breaks_stats.to_csv(super_path+'/breaks_stats_all.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     labels=[]
     for name in project_names:
@@ -172,6 +181,7 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
             labels.append('laravel')
         else:
             labels.append(name)
+    
     plt.clf()
     plt.boxplot(projects_counts)
     plt.xticks(numpy.arange(1,len(project_names)+1), labels, rotation=30)
@@ -181,7 +191,7 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
     plt.ylabel("Pauses per Year")
     plt.savefig(path+"/BreaksDistribution", dpi=600)
     plt.clf()
-     
+
 def getFarOutThreshold(values):
     import numpy
     q_3rd = numpy.percentile(values,75) 
@@ -544,7 +554,7 @@ def getDeadsFromSleepingDetail(period_detail):
             add(others_deads_df, [float(b[1]), b[2]])
     return others_deads_df
 
-def printProjectsDurations(project_names, path):
+def printProjectsDurationsLogScale(project_names, path):
         import numpy, pandas
         import seaborn as sns
         
@@ -576,11 +586,14 @@ def printProjectsDurations(project_names, path):
                         add(data, [project_name, 'hibernating', hibernation_avg])
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
-        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2')
+        
+        pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
+        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['sleeping','hibernating'], data=data, palette=pal)
+        sns_plot.set_yscale('log')
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
 
-def printProjectsDurationsLog(project_names, path):
+def printProjectsDurationsLogTransformed(project_names, path):
         import numpy, pandas
         import seaborn as sns
         
@@ -607,8 +620,9 @@ def printProjectsDurationsLog(project_names, path):
                         add(data, ['laravel', 'hibernating', hibernation_avg])
                     else:
                         add(data, [project_name, 'hibernating', hibernation_avg])
-            
-        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", data=data, palette='Set2') #fliersize=5 (Default)
+        
+        pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
+        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['sleeping','hibernating'], data=data, palette=pal) #fliersize=5 (Default)
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
@@ -844,7 +858,8 @@ def plotAllProjectInactivities(p_names):
         if(dev_row['deads']>0):
             add(data, [dev_row['project'], 'dead', dev_row['deads']])
         
-    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['sleeping','hibernating','dead'], data=data, palette='Set2')
+    pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
+    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['sleeping','hibernating','dead'], data=data, palette=pal)
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     

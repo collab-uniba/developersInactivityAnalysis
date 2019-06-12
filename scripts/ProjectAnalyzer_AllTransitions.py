@@ -33,23 +33,23 @@ for i in range(START_FROM, len(p_names)):
 
     #Read Breaks Table
     with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
-        reader = csv.reader(f)
+        #reader = csv.reader(f)
         inactivity_intervals_data = [list(map(float,rec)) for rec in csv.reader(f, delimiter=',')]
     
     #Read Break Dates Table
     with open(super_path+'/'+project_name+'/break_dates_list.csv', 'r') as f:
-        reader = csv.reader(f)
+        #reader = csv.reader(f)
         break_dates_data = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
     
     breaks_df = pandas.DataFrame({'durations' : inactivity_intervals_data, 'datelimits' : break_dates_data})
-    
+
     # FILTER DEVELOPERS
     SLIDE_WIN_SIZE = 20
 
     active_users_df = pandas.DataFrame(columns=['durations','datelimits'])
     
     path = (super_path+'/'+project_name)
-    util.reportPlotProjectBreaksDistribution(breaks_df['durations'], project_name, path)
+    #util.reportPlotProjectBreaksDistribution(breaks_df['durations'], project_name, path)
     
     for index, row in breaks_df.iterrows():
         #Constraint on #Commit_Days: (row['durations'][0] in core_user_ids)
@@ -221,6 +221,6 @@ util.tableCumulativeTransitionsPercentages(super_path)
 util.tableTransitionsPercentagesProjectList(cfg.p_names, cfg.super_path)
 util.reportPlotAllProjectBreaksDistribution(cfg.p_names, cfg.super_path)
 util.tableTransitionsPercentages(cfg.p_names, cfg.super_path)
-util.printProjectsDurationsLog(cfg.p_names, cfg.super_path)
-util.printProjectsDurations(cfg.p_names, cfg.super_path)
+util.printProjectsDurationsLogTransformed(cfg.p_names, cfg.super_path)
+util.printProjectsDurationsLogScale(cfg.p_names, cfg.super_path)
 util.plotAllProjectInactivities(cfg.p_names)
