@@ -863,6 +863,54 @@ def plotAllProjectInactivities(p_names):
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
     sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
     
+def boxplotTransitionsPerYearOverall(p_names):
+    import pandas
+    import seaborn as sns
+    '''
+        For each project
+            read 'transitions.csv' file
+            for each line
+                dev: fixed
+                for each transition
+                    line: dev, transition_name, amount_per_year
+        boxplot
+    '''
+    data = pandas.DataFrame(columns=['dev','transition','amount_per_year'])
+    for i in range(0, len(p_names)):
+        chosen_project = i # FROM 0 TO n-1
+        
+        project_name =  p_names[chosen_project]
+        transitions = pandas.read_csv(super_path+'/'+project_name+'/transitions.csv', sep=';')
+        
+        for index, row in transitions.iterrows():
+            dev=row[0]
+            
+            if(row['A_to_S']!=0):
+                add(data, [dev, 'A_to_S', row['A_to_S']])
+            if(row['A_to_H']!=0):
+                add(data, [dev, 'A_to_H', row['A_to_H']])
+            if(row['S_to_A']!=0):
+                add(data, [dev, 'S_to_A', row['S_to_A']])
+            if(row['S_to_H']!=0):
+                add(data, [dev, 'S_to_H', row['S_to_H']])
+            if(row['H_to_A']!=0):
+                add(data, [dev, 'H_to_A', row['H_to_A']])
+            if(row['H_to_S']!=0):
+                add(data, [dev, 'H_to_S', row['H_to_S']])
+            if(row['H_to_D']!=0):
+                add(data, [dev, 'H_to_D', row['H_to_D']])
+            if(row['D_to_A']!=0):
+                add(data, [dev, 'D_to_A', row['D_to_A']])
+            if(row['D_to_S']!=0):
+                add(data, [dev, 'D_to_S', row['D_to_S']])
+    
+    pal=[sns.color_palette('Set1')[8]]
+    sns_plot = sns.boxplot(x='transition', y='amount_per_year', data=data, palette=pal, order=['A_to_S','A_to_H','S_to_A','S_to_H','H_to_A','H_to_S','H_to_D','D_to_A','D_to_S'])
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
+    sns_plot.get_figure().savefig(super_path+"/transitions_per_year_overall.png", dpi=600)
+
+boxplotTransitionsPerYearOverall(cfg.p_names)
+
 #reportPlotAllProjectBreaksDistribution(cfg.p_names, cfg.super_path)
 #tableTransitionsPercentages(cfg.p_names, cfg.super_path)
 #tableCumulativeTransitions(cfg.p_names, cfg.super_path)
