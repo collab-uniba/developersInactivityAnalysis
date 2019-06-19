@@ -163,9 +163,11 @@ for i in range(START_FROM, len(p_names)):
                         if(duration>dead_th):
                             util.add(current_user_dead_periods_df, [duration,date_range])
                         else:
-                            util.add(current_user_hibernation_periods_df, [duration,date_range])                  
-        
-        active_users_longer_intervals.append(longer_breaks)
+                            util.add(current_user_hibernation_periods_df, [duration,date_range])      
+        path = (super_path+'/'+project_name+"/Longer_Breaks")
+        os.makedirs(path, exist_ok=True) 
+        longer_breaks.to_csv(path+'/'+str(user_id)+'_longer_breaks.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+        #active_users_longer_intervals.append(longer_breaks)
         
         path = (super_path+'/'+project_name+"/Sleeping&Awaken_Users/Details")
         os.makedirs(path, exist_ok=True) 
