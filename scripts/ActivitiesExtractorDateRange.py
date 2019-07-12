@@ -4,20 +4,6 @@ Created on Fri Feb  8 14:03:00 2019
 
 @author: Pepp_
 """
-
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Feb  6 11:09:58 2019
-
-@author: Pepp_
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Dec 20 14:14:43 2018
-
-@author: Pepp_
-"""
 ### Import Library
 import mysql.connector
 import pandas

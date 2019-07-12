@@ -57,7 +57,14 @@ def days_between(d1, d2): # gets the number of days between two dates
 # ITERATE FROM MIN_TIMESTAMP --> MAX_TIMESTAMP
         # OBTAIN A LIST OF STRINGS: [USER_ID, DAY1, DAY2, ..., DAYN]
 def daterange(start_date, end_date):
+    from datetime import datetime
     from datetime import timedelta #, date
+    
+    if type(start_date)==str:
+        start_date=datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    if type(end_date)==str:
+        end_date=datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
+
     for n in range(int ((end_date - start_date).days+2)):
         yield start_date + timedelta(n)
         
@@ -101,6 +108,14 @@ def writeUsersCSV_byItem(cursor, dataframe, path):
         username = get_username(cursor, user_id)
         item[1].to_csv(path+"/"+user_id+"_"+username+'.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
         print(user_id+" CSV Written")
+
+def writeUsersCSV_byItem_PyGithub(dataframe, path):
+    import os
+    os.makedirs(path, exist_ok=True) 
+    for item in dataframe:
+        username = item[0]
+        item[1].to_csv(path+"/"+username+'.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+        print(username+" CSV Written")
         
 #def reportPlotProjectBreaksDistribution(breaks_list, project, path):
 #    import matplotlib.pyplot as plt
@@ -909,7 +924,7 @@ def boxplotTransitionsPerYearOverall(p_names):
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
     sns_plot.get_figure().savefig(super_path+"/transitions_per_year_overall.png", dpi=600)
 
-boxplotTransitionsPerYearOverall(cfg.p_names)
+#boxplotTransitionsPerYearOverall(cfg.p_names)
 
 #reportPlotAllProjectBreaksDistribution(cfg.p_names, cfg.super_path)
 #tableTransitionsPercentages(cfg.p_names, cfg.super_path)
