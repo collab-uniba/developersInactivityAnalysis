@@ -5,6 +5,38 @@ from github import Github
 import github
 from datetime import datetime
 
+def runCommitsExtractionRoutine(super_path, repo, project_name, chosen_organization):
+    logging.info('Project: '+project_name+' Org: '+chosen_organization+' Started')
+    
+    cfg.waitRateLimit(g)
+    project_start_dt=repo.created_at
+    #project_start=project_start_dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    path = (super_path+'/'+project_name)
+    os.makedirs(path, exist_ok=True)  
+    
+    collection_day=datetime.strptime(cfg.collection_date, '%Y-%m-%d')
+    cfg.waitRateLimit(g)
+    project_url = chosen_organization+'/'+project_name 
+    
+    writeCommitFile_Login(g, project_url, project_start_dt, collection_day, path)
+    
+def mergeProjectsCommits(path, main_project_name): # No filter on core_devs_df. All developers are taken
+    proj_path = path + '/' + main_project_name
+    commits_data =  pandas.read_csv(proj_path+'/commits_raw_login.csv', sep=',')
+    
+    projects=os.listdir(path)
+    for project in projects:
+        if ((project!=main_project_name) & (os.path.isdir(os.path.join(path, project)))):
+            proj_path = path + '/' + project
+            if 'commits_raw_login.csv' in os.listdir(proj_path):
+                project_commits = pandas.read_csv(proj_path+'/commits_raw_login.csv', sep=',')
+                commits_data = pandas.concat([commits_data, project_commits], ignore_index=True)
+                print('Organization commits merged with ', project)
+    
+    commits_data.to_csv(path+'/commits_raw_login.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    print('ALL Organization commits merged')
+    
 def writeCommitFile_Login(gith, project_url, start_date, end_date, path):
     import os, requests
     
@@ -84,7 +116,7 @@ def writeCommitFile_Login(gith, project_url, start_date, end_date, path):
             logger.flush()
             raise
 
-def writeCommitTable_Login(commits_data):
+def writeCommitTable_Login(super_path, commits_data, core_devs_list):
     # GET MIN and MAX COMMIT DATETIME
     max_commit_date=max(commits_data['date'])
     min_commit_date=min(commits_data['date'])
@@ -95,7 +127,7 @@ def writeCommitTable_Login(commits_data):
 
     # ITERATE UNIQUE USERS (U)
     u_data=[]
-    for u in commits_data.author_id.unique():
+    for u in core_devs_list:
         user_id=u
         cur_user_data=[user_id]
         date_commit_count = pandas.to_datetime(commits_data[['date']][commits_data['author_id']==u].pop('date'), format="%Y-%m-%d").dt.date.value_counts()
@@ -110,10 +142,10 @@ def writeCommitTable_Login(commits_data):
         u_data.append(cur_user_data)
     
     commit_table=pandas.DataFrame(u_data,columns=column_names)
-    commit_table.to_csv(super_path+'/'+project_name+'/commit_table_login.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-    print("Commit CSV Written: ", project_name)
+    commit_table.to_csv(super_path+'/commit_table_login.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    print("Organization Commit Table CSV Written")
     
-def writeIntervalsBreaks_Files(commit_table):
+def writeIntervalsBreaks_Files(super_path, commit_table):
     # Calcola days between commits, if commits are in adjacent days count 1
     inactivity_intervals_data=[]
     break_dates=[]
@@ -136,26 +168,63 @@ def writeIntervalsBreaks_Files(commit_table):
         commit_frequency = len(commit_dates)/user_lifespan
         row.append(user_lifespan)
         row.append(commit_frequency)
-    print('Inactivity Computation Done: ', project_name)
+    print('Organization Inactivity Computation Done')
     
-    with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'w', newline='') as outcsv:   
+    with open(super_path+'/inactivity_interval_list.csv', 'w', newline='') as outcsv:   
         #configure writer to write standard csv file
         writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, quotechar='"',escapechar='\\')
         for r in inactivity_intervals_data:
             #Write item to outcsv
             writer.writerow(r)
     
-    with open(super_path+'/'+project_name+'/break_dates_list.csv', 'w', newline='') as outcsv:   
+    with open(super_path+'/break_dates_list.csv', 'w', newline='') as outcsv:   
         #configure writer to write standard csv file
         writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, quotechar='"',escapechar='\\')
         for r in break_dates:
             #Write item to outcsv
             writer.writerow(r)
-    logging.info('Project: '+project_name+' DONE')
 
+def writeCoreDevelopers(super_path, project_name):
+    with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+        #reader = csv.reader(f)
+        inactivity_intervals_data = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
 
+    #Read Break Dates Table
+    with open(super_path+'/'+project_name+'/break_dates_list.csv', 'r') as f:
+        #reader = csv.reader(f)
+        break_dates_data = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
     
-token_index=6
+    breaks_df = pandas.DataFrame({'durations' : inactivity_intervals_data, 'datelimits' : break_dates_data})
+    
+    # FILTER DEVELOPERS
+    SLIDE_WIN_SIZE = 20
+    
+    active_users_df = pandas.DataFrame(columns=['durations','datelimits'])
+    
+    path = (super_path+'/'+project_name)
+    
+    for index, row in breaks_df.iterrows():
+        num_breaks=len(row['durations'])-3
+        if (('[bot]' not in row['durations'][0]) & (num_breaks>=SLIDE_WIN_SIZE)):
+            util.add(active_users_df, row)
+    num_all_users = len(inactivity_intervals_data)
+    num_active_users = len(active_users_df)
+    
+    logging.info('Project: '+project_name+'All Users: '+str(num_all_users)+' Breaks_Threshold/Sliding_Window: '+str(SLIDE_WIN_SIZE)+' Active Users: '+str(num_active_users))
+
+    active_users=[]
+    for index, row in active_users_df.iterrows():
+        user_id=row['durations'][0]
+        active_users.append(user_id)
+        
+    active_users_ids_df=pandas.DataFrame(active_users, columns=['id'])
+            
+    active_users_ids_df.to_csv(path+'/active_users.csv', sep=';', encoding='utf-8', na_rep='NA', header=True, index=False, mode='w', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+
+    print('Core Developer Written for '+project_name)
+    return active_users_ids_df
+
+token_index=4
 tm = cfg.TokenManagement.getInstance()
 g = Github(tm.getToken(token_index))
 g.per_page=cfg.items_per_page
@@ -165,38 +234,40 @@ organizations = cfg.organizations
 
 chosen_organization=organizations[token_index-1]
 main_project=p_names[token_index-1]
-super_path = cfg.super_path + '/' + chosen_organization
-os.makedirs(super_path, exist_ok=True)  
-org = g.get_organization(chosen_organization)
 
+super_path=cfg.super_path+'/'+chosen_organization
+os.makedirs(super_path, exist_ok=True)  
+
+logging.basicConfig(filename=super_path+'/CommitExtraction_Organization.log',level=logging.INFO)
+    
+cfg.waitRateLimit(g)
+repo=g.get_repo(chosen_organization+'/'+main_project)
+
+#XXX UNCOMMENT runCommitsExtractionRoutine(super_path, repo, main_project, chosen_organization)
+
+core_devs_df = writeCoreDevelopers(super_path, main_project)
+core_devs_list=core_devs_df.id.tolist()
+print('Main Project Extraction COMPLETE!!!')
+
+org = g.get_organization(chosen_organization)
 org_repos = org.get_repos(type='all')
 
+# XXX UNCOMMENT THE FOLLOWING BLOCK
+'''XXX UNCOMMENT 
 for repo in org_repos:
     cfg.waitRateLimit(g)
     project_name = repo.name
     if project_name != main_project:
-        logging.basicConfig(filename=super_path+'/CommitExtraction_Organization.log',level=logging.INFO)
-        logging.info('Project: '+project_name+' Org: '+chosen_organization+' Started')
-    
-        cfg.waitRateLimit(g)
-        project_start_dt=repo.created_at
-        project_start=project_start_dt.strftime('%Y-%m-%d %H:%M:%S')
-    
-        path = (super_path+'/'+project_name)
-        os.makedirs(path, exist_ok=True)  
-        
-        collection_day=datetime.strptime(cfg.collection_date, '%Y-%m-%d')
-        cfg.waitRateLimit(g)
-        project_url = chosen_organization+'/'+project_name 
-        
-        writeCommitFile_Login(g, project_url, project_start_dt, collection_day, path)
-        #writeCommitFile_Basic(commits, path)
-        if 'commits_raw_login.csv' in os.listdir(path):
-            commits_data = pandas.read_csv(path+'/commits_raw_login.csv', sep=',')
-            writeCommitTable_Login(commits_data)
-        
-        if 'commit_table_login.csv' in os.listdir(path):
-            commit_table = pandas.read_csv(path+'/commit_table_login.csv', sep=',')
-            writeIntervalsBreaks_Files(commit_table)
-
+        runCommitsExtractionRoutine(super_path, repo, project_name, chosen_organization)
+'''
 print('Side Projects Extraction COMPLETE!!!')
+
+mergeProjectsCommits(super_path, main_project) # No filter on core_devs_df. All developers are taken
+
+if 'commits_raw_login.csv' in os.listdir(super_path):
+    commits_data = pandas.read_csv(super_path+'/commits_raw_login.csv', sep=',')
+    writeCommitTable_Login(super_path, commits_data, core_devs_list)
+
+if 'commit_table_login.csv' in os.listdir(super_path):
+    commit_table = pandas.read_csv(super_path+'/commit_table_login.csv', sep=',')
+    writeIntervalsBreaks_Files(super_path, commit_table)

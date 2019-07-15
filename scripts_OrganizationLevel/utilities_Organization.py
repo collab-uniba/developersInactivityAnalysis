@@ -78,28 +78,28 @@ def writeUsersCSV_byItem(dataframe, path):
         item[1].to_csv(path+"/"+username+'.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
         print(username+" CSV Written")
 
-def reportPlotAllProjectBreaksDistribution(project_names, path):
+def reportPlotAllProjectBreaksDistribution(o_names, path):
     import matplotlib.pyplot as plt
     import numpy, csv, pandas
     
     breaks_stats=pandas.DataFrame(columns=['project','mean','st_dev','var','median','breaks_devlife_corr'])
     projects_counts=[]
-    for i in range(0, len(project_names)):
+    for i in range(0, len(o_names)):
         chosen_project = i # FROM 0 TO n-1
         
-        project_name =  project_names[chosen_project]
+        project_name =  o_names[chosen_project]
     
         breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
 
         #Read Breaks Table
-        with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+        with open(path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
             breaks_list = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
         
         counts_perYear=[]
         for row in breaks_list:
             num_breaks = len(row[1:])-2   
             if num_breaks>0:
-                num_days = row[-2]
+                num_days = int(row[-2])
                 years=num_days / 365
                 BpY=num_breaks/years
                 counts_perYear.append(BpY)
@@ -112,10 +112,10 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
                            numpy.median(counts_perYear),
                            numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])[1][0]])
     
-    breaks_stats.to_csv(super_path+'/breaks_stats_all.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    breaks_stats.to_csv(path+'/breaks_stats_all.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     labels=[]
-    for name in project_names:
+    for name in o_names:
         if name=='framework':
             labels.append('laravel')
         else:
@@ -123,7 +123,7 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
     
     plt.clf()
     plt.boxplot(projects_counts)
-    plt.xticks(numpy.arange(1,len(project_names)+1), labels, rotation=30)
+    plt.xticks(numpy.arange(1,len(o_names)+1), labels, rotation=30)
     # Pad margins so that markers don't get clipped by the axes: plt.margins(0.2)
     # Tweak spacing to prevent clipping of tick-label: plt.subplots_adjust(bottom=0.15)
     plt.grid(False)
@@ -200,12 +200,12 @@ def refineSleepingPeriod(break_duration, break_limits, action_days, th):
     # A Final status 'h', 'd' or 'sut' means an UNFREEZING ('sut' is not written into the detail list)
     return period_detail
 
-def getHibernationsList(path, project): # How many developers Hibernated at least once
+def getHibernationsList(path): # How many developers Hibernated at least once
     import os#, csv
     
-    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
+    hibernated_dir=path+'/Hibernated&Unfrozen_Users'
     hibernated_file_list = [name for name in os.listdir(hibernated_dir) if name.endswith('.csv')]
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    dead_dir=path+'/Dead&Resurrected_Users'
     dead_file_list = [name for name in os.listdir(dead_dir) if ((name.endswith('.csv')) & (name not in hibernated_file_list))]
     
     id_list=[uid.split('.')[0] for uid in hibernated_file_list]
@@ -213,44 +213,44 @@ def getHibernationsList(path, project): # How many developers Hibernated at leas
     
     return id_list
 
-def getDeadsList(path, project): # How many developers Hibernated at least once
+def getDeadsList(path): # How many developers Hibernated at least once
     import os#, csv
     
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    dead_dir=path+'/Dead&Resurrected_Users'
     dead_file_list = [name for name in os.listdir(dead_dir) if (name.endswith('.csv'))]
 
     id_list=[uid.split('.')[0] for uid in dead_file_list]
     
     return id_list
 
-def getSleepingsList(path, project): # How many developers Slept at least once
+def getSleepingsList(path): # How many developers Slept at least once
     import os
 
-    sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users'
+    sleeping_dir=path+'/Sleeping&Awaken_Users'
     sleeping_file_list = [name for name in os.listdir(sleeping_dir) if (name.endswith('.csv'))]
 
     id_list=[uid.split('.')[0] for uid in sleeping_file_list]
     
     return id_list
 
-def countDevTransitions(path, project, breaks_list):
+def countDevTransitions(path, breaks_list):
     import os, csv, pandas
     
-    sleeping_devs=getSleepingsList(path, project)
-    hibernated_devs=getHibernationsList(path, project)
+    sleeping_devs=getSleepingsList(path)
+    hibernated_devs=getHibernationsList(path)
     
     analyzed_devs = list(set(sleeping_devs).union(hibernated_devs)) #for more than 2 lists is list(set().union(l1,l2,l3))
     
     labels = ['dev','breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','H_to_D','D_to_A','D_to_S']
     transitions_df = pandas.DataFrame(columns=labels)
     
-    sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users/Details'
-    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    sleeping_dir=path+'/Sleeping&Awaken_Users/Details'
+    hibernated_dir=path+'/Hibernated&Unfrozen_Users'
+    dead_dir=path+'/Dead&Resurrected_Users'
     
     for dev in analyzed_devs:
         
-        plot_path = path+'/'+project+'/DevStats_Plots'
+        plot_path = path+'/DevStats_Plots'
         os.makedirs(plot_path, exist_ok=True) 
         
         AtoS_count=0
@@ -359,27 +359,27 @@ def countDevTransitions(path, project, breaks_list):
         
         add(transitions_df, current_dev_stats)              
     
-    transitions_df.to_csv(path+'/'+project+'/transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    transitions_df.to_csv(path+'/transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     return transitions_df
 
-def reportDevsBreaksLengthDistribution(project, path):
+def reportDevsBreaksLengthDistribution(path):
     import os, csv, pandas
     
-    sleeping_devs=getSleepingsList(path, project)
-    hibernated_devs=getHibernationsList(path, project)
+    sleeping_devs=getSleepingsList(path)
+    hibernated_devs=getHibernationsList(path)
     
     analyzed_devs = list(set(sleeping_devs).union(hibernated_devs)) #for more than 2 lists is list(set().union(l1,l2,l3))
     
     labels=['dev','sleepings','hibernatings','deads']
     durations_df = pandas.DataFrame(columns=labels)
     
-    sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users'
-    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    sleeping_dir=path+'/Sleeping&Awaken_Users'
+    hibernated_dir=path+'/Hibernated&Unfrozen_Users'
+    dead_dir=path+'/Dead&Resurrected_Users'
     
     for dev in analyzed_devs:
-        plot_path = path+'/'+project+'/DevStats_Plots'
+        plot_path = path+'/DevStats_Plots'
         os.makedirs(plot_path, exist_ok=True) 
         
         ##TRASFORMARE QUESTI IN ARRAY E APPENDERE LE DURATE
@@ -413,7 +413,7 @@ def reportDevsBreaksLengthDistribution(project, path):
         
         add(durations_df, current_dev_stats)              
     
-    durations_df.to_csv(path+'/'+project+'/statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    durations_df.to_csv(path+'/statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     return durations_df
 
@@ -441,15 +441,15 @@ def getDeadsFromSleepingDetail(period_detail):
             add(others_deads_df, [float(b[1]), b[2]])
     return others_deads_df
 
-def printProjectsDurationsLogScale(project_names, path):
+def printProjectsDurationsLogScale(o_names, path):
         import numpy, pandas
         import seaborn as sns
         
         data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
-        for i in range(0, len(project_names)):
+        for i in range(0, len(o_names)):
             chosen_project = i # FROM 0 TO n-1
             
-            project_name =  project_names[chosen_project]
+            project_name =  o_names[chosen_project]
             s_avg_list=[]
             h_avg_list=[]
             current_project_df = pandas.read_csv(path+'/'+project_name+'/statuses_durations.csv', sep=';')
@@ -480,15 +480,15 @@ def printProjectsDurationsLogScale(project_names, path):
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
 
-def printProjectsDurationsLogTransformed(project_names, path):
+def printProjectsDurationsLogTransformed(o_names, path):
         import numpy, pandas
         import seaborn as sns
         
         data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
-        for i in range(0, len(project_names)):
+        for i in range(0, len(o_names)):
             chosen_project = i # FROM 0 TO n-1
             
-            project_name =  project_names[chosen_project]
+            project_name =  o_names[chosen_project]
             
             current_project_df = pandas.read_csv(path+'/'+project_name+'/statuses_durations.csv', sep=';')
             for l in current_project_df['sleepings'].tolist():
@@ -513,7 +513,7 @@ def printProjectsDurationsLogTransformed(project_names, path):
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
-def tableCumulativeTransitions(p_names, path):
+def tableCumulativeTransitions(o_names, path):
     import pandas
     
     START_FROM = 0
@@ -522,10 +522,10 @@ def tableCumulativeTransitions(p_names, path):
     
     cumulative_table=pandas.DataFrame(columns=labels)
     
-    for i in range(START_FROM, len(p_names)):
+    for i in range(START_FROM, len(o_names)):
         
         chosen_project = i # FROM 0 TO n-1  
-        project_name =  p_names[chosen_project]
+        project_name =  o_names[chosen_project]
         
         current_table=pandas.read_csv(path+'/'+project_name+'/transitions.csv', sep=';')
         sums = current_table.sum(skipna = True)
@@ -536,7 +536,7 @@ def tableCumulativeTransitions(p_names, path):
         add(cumulative_table, line)
     cumulative_table.to_csv(path+'/cumulative_transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
-def tableTransitionsPercentagesProjectList(p_names, path):
+def tableTransitionsPercentagesProjectList(path):
     import pandas
     transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
     
@@ -586,7 +586,7 @@ def tableTransitionsPercentagesProjectList(p_names, path):
         
     projects_table.to_csv(path+'/transitions_percentages_projects.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
-def tableTransitionsPercentages(p_names, path):
+def tableTransitionsPercentages(path):
     import pandas, os
     transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
     
@@ -632,8 +632,9 @@ def tableTransitionsPercentages(p_names, path):
         add(matrix, row)
         row=['Dead', DtoA, DtoS, '-', DtoD]
         add(matrix, row)
-        os.makedirs(path+'/Chains/', exist_ok=True) 
-        matrix.to_csv(path+'/Chains/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+        chains_path = path+'/Chains'
+        os.makedirs(chains_path, exist_ok=True) 
+        matrix.to_csv(chains_path+'/'+proj['Project']+'_markov.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
 def tableCumulativeTransitionsPercentages(path):
     import pandas
@@ -724,15 +725,15 @@ def getProjectInactivities(project): #returns the list of developers each with i
 
     return inactivities_df
 
-def plotAllProjectInactivities(p_names):
+def plotAllProjectInactivities(o_names, path):
     import pandas
     import seaborn as sns
     
     dataframes=[]
-    for i in range(0, len(p_names)):
+    for i in range(0, len(o_names)):
         chosen_project = i # FROM 0 TO n-1
         
-        project_name =  p_names[chosen_project]
+        project_name =  o_names[chosen_project]
         dataframes.append(getProjectInactivities(project_name))
     aggregated_data = pandas.concat(dataframes)
     
@@ -748,7 +749,7 @@ def plotAllProjectInactivities(p_names):
     pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['sleeping','hibernating','dead'], data=data, palette=pal)
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
-    sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
+    sns_plot.get_figure().savefig(path+"/Inactivities_occurrences.png", dpi=600)
     
 def boxplotTransitionsPerYearOverall(p_names):
     import pandas

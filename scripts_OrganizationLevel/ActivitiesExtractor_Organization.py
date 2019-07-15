@@ -6,7 +6,7 @@ import config_Organization as cfg
 from github import Github
 import github
 
-super_path = cfg.super_path
+#super_path = cfg.super_path
     
 def get_last_page_read_short(log_file):
     log_handler = open (log_file,'r')
@@ -43,8 +43,8 @@ def get_action_timeline(action_name, action_table, column_names):
             cur_action_data.append(0)
     return cur_action_data
 
-def get_issues_prs(gith, repo, project_name, start_date, developer_login):
-    path = super_path+'/'+project_name+'/Other_Activities/'+developer_login
+def get_issues_prs(org_path, gith, repo, project_name, start_date, developer_login):
+    path = org_path+'/'+project_name+'/Activities_Plots/'+developer_login
     os.makedirs(path, exist_ok=True) 
     
     exception_thrown = True
@@ -104,8 +104,7 @@ def get_issues_prs(gith, repo, project_name, start_date, developer_login):
                 issues_prs_data.to_csv(path+'/issues_pr_creation.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
             raise
             
-def get_issues_comments_repo(gith, repo, project_name, start_date, active_users):
-    path = super_path+'/'+project_name+'/Other_Activities'
+def get_issues_comments_repo(gith, path, repo, project_name, start_date, active_users):
     os.makedirs(path, exist_ok=True)
     
     exception_thrown = True
@@ -203,13 +202,13 @@ def get_issues_comments_repo(gith, repo, project_name, start_date, active_users)
                 completed_issues.to_csv(path+'/comments_extraction_completed_issues.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
             raise
             
-def get_issues_comments_dev(project_name, developer_login):
-    path = super_path+'/'+project_name+'/Other_Activities/'+developer_login
+def get_issues_comments_dev(org_path, project_name, developer_login):
+    path = org_path+'/'+project_name+'/Activities_Plots/'+developer_login
     os.makedirs(path, exist_ok=True) 
     
-    if('complete_issues_comments_repo.csv' in os.listdir(super_path+'/'+project_name+'/Other_Activities')):
+    if('complete_issues_comments_repo.csv' in os.listdir(org_path+'/'+project_name+'/Other_Activities')):
         ### Get Comments on Issue
-        issues_comments = pandas.read_csv(super_path+'/'+project_name+'/Other_Activities/complete_issues_comments_repo.csv', sep=',')
+        issues_comments = pandas.read_csv(org_path+'/'+project_name+'/Other_Activities/complete_issues_comments_repo.csv', sep=',')
         issues_comments_data = pandas.DataFrame(columns=['id','date','creator_login'])
         
         for index, comment in issues_comments.iterrows():
@@ -223,8 +222,7 @@ def get_issues_comments_dev(project_name, developer_login):
         
 
         
-def get_pulls_comments_repo(gith, repo, project_name, start_date, active_users):
-    path = super_path+'/'+project_name+'/Other_Activities'
+def get_pulls_comments_repo(gith, path, repo, project_name, start_date, active_users):
     os.makedirs(path, exist_ok=True)
     
     exception_thrown = True
@@ -322,13 +320,13 @@ def get_pulls_comments_repo(gith, repo, project_name, start_date, active_users):
                 completed_pulls.to_csv(path+'/comments_extraction_completed_pulls.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
             raise
             
-def get_pulls_comments_dev(project_name, developer_login):
-    path = super_path+'/'+project_name+'/Other_Activities/'+developer_login
+def get_pulls_comments_dev(org_path, project_name, developer_login):
+    path = org_path+'/'+project_name+'/Activities_Plots/'+developer_login
     os.makedirs(path, exist_ok=True) 
 
-    if('complete_pulls_comments_repo.csv' in os.listdir(super_path+'/'+project_name+'/Other_Activities')):
+    if('complete_pulls_comments_repo.csv' in os.listdir(org_path+'/'+project_name+'/Other_Activities')):
         ### Get Comments on Pull Requests 
-        pulls_comments = pandas.read_csv(super_path+'/'+project_name+'/Other_Activities/complete_pulls_comments_repo.csv', sep=',')
+        pulls_comments = pandas.read_csv(org_path+'/'+project_name+'/Other_Activities/complete_pulls_comments_repo.csv', sep=',')
         pulls_comments_data = pandas.DataFrame(columns=['id','date','creator_login'])
 
         for index, comment in pulls_comments.iterrows():
@@ -340,8 +338,7 @@ def get_pulls_comments_dev(project_name, developer_login):
     else:
         print('{}: No Pulls Comments'.format(project_name))
         
-def get_issue_events_repo(gith, repo, project_name, start_date, active_users): #Why Not get_events()?
-    path = super_path+'/'+project_name+'/Other_Activities'
+def get_issue_events_repo(gith, path, repo, project_name, start_date, active_users): #Why Not get_events()?
     os.makedirs(path, exist_ok=True) 
     
     exception_thrown = True
@@ -440,12 +437,12 @@ def get_issue_events_repo(gith, repo, project_name, start_date, active_users): #
                 completed_issues.to_csv(path+'/events_extraction_completed_issues.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
             raise
             
-def get_issue_events_dev(project_name, developer_login):
-    path = super_path+'/'+project_name+'/Other_Activities/'+developer_login
+def get_issue_events_dev(org_path, project_name, developer_login):
+    path = org_path+'/'+project_name+'/Activities_Plots/'+developer_login
     os.makedirs(path, exist_ok=True) 
-    if('complete_issues_events_repo.csv' in os.listdir(super_path+'/'+project_name+'/Other_Activities')):
+    if('complete_issues_events_repo.csv' in os.listdir(org_path+'/'+project_name+'/Other_Activities')):
         ### Get Other Issues Events
-        issues_events = pandas.read_csv(super_path+'/'+project_name+'/Other_Activities/complete_issues_events_repo.csv', sep=',')
+        issues_events = pandas.read_csv(org_path+'/'+project_name+'/Other_Activities/complete_issues_events_repo.csv', sep=',')
         issues_events_data = pandas.DataFrame(columns=['id','date', 'event', 'creator_login'])
     
         for index, event in issues_events.iterrows():
@@ -457,19 +454,50 @@ def get_issue_events_dev(project_name, developer_login):
     else:
         print('{}: No Issue Events'.format(project_name))
     
-        
-def get_activities(gith, repo, project_name, start_date, end_date, developer_login):
-    get_issues_prs(gith, repo, project_name, start_date, developer_login)
-    get_issues_comments_dev(project_name, developer_login)
-    get_pulls_comments_dev(project_name, developer_login)
-    get_issue_events_dev(project_name, developer_login)
+def get_user_activities(org_path, g, project_start_dt, project_end, user_id):
+    ### Check if the user has already the activity file in the Organization folder
+    path = org_path+'/Activities_Plots/'+user_id
+    os.makedirs(path, exist_ok=True)
+    user_actions = pandas.DataFrame()
+    if 'actions_table.csv' in os.listdir(path): # If has already the Organization activity file
+        user_actions = pandas.read_csv(path+'/actions_table.csv', sep=';',index_col='action')
+    else:
+        for proj_folder in os.listdir(org_path): ### For each organization project
+            if ((proj_folder not in cfg.key_folders) & (os.path.isdir(os.path.join(org_path, proj_folder)))):
+                path = org_path+'/'+proj_folder+'/Activities_Plots/'+user_id
+                os.makedirs(path, exist_ok=True)
+                if 'actions_table.csv' in os.listdir(path): # If has already the Project activity file
+                    project_user_actions = pandas.read_csv(path+'/actions_table.csv', sep=';', index_col='action')
+                    user_actions = user_actions.add(project_user_actions, fill_value=0)
+                else: # Build and Write the Project activity file
+                    project_url=org_path.split('/')[-1]+'/'+proj_folder
+                    project_user_actions = get_activities(org_path, g, project_url, project_start_dt, project_end, user_id)
+                    if not project_user_actions.empty: 
+                        project_user_actions.to_csv(path+"/actions_table.csv", sep=';', encoding='utf-8', na_rep='NA', header=True, index=True, mode='w', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+                    user_actions = user_actions.add(project_user_actions, fill_value=0)
+        path = org_path+'/Activities_Plots/'+user_id
+        os.makedirs(path, exist_ok=True)
+        if not user_actions.empty: 
+            user_actions.to_csv(path+'/actions_table.csv', sep=';', encoding='utf-8', na_rep='NA', header=True, index=True, mode='w', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    return user_actions
+
+def get_activities(org_path, gith, project_url, start_date, end_date, developer_login):
+    project_name=project_url.split('/')[-1]
+    
+    cfg.waitRateLimit(gith)
+    repo=gith.get_repo(project_url)
+    
+    get_issues_prs(org_path, gith, repo, project_name, start_date, developer_login)
+    get_issues_comments_dev(org_path, project_name, developer_login)
+    get_pulls_comments_dev(org_path, project_name, developer_login)
+    get_issue_events_dev(org_path, project_name, developer_login)
 
     column_names=['action']
     for single_date in util.daterange(start_date, datetime.strptime(end_date, "%Y-%m-%d")):
         column_names.append(single_date.strftime("%Y-%m-%d"))
     
     ### Add Action Timeline to the Table
-    path = super_path+'/'+project_name+'/Other_Activities/'+developer_login
+    path = org_path+'/'+project_name+'/Activities_Plots/'+developer_login
     actions_data=[]
     if 'issues_pr_creation.csv' in os.listdir(path):
         issues_prs_data = pandas.read_csv(path+'/issues_pr_creation.csv', sep=',')
@@ -485,18 +513,18 @@ def get_activities(gith, repo, project_name, start_date, end_date, developer_log
         actions_data.append(get_action_timeline("issues_events", issues_events_data, column_names))
 
     actions_table=pandas.DataFrame(actions_data,columns=column_names)
+    actions_table = actions_table.set_index('action')
     #actions_table.to_csv(path+'all_actions_table.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     return actions_table
 
-def get_repo_activities(gith, repo, project_name, start_date, active_users):
-    path=super_path+'/'+project_name+'/Other_Activities'
+def get_repo_activities(gith, super_path, repo, project_name, start_date, active_users):
+    path = super_path+'/Other_Activities'
     os.makedirs(path, exist_ok=True) 
-    files_in_path = os.listdir(path)
     
-    if('complete_issues_comments_repo.csv' not in files_in_path):
-        get_issues_comments_repo(gith, repo, project_name, start_date, active_users)
-    if('complete_pulls_comments_repo.csv' not in files_in_path):
-        get_pulls_comments_repo(gith, repo, project_name, start_date, active_users)
-    if('complete_issues_events_repo.csv' not in files_in_path):
-        get_issue_events_repo(gith, repo, project_name, start_date, active_users)
+    if('complete_issues_comments_repo.csv' not in os.listdir(path)):
+        get_issues_comments_repo(gith, path, repo, project_name, start_date, active_users)
+    if('complete_pulls_comments_repo.csv' not in os.listdir(path)):
+        get_pulls_comments_repo(gith, path, repo, project_name, start_date, active_users)
+    if('complete_issues_events_repo.csv' not in os.listdir(path)):
+        get_issue_events_repo(gith, path, repo, project_name, start_date, active_users)
     

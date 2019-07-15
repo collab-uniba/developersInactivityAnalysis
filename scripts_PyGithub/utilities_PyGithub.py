@@ -91,14 +91,14 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
         breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
 
         #Read Breaks Table
-        with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+        with open(path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
             breaks_list = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
         
         counts_perYear=[]
         for row in breaks_list:
             num_breaks = len(row[1:])-2   
             if num_breaks>0:
-                num_days = row[-2]
+                num_days = int(row[-2])
                 years=num_days / 365
                 BpY=num_breaks/years
                 counts_perYear.append(BpY)
@@ -111,7 +111,7 @@ def reportPlotAllProjectBreaksDistribution(project_names, path):
                            numpy.median(counts_perYear),
                            numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])[1][0]])
     
-    breaks_stats.to_csv(super_path+'/breaks_stats_all.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    breaks_stats.to_csv(path+'/breaks_stats_all.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     labels=[]
     for name in project_names:
@@ -199,12 +199,12 @@ def refineSleepingPeriod(break_duration, break_limits, action_days, th):
     # A Final status 'h', 'd' or 'sut' means an UNFREEZING ('sut' is not written into the detail list)
     return period_detail
 
-def getHibernationsList(path, project): # How many developers Hibernated at least once
+def getHibernationsList(proj_path): # How many developers Hibernated at least once
     import os#, csv
     
-    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
+    hibernated_dir=proj_path+'/Hibernated&Unfrozen_Users'
     hibernated_file_list = [name for name in os.listdir(hibernated_dir) if name.endswith('.csv')]
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    dead_dir=proj_path+'/Dead&Resurrected_Users'
     dead_file_list = [name for name in os.listdir(dead_dir) if ((name.endswith('.csv')) & (name not in hibernated_file_list))]
     
     id_list=[uid.split('.')[0] for uid in hibernated_file_list]
@@ -212,20 +212,20 @@ def getHibernationsList(path, project): # How many developers Hibernated at leas
     
     return id_list
 
-def getDeadsList(path, project): # How many developers Hibernated at least once
+def getDeadsList(proj_path): # How many developers Hibernated at least once
     import os#, csv
     
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    dead_dir=proj_path+'/Dead&Resurrected_Users'
     dead_file_list = [name for name in os.listdir(dead_dir) if (name.endswith('.csv'))]
 
     id_list=[uid.split('.')[0] for uid in dead_file_list]
     
     return id_list
 
-def getSleepingsList(path, project): # How many developers Slept at least once
+def getSleepingsList(proj_path): # How many developers Slept at least once
     import os
 
-    sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users'
+    sleeping_dir=proj_path+'/Sleeping&Awaken_Users'
     sleeping_file_list = [name for name in os.listdir(sleeping_dir) if (name.endswith('.csv'))]
 
     id_list=[uid.split('.')[0] for uid in sleeping_file_list]
@@ -535,7 +535,7 @@ def tableCumulativeTransitions(p_names, path):
         add(cumulative_table, line)
     cumulative_table.to_csv(path+'/cumulative_transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
-def tableTransitionsPercentagesProjectList(p_names, path):
+def tableTransitionsPercentagesProjectList(path):
     import pandas
     transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
     
@@ -585,7 +585,7 @@ def tableTransitionsPercentagesProjectList(p_names, path):
         
     projects_table.to_csv(path+'/transitions_percentages_projects.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
-def tableTransitionsPercentages(p_names, path):
+def tableTransitionsPercentages(path):
     import pandas, os
     transitions_table=pandas.read_csv(path+'/cumulative_transitions.csv',sep=';')
     
@@ -723,7 +723,7 @@ def getProjectInactivities(project): #returns the list of developers each with i
 
     return inactivities_df
 
-def plotAllProjectInactivities(p_names):
+def plotAllProjectInactivities(p_names, path):
     import pandas
     import seaborn as sns
     
@@ -747,7 +747,7 @@ def plotAllProjectInactivities(p_names):
     pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['sleeping','hibernating','dead'], data=data, palette=pal)
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
-    sns_plot.get_figure().savefig(super_path+"/Inactivities_occurrences.png", dpi=600)
+    sns_plot.get_figure().savefig(path+"/Inactivities_occurrences.png", dpi=600)
     
 def boxplotTransitionsPerYearOverall(p_names):
     import pandas

@@ -5,6 +5,7 @@ items_per_page=100
 p_names = ['jabref','ionic','atom','flutter','linguist','elixir','react','framework','node','rails']
 organizations = ['JabRef','ionic-team','atom','flutter','github','elixir-lang','facebook','laravel','nodejs','rails']
 
+key_folders=['Activities_Plots','Dead&Resurrected_Users','Hibernated&Unfrozen_Users','Sleeping&Awaken_Users','DevStats_Plots','Longer_Breaks']
 collection_date='2019-06-20'
 
 dead_threshold = 365
