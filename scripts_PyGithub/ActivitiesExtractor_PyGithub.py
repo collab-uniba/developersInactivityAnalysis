@@ -60,7 +60,24 @@ def get_issues_prs(gith, repo, project_name, start_date, developer_login):
         logger = open(path+'/issues_pr_extraction.log','a+')
         ### Get Issue / Pull Requests
         created_issues_prs = repo.get_issues(state='all', sort='created_at', since=start_date, creator=developer_login)
-        num_items = created_issues_prs.totalCount
+        
+        count_exception = True
+        while(count_exception):
+            count_exception = False 
+            try:
+                num_items = created_issues_prs.totalCount
+            except github.GithubException:
+                print('Failed to get ISSUES/PRs Number from User {} and Project {} (TIMEOUT: Retrying)'.format(developer_login, project_name))
+                count_exception=True
+                pass
+            except requests.exceptions.Timeout:
+                print('Failed to get ISSUES/PRs Number from User {} and Project {} (TIMEOUT: Retrying)'.format(developer_login, project_name))
+                count_exception=True
+                pass
+            except:
+                print('Failed to get ISSUES/PRs Number from User {} and Project {} (Probably Empty)'.format(developer_login, project_name))
+                return
+        
         last_page = int(num_items/cfg.items_per_page)
         last_page_read=0
         
@@ -139,7 +156,7 @@ def get_issues_comments_repo(gith, repo, project_name, start_date, active_users)
         
         ### Get Comments on Issue
         try:
-            issues_page=0
+            issues_page=last_issues_page
             issue_id=''
             page=0
             
@@ -253,7 +270,7 @@ def get_pulls_comments_repo(gith, repo, project_name, start_date, active_users):
         
         ### Get Comments on Pull
         try:
-            pulls_page=0
+            pulls_page=last_pulls_page
             pull_id=''
             page=0
             
@@ -368,7 +385,7 @@ def get_issue_events_repo(gith, repo, project_name, start_date, active_users): #
         
         ### Get Other Issues Events
         try:
-            issues_page=0
+            issues_page=last_issues_page
             issue_id=''
             page=0
             

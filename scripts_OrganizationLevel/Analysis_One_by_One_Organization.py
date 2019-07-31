@@ -6,7 +6,6 @@ import logging
 import config_Organization as cfg
 from github import Github
 
-
 def runActivitiesExtractionRoutine(g, super_path, repo, project_name, project_start_dt, chosen_organization, active_users):  
     logging.info('Project: '+project_name+' Org: '+chosen_organization+' Started Activities Extraction')
     
@@ -24,7 +23,7 @@ organizations=cfg.organizations
 tm = cfg.TokenManagement.getInstance()
 
 # XXX Set Project
-token_index=1
+token_index=9
 chosen_project = token_index-1 # FROM 0 TO n-1
 g = Github(tm.getToken(token_index))
 g.per_page=cfg.items_per_page
@@ -39,7 +38,6 @@ super_path = cfg.super_path + '/' + chosen_organization
 os.makedirs(super_path, exist_ok=True)
 
 logging.basicConfig(filename=super_path+'/Activities_Extraction_Organization.log',level=logging.INFO)
-
 
 #Read Commit Table
 commit_table = pandas.read_csv(super_path+'/commit_table_login.csv', sep=',') 

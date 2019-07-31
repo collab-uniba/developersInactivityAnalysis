@@ -232,24 +232,24 @@ def getSleepingsList(proj_path): # How many developers Slept at least once
     
     return id_list
 
-def countDevTransitions(path, project, breaks_list):
+def countDevTransitions(path, breaks_list):
     import os, csv, pandas
     
-    sleeping_devs=getSleepingsList(path, project)
-    hibernated_devs=getHibernationsList(path, project)
+    sleeping_devs=getSleepingsList(path)
+    hibernated_devs=getHibernationsList(path)
     
     analyzed_devs = list(set(sleeping_devs).union(hibernated_devs)) #for more than 2 lists is list(set().union(l1,l2,l3))
     
     labels = ['dev','breaks','A_to_S','S_to_A','A_to_H','H_to_A','S_to_H','H_to_S','H_to_D','D_to_A','D_to_S']
     transitions_df = pandas.DataFrame(columns=labels)
     
-    sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users/Details'
-    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    sleeping_dir=path+'/Sleeping&Awaken_Users/Details'
+    hibernated_dir=path+'/Hibernated&Unfrozen_Users'
+    dead_dir=path+'/Dead&Resurrected_Users'
     
     for dev in analyzed_devs:
         
-        plot_path = path+'/'+project+'/DevStats_Plots'
+        plot_path = path+'/DevStats_Plots'
         os.makedirs(plot_path, exist_ok=True) 
         
         AtoS_count=0
@@ -358,27 +358,27 @@ def countDevTransitions(path, project, breaks_list):
         
         add(transitions_df, current_dev_stats)              
     
-    transitions_df.to_csv(path+'/'+project+'/transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    transitions_df.to_csv(path+'/transitions.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     return transitions_df
 
-def reportDevsBreaksLengthDistribution(project, path):
+def reportDevsBreaksLengthDistribution(path):
     import os, csv, pandas
     
-    sleeping_devs=getSleepingsList(path, project)
-    hibernated_devs=getHibernationsList(path, project)
+    sleeping_devs=getSleepingsList(path)
+    hibernated_devs=getHibernationsList(path)
     
     analyzed_devs = list(set(sleeping_devs).union(hibernated_devs)) #for more than 2 lists is list(set().union(l1,l2,l3))
     
     labels=['dev','sleepings','hibernatings','deads']
     durations_df = pandas.DataFrame(columns=labels)
     
-    sleeping_dir=path+'/'+project+'/Sleeping&Awaken_Users'
-    hibernated_dir=path+'/'+project+'/Hibernated&Unfrozen_Users'
-    dead_dir=path+'/'+project+'/Dead&Resurrected_Users'
+    sleeping_dir=path+'/Sleeping&Awaken_Users'
+    hibernated_dir=path+'/Hibernated&Unfrozen_Users'
+    dead_dir=path+'/Dead&Resurrected_Users'
     
     for dev in analyzed_devs:
-        plot_path = path+'/'+project+'/DevStats_Plots'
+        plot_path = path+'/DevStats_Plots'
         os.makedirs(plot_path, exist_ok=True) 
         
         ##TRASFORMARE QUESTI IN ARRAY E APPENDERE LE DURATE
@@ -412,7 +412,7 @@ def reportDevsBreaksLengthDistribution(project, path):
         
         add(durations_df, current_dev_stats)              
     
-    durations_df.to_csv(path+'/'+project+'/statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    durations_df.to_csv(path+'/statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     return durations_df
 

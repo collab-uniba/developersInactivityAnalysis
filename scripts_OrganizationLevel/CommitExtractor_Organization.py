@@ -50,11 +50,31 @@ def writeCommitFile_Login(gith, project_url, start_date, end_date, path):
         repo = gith.get_repo(project_url)
         
         commits = repo.get_commits(since=start_date, until=end_date) #Fake users to be filtered out (author_id NOT IN (SELECT id from users where fake=1))
-        try:
-            num_items = commits.totalCount
-        except:
-            print('Failed to get commits from this project (Probably Empty): '+project_url)
-            return
+        
+        count_exception = True
+        while(count_exception):
+            count_exception = False 
+            try:
+                num_items = commits.totalCount
+            except github.GithubException as ghe:
+                if str(ghe)=='500 None':
+                    print('Failed to get commits from this project (500 None: Ignoring Repo):', project_url)
+                    return
+                elif str(ghe).startswith('409'):
+                    print('Failed to get commits from this project (409 Empty: Ignoring Repo):', project_url)
+                    return
+                else:
+                    print('Failed to get commits from this project (GITHUB Unknown: Retrying):', project_url)
+                    count_exception=True
+                pass
+            except requests.exceptions.Timeout:
+                print('Failed to get commits from this project (TIMEOUT: Retrying):', project_url)
+                count_exception=True
+                pass
+            except:
+                print('Failed to get commits from this project (Probably Empty): ', project_url)
+                return
+
         last_page = int(num_items/cfg.items_per_page)
         last_page_read=0
         
@@ -186,12 +206,10 @@ def writeIntervalsBreaks_Files(super_path, commit_table):
 
 def writeCoreDevelopers(super_path, project_name):
     with open(super_path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
-        #reader = csv.reader(f)
         inactivity_intervals_data = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
 
     #Read Break Dates Table
     with open(super_path+'/'+project_name+'/break_dates_list.csv', 'r') as f:
-        #reader = csv.reader(f)
         break_dates_data = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
     
     breaks_df = pandas.DataFrame({'durations' : inactivity_intervals_data, 'datelimits' : break_dates_data})
@@ -224,7 +242,7 @@ def writeCoreDevelopers(super_path, project_name):
     print('Core Developer Written for '+project_name)
     return active_users_ids_df
 
-token_index=4
+token_index=9
 tm = cfg.TokenManagement.getInstance()
 g = Github(tm.getToken(token_index))
 g.per_page=cfg.items_per_page
@@ -243,7 +261,7 @@ logging.basicConfig(filename=super_path+'/CommitExtraction_Organization.log',lev
 cfg.waitRateLimit(g)
 repo=g.get_repo(chosen_organization+'/'+main_project)
 
-#XXX UNCOMMENT runCommitsExtractionRoutine(super_path, repo, main_project, chosen_organization)
+#runCommitsExtractionRoutine(super_path, repo, main_project, chosen_organization)
 
 core_devs_df = writeCoreDevelopers(super_path, main_project)
 core_devs_list=core_devs_df.id.tolist()
@@ -252,14 +270,11 @@ print('Main Project Extraction COMPLETE!!!')
 org = g.get_organization(chosen_organization)
 org_repos = org.get_repos(type='all')
 
-# XXX UNCOMMENT THE FOLLOWING BLOCK
-'''XXX UNCOMMENT 
 for repo in org_repos:
     cfg.waitRateLimit(g)
     project_name = repo.name
     if project_name != main_project:
         runCommitsExtractionRoutine(super_path, repo, project_name, chosen_organization)
-'''
 print('Side Projects Extraction COMPLETE!!!')
 
 mergeProjectsCommits(super_path, main_project) # No filter on core_devs_df. All developers are taken

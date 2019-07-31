@@ -78,7 +78,7 @@ def writeUsersCSV_byItem(dataframe, path):
         item[1].to_csv(path+"/"+username+'.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
         print(username+" CSV Written")
 
-def reportPlotAllProjectBreaksDistribution(o_names, path):
+def reportPlotAllProjectBreaksDistribution(o_names, p_names, path):
     import matplotlib.pyplot as plt
     import numpy, csv, pandas
     
@@ -88,11 +88,11 @@ def reportPlotAllProjectBreaksDistribution(o_names, path):
         chosen_project = i # FROM 0 TO n-1
         
         project_name =  o_names[chosen_project]
-    
+        main_project = p_names[chosen_project]
         breaks_lifetime = pandas.DataFrame(columns=['BpY','life'])
 
         #Read Breaks Table
-        with open(path+'/'+project_name+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
+        with open(path+'/'+project_name+'/'+main_project+'/inactivity_interval_list.csv', 'r') as f:  #opens PW file
             breaks_list = [list(map(str,rec)) for rec in csv.reader(f, delimiter=',')]
         
         counts_perYear=[]
@@ -122,8 +122,10 @@ def reportPlotAllProjectBreaksDistribution(o_names, path):
             labels.append(name)
     
     plt.clf()
+    projects_counts.reverse()
     plt.boxplot(projects_counts)
-    plt.xticks(numpy.arange(1,len(o_names)+1), labels, rotation=30)
+    labels.reverse()
+    plt.xticks(numpy.arange(1,len(o_names)+1), labels, rotation=20)
     # Pad margins so that markers don't get clipped by the axes: plt.margins(0.2)
     # Tweak spacing to prevent clipping of tick-label: plt.subplots_adjust(bottom=0.15)
     plt.grid(False)
@@ -459,25 +461,25 @@ def printProjectsDurationsLogScale(o_names, path):
                     sleeping_avg=numpy.mean(l)
                     s_avg_list.append(sleeping_avg)
                     if(project_name=='framework'):
-                        add(data, ['laravel', 'sleeping', sleeping_avg])
+                        add(data, ['laravel', 'non-coding', sleeping_avg])
                     else:
-                        add(data, [project_name, 'sleeping', sleeping_avg])
+                        add(data, [project_name, 'non-coding', sleeping_avg])
             for l in current_project_df['hibernatings'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     hibernation_avg=numpy.mean(l)
                     h_avg_list.append(hibernation_avg)
                     if(project_name=='framework'):
-                        add(data, ['laravel', 'hibernating', hibernation_avg])
+                        add(data, ['laravel', 'inactive', hibernation_avg])
                     else:
-                        add(data, [project_name, 'hibernating', hibernation_avg])
+                        add(data, [project_name, 'inactive', hibernation_avg])
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
         
         pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
-        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['sleeping','hibernating'], data=data, palette=pal)
+        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding','inactive'], data=data, palette=pal)
         sns_plot.set_yscale('log')
-        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
+        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=20)
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
 
 def printProjectsDurationsLogTransformed(o_names, path):
@@ -496,21 +498,21 @@ def printProjectsDurationsLogTransformed(o_names, path):
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     sleeping_avg=numpy.log1p(numpy.mean(l))
                     if(project_name=='framework'):
-                        add(data, ['laravel', 'sleeping', sleeping_avg])
+                        add(data, ['laravel', 'non-coding', sleeping_avg])
                     else:
-                        add(data, [project_name, 'sleeping', sleeping_avg])
+                        add(data, [project_name, 'non-coding', sleeping_avg])
             for l in current_project_df['hibernatings'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     hibernation_avg=numpy.log1p(numpy.mean(l))
                     if(project_name=='framework'):
-                        add(data, ['laravel', 'hibernating', hibernation_avg])
+                        add(data, ['laravel', 'inactive', hibernation_avg])
                     else:
-                        add(data, [project_name, 'hibernating', hibernation_avg])
+                        add(data, [project_name, 'inactive', hibernation_avg])
         
         pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
-        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['sleeping','hibernating'], data=data, palette=pal) #fliersize=5 (Default)
-        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=30)
+        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding','inactive'], data=data, palette=pal) #fliersize=5 (Default)
+        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=20)
         sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
 
 def tableCumulativeTransitions(o_names, path):
@@ -740,15 +742,16 @@ def plotAllProjectInactivities(o_names, path):
     data = pandas.DataFrame(columns=['project', 'status', 'occurrences'])
     for index, dev_row in aggregated_data.iterrows():
         if(dev_row['sleepings']>0):
-            add(data, [dev_row['project'], 'sleeping', dev_row['sleepings']])
+            add(data, [dev_row['project'], 'non-coding', dev_row['sleepings']])
         if(dev_row['hibernatings']>0):
-            add(data, [dev_row['project'], 'hibernating', dev_row['hibernatings']])
+            add(data, [dev_row['project'], 'inactive', dev_row['hibernatings']])
         if(dev_row['deads']>0):
-            add(data, [dev_row['project'], 'dead', dev_row['deads']])
+            add(data, [dev_row['project'], 'gone', dev_row['deads']])
         
     pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['sleeping','hibernating','dead'], data=data, palette=pal)
-    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
+    sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['non-coding','inactive','gone'], data=data, palette=pal)
+    #sns_plot.set_yscale('log')
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
     sns_plot.get_figure().savefig(path+"/Inactivities_occurrences.png", dpi=600)
     
 def boxplotTransitionsPerYearOverall(p_names):
@@ -786,5 +789,5 @@ def boxplotTransitionsPerYearOverall(p_names):
     
     pal=[sns.color_palette('Set1')[8]]
     sns_plot = sns.boxplot(x='transition', y='amount_per_year', data=data, palette=pal, order=['A_to_S','A_to_H','S_to_A','S_to_H','H_to_A','H_to_S','H_to_D','D_to_A','D_to_S'])
-    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=30)
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
     sns_plot.get_figure().savefig(super_path+"/transitions_per_year_overall.png", dpi=600)

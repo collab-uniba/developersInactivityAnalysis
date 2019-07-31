@@ -1,9 +1,11 @@
 from github import Github
+from datetime import datetime
+import time, requests, github
 
 items_per_page=100
 
-p_names = ['jabref','ionic','atom','flutter','linguist','elixir','react','framework','node','rails']
-organizations = ['JabRef','ionic-team','atom','flutter','github','elixir-lang','facebook','laravel','nodejs','rails']
+p_names = ['jabref','ionic','flutter','atom','linguist','elixir','react','framework','node','rails']
+organizations = ['JabRef','ionic-team','flutter','atom','github','elixir-lang','facebook','laravel','nodejs','rails']
 
 key_folders=['Activities_Plots','Dead&Resurrected_Users','Hibernated&Unfrozen_Users','Sleeping&Awaken_Users','DevStats_Plots','Longer_Breaks']
 collection_date='2019-06-20'
@@ -68,23 +70,37 @@ def checkRateLimit(github):
         github.per_page=items_per_page
         checkRateLimit(github)
         
-def waitRateLimit(github):
-    from datetime import datetime
-    import time
+def waitRateLimit(ghub):
+    exception_thrown = True
+    while(exception_thrown):
+        exception_thrown = False
+        try:
+            search_limit = ghub.get_rate_limit().search.remaining
+            core_limit = ghub.get_rate_limit().core.remaining
+            
+            S_reset=ghub.get_rate_limit().search.reset
+            ttw=0
+            now=datetime.utcnow()
+            if(search_limit<=5):
+                S_reset=ghub.get_rate_limit().search.reset
+                ttw = (S_reset-now).total_seconds() + 10
+                print('Waiting {} for limit reset', ttw)
+            if(core_limit<=500):
+                C_reset=ghub.get_rate_limit().core.reset
+                ttw = (C_reset-now).total_seconds() + 100
+                print('Waiting {} for limit reset', ttw)
+            time.sleep(ttw)
+        except github.GithubException as ghe:
+            print('Exception Occurred While Getting Rate Limits: Github', ghe)
+            exception_thrown=True
+            pass
+        except requests.exceptions.Timeout:
+            print('Exception Occurred While Getting Rate Limits: Timeout', ghe)
+            exception_thrown=True
+            pass
+        except:
+            print('Execution Interrupted While Getting Rate Limits', ghe)
+            raise
     
-    search_limit = github.get_rate_limit().search.remaining
-    core_limit = github.get_rate_limit().core.remaining
     
-    S_reset=github.get_rate_limit().search.reset
-    ttw=0
-    now=datetime.utcnow()
-    if(search_limit<=5):
-        S_reset=github.get_rate_limit().search.reset
-        ttw = (S_reset-now).total_seconds() + 10
-        print('Waiting {} for limit reset', ttw)
-    if(core_limit<=500):
-        C_reset=github.get_rate_limit().core.reset
-        ttw = (C_reset-now).total_seconds() + 100
-        print('Waiting {} for limit reset', ttw)
-    time.sleep(ttw)
     

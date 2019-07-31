@@ -194,11 +194,12 @@ num_dead_users = len(active_devs_dead_intervals_df)
 path = (super_path+'/'+project_name+"/Dead&Resurrected_Users")
 util.writeUsersCSV_byItem(active_devs_dead_intervals_df, path)
 
-full_sleepings_list = util.getSleepingsList(super_path, project_name)
-full_hibernated_list = util.getHibernationsList(super_path, project_name) # Includes Deads because they have been Hibernated before
-full_dead_list = util.getDeadsList(super_path, project_name)
-util.add(projects_stats, [project_name, num_all_users, num_active_users, len(full_sleepings_list), len(full_hibernated_list), len(full_dead_list)])
-project_transitions=util.countDevTransitions(super_path, project_name, breaks_df['durations'])
-durations = util.reportDevsBreaksLengthDistribution(project_name, super_path)
+path=super_path+'/'+project_name
+full_sleepings_list = util.getSleepingsList(path)
+full_hibernated_list = util.getHibernationsList(path) # Includes Deads because they have been Hibernated before
+full_dead_list = util.getDeadsList(path)
+#util.add(projects_stats, [project_name, num_all_users, num_active_users, len(full_sleepings_list), len(full_hibernated_list), len(full_dead_list)])
+project_transitions=util.countDevTransitions(path, breaks_df['durations'])
+durations = util.reportDevsBreaksLengthDistribution(path)
 durations.to_csv(super_path+'/'+project_name+'/dev_statuses_durations.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 print("EVERYTHING DONE!!!")

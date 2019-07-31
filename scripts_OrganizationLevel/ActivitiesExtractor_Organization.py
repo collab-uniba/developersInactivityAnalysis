@@ -41,7 +41,7 @@ def get_action_timeline(action_name, action_table, column_names):
             cur_action_data.append(date_action_count[pandas.to_datetime(d).date()])
         except Exception: # add "as name_given_to_exception" before ":" to get info 
             cur_action_data.append(0)
-    return cur_action_data
+    return cur_action_data 
 
 def get_issues_prs(org_path, gith, repo, project_name, start_date, developer_login):
     path = org_path+'/'+project_name+'/Activities_Plots/'+developer_login
@@ -54,7 +54,24 @@ def get_issues_prs(org_path, gith, repo, project_name, start_date, developer_log
         logger = open(path+'/issues_pr_extraction.log','a+')
         ### Get Issue / Pull Requests
         created_issues_prs = repo.get_issues(state='all', sort='created_at', since=start_date, creator=developer_login)
-        num_items = created_issues_prs.totalCount
+        
+        count_exception = True
+        while(count_exception):
+            count_exception = False 
+            try:
+                num_items = created_issues_prs.totalCount
+            except github.GithubException:
+                print('Failed to get ISSUES/PRs Number from User {} and Project {} (TIMEOUT: Retrying)'.format(developer_login, project_name))
+                count_exception=True
+                pass
+            except requests.exceptions.Timeout:
+                print('Failed to get ISSUES/PRs Number from User {} and Project {} (TIMEOUT: Retrying)'.format(developer_login, project_name))
+                count_exception=True
+                pass
+            except:
+                print('Failed to get ISSUES/PRs Number from User {} and Project {} (Probably Empty)'.format(developer_login, project_name))
+                return
+
         last_page = int(num_items/cfg.items_per_page)
         last_page_read=0
         
@@ -84,7 +101,6 @@ def get_issues_prs(org_path, gith, repo, project_name, start_date, developer_log
             logger.flush()
             if(len(issues_prs_data)>0):
                 issues_prs_data.to_csv(path+'/issues_pr_creation.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-            #get_issues_prs(gith, repo, project_name, start_date, developer_login)
             exception_thrown=True
             pass
         except requests.exceptions.Timeout:
@@ -93,7 +109,6 @@ def get_issues_prs(org_path, gith, repo, project_name, start_date, developer_log
             logger.flush()
             if(len(issues_prs_data)>0):
                 issues_prs_data.to_csv(path+'/issues_pr_creation.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-            #get_issues_prs(gith, repo, project_name, start_date, developer_login)
             exception_thrown=True
             pass
         except:
@@ -132,7 +147,7 @@ def get_issues_comments_repo(gith, path, repo, project_name, start_date, active_
         
         ### Get Comments on Issue
         try:
-            issues_page=0
+            issues_page=last_issues_page
             issue_id=''
             page=0
             
@@ -175,10 +190,13 @@ def get_issues_comments_repo(gith, path, repo, project_name, start_date, active_
                 completed_issues.to_csv(path+'/comments_extraction_completed_issues.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
                 os.rename(path+'/issues_comments_repo.csv', path+'/complete_issues_comments_repo.csv')
             print('{}: Issues Comments Extraction Complete'.format(repo))
-        except github.GithubException:
+        except github.GithubException as ghe:
             print('Exception Occurred While Getting ISSUES COMMENTS: Github')
             logger.write('last_issues_page:{},last_issue:{},last_comment_page:{}\n'.format(issues_page, issue_id, page))
             logger.flush()
+            if str(ghe)=='500 None':
+                print('PROBLEMS ON ISSUE: {} Excluded From Comments Extraction'.format(issue_id))
+                util.add(completed_issues, issue_id)
             if(len(issues_comments_data)>0):
                 issues_comments_data.to_csv(path+'/issues_comments_repo.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
                 completed_issues.to_csv(path+'/comments_extraction_completed_issues.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
@@ -250,7 +268,7 @@ def get_pulls_comments_repo(gith, path, repo, project_name, start_date, active_u
         
         ### Get Comments on Pull
         try:
-            pulls_page=0
+            pulls_page=last_pulls_page
             pull_id=''
             page=0
             
@@ -293,14 +311,17 @@ def get_pulls_comments_repo(gith, path, repo, project_name, start_date, active_u
                 completed_pulls.to_csv(path+'/comments_extraction_completed_pulls.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
                 os.rename(path+'/pulls_comments_repo.csv', path+'/complete_pulls_comments_repo.csv')
             print('{}: Pulls Comments Extraction Complete'.format(repo))
-        except github.GithubException:
+        except github.GithubException as ghe:
             print('Exception Occurred While Getting PULLS COMMENTS: Github')
             logger.write('last_pulls_page:{},last_pull:{},last_comment_page:{}\n'.format(pulls_page, pull_id, page))
             logger.flush()
+            if str(ghe)=='500 None':
+                print('PROBLEMS ON PULL: {} Excluded From Comments Extraction'.format(pull_id))
+                util.add(completed_pulls, pull_id)
             if(len(pulls_comments_data)>0):
                 pulls_comments_data.to_csv(path+'/pulls_comments_repo.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
                 completed_pulls.to_csv(path+'/comments_extraction_completed_pulls.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-            exception_thrown=True
+            exception_thrown=True            
             pass
         except requests.exceptions.Timeout:
             print('Exception Occurred While Getting PULLS COMMENTS: Timeout')
@@ -366,7 +387,7 @@ def get_issue_events_repo(gith, path, repo, project_name, start_date, active_use
         
         ### Get Other Issues Events
         try:
-            issues_page=0
+            issues_page=last_issues_page
             issue_id=''
             page=0
             
@@ -410,10 +431,22 @@ def get_issue_events_repo(gith, path, repo, project_name, start_date, active_use
                 os.rename(path+'/issues_events_repo.csv', path+'/complete_issues_events_repo.csv')
             print('{}: Issues Events Extraction Complete'.format(repo))
             
-        except github.GithubException:
+#        except github.UnknownObjectException:
+#            print('Exception Occurred While Getting ISSUES EVENTS: UnknownObject (Skipped)')
+#            logger.write('last_issues_page:{},last_issue:{},last_event_page:{}\n'.format(issues_page, issue_id, page))
+#            logger.flush()
+#            if(len(issues_events_data)>0):
+#                issues_events_data.to_csv(path+'/issues_events_repo.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+#                completed_issues.to_csv(path+'/events_extraction_completed_issues.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+#            exception_thrown=True
+#            pass
+        except github.GithubException as ghe:
             print('Exception Occurred While Getting ISSUES EVENTS: Github')
             logger.write('last_issues_page:{},last_issue:{},last_event_page:{}\n'.format(issues_page, issue_id, page))
             logger.flush()
+            if str(ghe)=='500 None':
+                print('PROBLEMS ON ISSUE: {} Excluded From Events Extraction'.format(issue_id))
+                util.add(completed_issues, issue_id)
             if(len(issues_events_data)>0):
                 issues_events_data.to_csv(path+'/issues_events_repo.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
                 completed_issues.to_csv(path+'/events_extraction_completed_issues.csv', sep=',', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
@@ -484,9 +517,28 @@ def get_user_activities(org_path, g, project_start_dt, project_end, user_id):
 def get_activities(org_path, gith, project_url, start_date, end_date, developer_login):
     project_name=project_url.split('/')[-1]
     
-    cfg.waitRateLimit(gith)
-    repo=gith.get_repo(project_url)
-    
+    exception_thrown = True
+    while(exception_thrown):
+        exception_thrown = False
+        
+        try:
+            cfg.waitRateLimit(gith)
+            repo=gith.get_repo(project_url)
+        except github.UnknownObjectException:
+            print('Skipped Because Unknown REPO {}'.format(project_url))
+            return pandas.DataFrame()
+        except github.GithubException:
+            print('Exception Occurred While Getting REPO {}: Github'.format(project_url))
+            exception_thrown=True
+            pass
+        except requests.exceptions.Timeout:
+            print('Exception Occurred While Getting REPO {}: Timeout'.format(project_url))
+            exception_thrown=True
+            pass
+        except:
+            print('Execution Interrupted While Getting REPO {}'.format(project_url))
+            raise
+            
     get_issues_prs(org_path, gith, repo, project_name, start_date, developer_login)
     get_issues_comments_dev(org_path, project_name, developer_login)
     get_pulls_comments_dev(org_path, project_name, developer_login)
