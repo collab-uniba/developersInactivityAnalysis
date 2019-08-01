@@ -115,7 +115,7 @@ def reportPlotAllProjectBreaksDistribution(o_names, p_names, path):
     breaks_stats.to_csv(path+'/breaks_stats_all.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
     
     labels=[]
-    for name in o_names:
+    for name in p_names:
         if name=='framework':
             labels.append('laravel')
         else:
@@ -125,7 +125,7 @@ def reportPlotAllProjectBreaksDistribution(o_names, p_names, path):
     projects_counts.reverse()
     plt.boxplot(projects_counts)
     labels.reverse()
-    plt.xticks(numpy.arange(1,len(o_names)+1), labels, rotation=20)
+    plt.xticks(numpy.arange(1,len(p_names)+1), labels, rotation=20)
     # Pad margins so that markers don't get clipped by the axes: plt.margins(0.2)
     # Tweak spacing to prevent clipping of tick-label: plt.subplots_adjust(bottom=0.15)
     plt.grid(False)
@@ -444,10 +444,11 @@ def getDeadsFromSleepingDetail(period_detail):
     return others_deads_df
 
 def printProjectsDurationsLogScale(o_names, path):
-        import numpy, pandas
+        import numpy, pandas, scipy
         import seaborn as sns
         
         data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
+        t_stats_df = pandas.DataFrame(columns=['project', 't_stat', 'p_value (t)', 'u_stat', 'p_value (u)'])
         for i in range(0, len(o_names)):
             chosen_project = i # FROM 0 TO n-1
             
@@ -455,6 +456,7 @@ def printProjectsDurationsLogScale(o_names, path):
             s_avg_list=[]
             h_avg_list=[]
             current_project_df = pandas.read_csv(path+'/'+project_name+'/statuses_durations.csv', sep=';')
+            
             for l in current_project_df['sleepings'].tolist():
                 if l!='[]':
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
@@ -473,14 +475,25 @@ def printProjectsDurationsLogScale(o_names, path):
                         add(data, ['laravel', 'inactive', hibernation_avg])
                     else:
                         add(data, [project_name, 'inactive', hibernation_avg])
+            t_stats = scipy.stats.ttest_ind(s_avg_list, h_avg_list)
+            u_stats = scipy.stats.mannwhitneyu(s_avg_list, h_avg_list)
+            add(t_stats_df, [project_name, t_stats[0], t_stats[1], u_stats[0], u_stats[1]])
+            
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
         
+        t_stats_df.to_csv(path+'/t_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+
         pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding','inactive'], data=data, palette=pal)
         sns_plot.set_yscale('log')
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=20)
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
+
+main_path = cfg.super_path
+organizations = ['JabRef','ionic-team','flutter','atom','github','elixir-lang','laravel','rails']
+printProjectsDurationsLogScale(organizations, main_path)
+
 
 def printProjectsDurationsLogTransformed(o_names, path):
         import numpy, pandas
@@ -751,6 +764,7 @@ def plotAllProjectInactivities(o_names, path):
     pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
     sns_plot = sns.boxplot(x='project', y='occurrences', hue="status", hue_order=['non-coding','inactive','gone'], data=data, palette=pal)
     #sns_plot.set_yscale('log')
+    sns_plot.set(ylim=(0, 13))
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
     sns_plot.get_figure().savefig(path+"/Inactivities_occurrences.png", dpi=600)
     

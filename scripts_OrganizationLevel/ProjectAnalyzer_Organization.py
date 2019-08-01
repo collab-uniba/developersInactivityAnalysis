@@ -41,7 +41,7 @@ projects_stats.to_csv(main_path+'/projects_stats.csv', sep=';', na_rep='NA', hea
 util.tableCumulativeTransitions(organizations, main_path)
 util.tableCumulativeTransitionsPercentages(main_path)
 util.tableTransitionsPercentagesProjectList(main_path)
-util.reportPlotAllProjectBreaksDistribution(organizations,p_names, main_path)
+util.reportPlotAllProjectBreaksDistribution(organizations, p_names, main_path)
 util.tableTransitionsPercentages(main_path)
 util.printProjectsDurationsLogTransformed(organizations, main_path)
 util.printProjectsDurationsLogScale(organizations, main_path)
