@@ -443,12 +443,54 @@ def getDeadsFromSleepingDetail(period_detail):
             add(others_deads_df, [float(b[1]), b[2]])
     return others_deads_df
 
+def makeMeanDiffTests(o_names, path):
+    import numpy, pandas, scipy
+    
+    t_stats_df = pandas.DataFrame(columns=['organization','N_s','N_h','N_common', 't', 'p(t)','tp','p(tp)','u','p(u)','w','p(w)','h','p(h)'])
+    
+    for i in range(0, len(o_names)):
+        chosen_project = i # FROM 0 TO n-1
+            
+        project_name =  o_names[chosen_project]
+        sleep_means_df = pandas.DataFrame(columns=['id','mean'])
+        hiber_means_df = pandas.DataFrame(columns=['id','mean'])
+            
+        current_project_df = pandas.read_csv(path+'/'+project_name+'/statuses_durations.csv', sep=';')
+            
+        for index, line in current_project_df.iterrows():
+            ls = line['sleepings']    
+            if ls!='[]':
+                    ls=list(map(int,ls.replace('[','').replace(']','').split(',')))
+                    sleeping_avg=numpy.mean(ls)
+                    add(sleep_means_df, [line['dev'],sleeping_avg])
+            lh = line['hibernatings']
+            if lh!='[]':
+                lh=list(map(int,lh.replace('[','').replace(']','').split(',')))
+                hibernation_avg=numpy.mean(lh)
+                add(hiber_means_df, [line['dev'],hibernation_avg])
+                
+        s_avg_list = sleep_means_df['mean'].tolist()
+        h_avg_list = hiber_means_df['mean'].tolist()
+        paired_df = pandas.merge(sleep_means_df, hiber_means_df, how='inner', on=['id'])
+        s_paired_avg_list = paired_df['mean_x'].tolist()
+        h_paired_avg_list = paired_df['mean_y'].tolist()
+            
+        t_val, t_p = scipy.stats.ttest_ind(s_avg_list, h_avg_list)
+        t_paired_val, t_paired_p = scipy.stats.ttest_rel(s_paired_avg_list, h_paired_avg_list)
+        u_val, u_p = scipy.stats.mannwhitneyu(s_avg_list, h_avg_list)
+        w_val, w_p = scipy.stats.wilcoxon(s_paired_avg_list, h_paired_avg_list)
+        h_val, h_p = scipy.stats.kruskal(s_avg_list, h_avg_list)
+        #f_val, f_p = scipy.stats.friedmanchisquare(s_avg_list, h_avg_list)
+        add(t_stats_df, [project_name, len(s_avg_list), len(h_avg_list), len(paired_df), t_val, t_p, t_paired_val, t_paired_p, u_val, u_p, w_val, w_p, k_val, k_p])
+    
+    t_stats_df.to_csv(path+'/t_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+
+
 def printProjectsDurationsLogScale(o_names, path):
         import numpy, pandas, scipy
         import seaborn as sns
         
         data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
-        t_stats_df = pandas.DataFrame(columns=['project', 't_stat', 'p_value (t)', 'u_stat', 'p_value (u)'])
         for i in range(0, len(o_names)):
             chosen_project = i # FROM 0 TO n-1
             
@@ -462,6 +504,7 @@ def printProjectsDurationsLogScale(o_names, path):
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     sleeping_avg=numpy.mean(l)
                     s_avg_list.append(sleeping_avg)
+                    add(sleep_means_df, [])
                     if(project_name=='framework'):
                         add(data, ['laravel', 'non-coding', sleeping_avg])
                     else:
@@ -475,9 +518,6 @@ def printProjectsDurationsLogScale(o_names, path):
                         add(data, ['laravel', 'inactive', hibernation_avg])
                     else:
                         add(data, [project_name, 'inactive', hibernation_avg])
-            t_stats = scipy.stats.ttest_ind(s_avg_list, h_avg_list)
-            u_stats = scipy.stats.mannwhitneyu(s_avg_list, h_avg_list)
-            add(t_stats_df, [project_name, t_stats[0], t_stats[1], u_stats[0], u_stats[1]])
             
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
@@ -490,9 +530,9 @@ def printProjectsDurationsLogScale(o_names, path):
         sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=20)
         sns_plot.get_figure().savefig(path+"/durationsDistributions", dpi=600)
 
-main_path = cfg.super_path
-organizations = ['JabRef','ionic-team','flutter','atom','github','elixir-lang','laravel','rails']
-printProjectsDurationsLogScale(organizations, main_path)
+#main_path = cfg.super_path
+#organizations = ['JabRef','ionic-team','flutter','atom','github','elixir-lang','laravel','rails']
+#makeMeanDiffTests(organizations, main_path)
 
 
 def printProjectsDurationsLogTransformed(o_names, path):
