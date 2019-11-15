@@ -444,7 +444,7 @@ def getDeadsFromSleepingDetail(period_detail):
     return others_deads_df
 
 def makeMeanDiffTests(o_names, path):
-    import numpy, pandas, scipy
+    import numpy, pandas, scipy.stats
     
     t_stats_df = pandas.DataFrame(columns=['organization','N_s','N_h','N_common', 't', 'p(t)','tp','p(tp)','u','p(u)','w','p(w)','h','p(h)'])
     
@@ -478,16 +478,16 @@ def makeMeanDiffTests(o_names, path):
         t_val, t_p = scipy.stats.ttest_ind(s_avg_list, h_avg_list)
         t_paired_val, t_paired_p = scipy.stats.ttest_rel(s_paired_avg_list, h_paired_avg_list)
         u_val, u_p = scipy.stats.mannwhitneyu(s_avg_list, h_avg_list)
-        w_val, w_p = scipy.stats.wilcoxon(s_paired_avg_list, h_paired_avg_list)
+        w_val, w_p = scipy.stats.wilcoxon(s_paired_avg_list, h_paired_avg_list, correction = True)
         h_val, h_p = scipy.stats.kruskal(s_avg_list, h_avg_list)
         #f_val, f_p = scipy.stats.friedmanchisquare(s_avg_list, h_avg_list)
-        add(t_stats_df, [project_name, len(s_avg_list), len(h_avg_list), len(paired_df), t_val, t_p, t_paired_val, t_paired_p, u_val, u_p, w_val, w_p, k_val, k_p])
+        add(t_stats_df, [project_name, len(s_avg_list), len(h_avg_list), len(paired_df), t_val, t_p, t_paired_val, t_paired_p, u_val, u_p, w_val, w_p, h_val, h_p])
     
     t_stats_df.to_csv(path+'/t_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
 
 
 def printProjectsDurationsLogScale(o_names, path):
-        import numpy, pandas, scipy
+        import numpy, pandas
         import seaborn as sns
         
         data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
@@ -504,7 +504,6 @@ def printProjectsDurationsLogScale(o_names, path):
                     l=list(map(int,l.replace('[','').replace(']','').split(',')))
                     sleeping_avg=numpy.mean(l)
                     s_avg_list.append(sleeping_avg)
-                    add(sleep_means_df, [])
                     if(project_name=='framework'):
                         add(data, ['laravel', 'non-coding', sleeping_avg])
                     else:
@@ -522,8 +521,6 @@ def printProjectsDurationsLogScale(o_names, path):
         print('S: '+str(min(s_avg_list))+' - '+str(max(s_avg_list))+' Avg: '+str(numpy.mean(s_avg_list)))
         print('H: '+str(min(h_avg_list))+' - '+str(max(h_avg_list))+' Avg: '+str(numpy.mean(h_avg_list)))
         
-        t_stats_df.to_csv(path+'/t_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
-
         pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
         sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding','inactive'], data=data, palette=pal)
         sns_plot.set_yscale('log')
@@ -534,7 +531,113 @@ def printProjectsDurationsLogScale(o_names, path):
 #organizations = ['JabRef','ionic-team','flutter','atom','github','elixir-lang','laravel','rails']
 #makeMeanDiffTests(organizations, main_path)
 
+def computeExtremeProjectsDurations(o_names, path):
+        import numpy, pandas
+        
+        data = pandas.DataFrame(columns=['project', 'status', 'average_duration', 'min', 'max'])
+        for i in range(0, len(o_names)):
+            chosen_project = i # FROM 0 TO n-1
+            
+            project_name =  o_names[chosen_project]
+            
+            current_project_df = pandas.read_csv(path+'/'+project_name+'/statuses_durations.csv', sep=';')
+            min_proj_sleeping = 999999
+            max_proj_sleeping = 0
+            proj_sleeping_avgs=[]
+            for l in current_project_df['sleepings'].tolist():
+                if l!='[]':
+                    l=list(map(int,l.replace('[','').replace(']','').split(',')))
+                    min_dev_sleeping = min(l)
+                    if min_dev_sleeping < min_proj_sleeping:
+                        min_proj_sleeping=min_dev_sleeping
+                    max_dev_sleeping = max(l)
+                    if max_dev_sleeping > max_proj_sleeping:
+                        max_proj_sleeping = max_dev_sleeping
+                    proj_sleeping_avgs.append(numpy.mean(l))
+            
+            sleeping_avg = numpy.mean(proj_sleeping_avgs)
+            if(project_name=='framework'):
+                add(data, ['laravel', 'non-coding', sleeping_avg, min_proj_sleeping, max_proj_sleeping])
+            else:
+                add(data, [project_name, 'non-coding', sleeping_avg, min_proj_sleeping, max_proj_sleeping])
+                
+            min_proj_hibernating = 999999
+            max_proj_hibernating = 0
+            proj_hibernating_avgs=[]
+            for l in current_project_df['hibernatings'].tolist():
+                if l!='[]':
+                    l=list(map(int,l.replace('[','').replace(']','').split(',')))
+                    min_dev_hibernating = min(l)
+                    if min_dev_hibernating < min_proj_hibernating:
+                        min_proj_hibernating=min_dev_hibernating
+                    max_dev_hibernating = max(l)
+                    if max_dev_hibernating > max_proj_hibernating:
+                        max_proj_hibernating = max_dev_hibernating
+                    proj_hibernating_avgs.append(numpy.mean(l))
+            
+            hibernating_avg = numpy.mean(proj_hibernating_avgs)
+            if(project_name=='framework'):
+                add(data, ['laravel', 'inactive', hibernating_avg, min_proj_hibernating, max_proj_hibernating])
+            else:
+                add(data, [project_name, 'inactive', hibernating_avg, min_proj_hibernating, max_proj_hibernating])
+                
+            min_proj_dead = 999999
+            max_proj_dead = 0
+            proj_dead_avgs=[]
+            for l in current_project_df['deads'].tolist():
+                if l!='[]':
+                    l=list(map(int,l.replace('[','').replace(']','').split(',')))
+                    min_dev_dead = min(l)
+                    if min_dev_dead < min_proj_dead:
+                        min_proj_dead=min_dev_dead
+                    max_dev_dead = max(l)
+                    if max_dev_dead > max_proj_dead:
+                        max_proj_dead = max_dev_dead
+                    proj_dead_avgs.append(numpy.mean(l))
+            
+            dead_avg = numpy.mean(proj_dead_avgs)
+            if(project_name=='framework'):
+                add(data, ['laravel', 'gone', dead_avg, min_proj_dead, max_proj_dead])
+            else:
+                add(data, [project_name, 'gone', dead_avg, min_proj_dead, max_proj_dead])
+        
+        data.to_csv(path+'/extreme_duration_stats.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+        
+        
 
+def printProjectsDurations(o_names, path):
+        import numpy, pandas
+        import seaborn as sns
+        
+        data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
+        for i in range(0, len(o_names)):
+            chosen_project = i # FROM 0 TO n-1
+            
+            project_name =  o_names[chosen_project]
+            
+            current_project_df = pandas.read_csv(path+'/'+project_name+'/statuses_durations.csv', sep=';')
+            for l in current_project_df['sleepings'].tolist():
+                if l!='[]':
+                    l=list(map(int,l.replace('[','').replace(']','').split(',')))
+                    sleeping_avg=numpy.mean(l)
+                    if(project_name=='framework'):
+                        add(data, ['laravel', 'non-coding', sleeping_avg])
+                    else:
+                        add(data, [project_name, 'non-coding', sleeping_avg])
+            for l in current_project_df['hibernatings'].tolist():
+                if l!='[]':
+                    l=list(map(int,l.replace('[','').replace(']','').split(',')))
+                    hibernation_avg=numpy.mean(l)
+                    if(project_name=='framework'):
+                        add(data, ['laravel', 'inactive', hibernation_avg])
+                    else:
+                        add(data, [project_name, 'inactive', hibernation_avg])
+        
+        pal=[sns.color_palette('Set1')[5],sns.color_palette('Set1')[8],sns.color_palette('Set1')[0]]
+        sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding','inactive'], data=data, palette=pal) #fliersize=5 (Default)
+        sns_plot.set_xticklabels(sns_plot.get_xticklabels(),rotation=20)
+        sns_plot.get_figure().savefig(path+"/durationsDistributionsLOG", dpi=600)
+        
 def printProjectsDurationsLogTransformed(o_names, path):
         import numpy, pandas
         import seaborn as sns
@@ -845,3 +948,74 @@ def boxplotTransitionsPerYearOverall(p_names):
     sns_plot = sns.boxplot(x='transition', y='amount_per_year', data=data, palette=pal, order=['A_to_S','A_to_H','S_to_A','S_to_H','H_to_A','H_to_S','H_to_D','D_to_A','D_to_S'])
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
     sns_plot.get_figure().savefig(super_path+"/transitions_per_year_overall.png", dpi=600)
+    
+def countDevsStillInStatus(o_names, path):
+    import pandas, os
+    
+    collection_date=cfg.collection_date
+    current_situation = pandas.DataFrame(columns=['organization','developer','current_status', 'for (days)'])
+    for i in range(0, len(o_names)):
+        chosen_org = i # FROM 0 TO n-1
+        
+        organization = o_names[chosen_org]
+        cont_gone=0
+        cont_inactive=0
+        cont_non_coding=0
+        
+        # Collect Dead
+        dead_dir=path+'/'+organization+'/Dead&Resurrected_Users'
+        for file_name in os.listdir(dead_dir):
+            dead_breaks=pandas.read_csv(dead_dir+'/'+file_name)
+            for index, b in dead_breaks.iterrows():
+                end=b['datelimits'].split('/')[1]
+                if(end==collection_date):
+                    days=b['durations']
+                    add(current_situation, [organization, file_name.split('.')[0], 'Gone', days])
+                    cont_gone += 1
+        
+        # Collect Hibernations
+        hibernation_dir=path+'/'+organization+'/Hibernated&Unfrozen_Users'
+        for file_name in os.listdir(hibernation_dir):
+            hibernation_breaks=pandas.read_csv(hibernation_dir+'/'+file_name)
+            for index, b in hibernation_breaks.iterrows():
+                end=b['datelimits'].split('/')[1]
+                if(end==collection_date):
+                    days=b['durations']
+                    add(current_situation, [organization, file_name.split('.')[0], 'Inactive', days])
+                    cont_inactive += 1
+                    
+        # Collect Sleepings
+        non_coding_dir=path+'/'+organization+'/Sleeping&Awaken_Users'
+        for file_name in os.listdir(non_coding_dir):
+            if os.path.isfile(non_coding_dir+'/'+file_name):
+                non_coding_breaks=pandas.read_csv(non_coding_dir+'/'+file_name)
+                for index, b in non_coding_breaks.iterrows():
+                    end=b['datelimits'].split('/')[1]
+                    if(end==collection_date):
+                        days=b['durations']
+                        add(current_situation, [organization, file_name.split('.')[0], 'Non-coding', days])
+                        cont_non_coding += 1
+        
+        print(organization, cont_non_coding, cont_inactive, cont_gone)          
+          
+    current_situation.to_csv(path+'/current_devs_situation.csv', sep=';', na_rep='NA', header=True, index=False, mode='w', encoding='utf-8', quoting=None, quotechar='"', line_terminator='\n', decimal='.')
+    
+    
+    
+main_path = cfg.super_path
+organizations = ['ionic-team','flutter','atom','github','JabRef','elixir-lang','laravel','rails']
+organizations.reverse()
+countDevsStillInStatus(organizations, main_path)
+computeExtremeProjectsDurations(organizations, main_path)
+
+from statsmodels.sandbox.stats.multicomp import multipletests
+pvals = [.0001, .7776, .8261, .3743, .5002, .9032, .3317, .7989]
+
+# Create a list of the adjusted p-values
+p_adjusted = multipletests(pvals, alpha=.05, method='bonferroni')
+
+# Print the resulting conclusions
+print(p_adjusted[0])
+for el in p_adjusted[1]:
+    print(el)
+print(p_adjusted[2])

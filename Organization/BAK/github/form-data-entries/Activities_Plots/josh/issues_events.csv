@@ -1,0 +1,5 @@
+id,date,event,creator_login
+1497323458,2018-02-28 18:03:25,referenced,josh
+1497323460,2018-02-28 18:03:25,merged,josh
+1497323463,2018-02-28 18:03:25,closed,josh
+1497323578,2018-02-28 18:03:29,head_ref_deleted,josh

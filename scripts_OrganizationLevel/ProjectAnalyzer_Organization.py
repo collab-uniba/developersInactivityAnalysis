@@ -8,8 +8,8 @@ organizations = cfg.organizations
 
 main_path = cfg.super_path
 
-p_names = ['jabref','ionic','flutter','atom','linguist','elixir','framework','rails']
-organizations = ['JabRef','ionic-team','flutter','atom','github','elixir-lang','laravel','rails']
+p_names = ['ionic','flutter','atom','linguist','jabref','elixir','framework','rails']
+organizations = ['ionic-team','flutter','atom','github','JabRef','elixir-lang','laravel','rails']
 
 START_FROM = 1 #1 is Jabref, 10 is rails
 projects_stats=pandas.DataFrame(columns=['Project','Contributors','Sampled_Contributors','Sleeping','Hibernated','Dead'])
@@ -43,6 +43,7 @@ util.tableCumulativeTransitionsPercentages(main_path)
 util.tableTransitionsPercentagesProjectList(main_path)
 util.reportPlotAllProjectBreaksDistribution(organizations, p_names, main_path)
 util.tableTransitionsPercentages(main_path)
+util.printProjectsDurations(organizations, main_path)
 util.printProjectsDurationsLogTransformed(organizations, main_path)
 util.printProjectsDurationsLogScale(organizations, main_path)
 util.makeMeanDiffTests(organizations, main_path)
