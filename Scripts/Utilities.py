@@ -148,8 +148,7 @@ def map_name_login(results_folder, repo_name, destination_folder):
     TF_names_list = TF_devs.Developer.tolist()
     TF_name_login_map = pandas.DataFrame(columns=['name', 'login'])
 
-    #token = 'ca790cc1fc54d67c612d95c2b4acb6177481656e'
-    token = 'e1ea36365796d17d80d51db71e1ad06b9964d64b'
+    token = 'Insert a Valid Token'
     g = Github(token)
 
     repo = g.get_repo(repo_name)
