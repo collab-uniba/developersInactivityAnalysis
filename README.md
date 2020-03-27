@@ -1,3 +1,7 @@
+# Will you come back to contribute? Investigating the inactivitiy of OSS developers in GitHub
+[![DOI](https://zenodo.org/badge/183011533.svg)](https://zenodo.org/badge/latestdoi/183011533)
+
+
 ### CommitExtractor.py
 
 #### Params
@@ -147,6 +151,6 @@ None
 3. If there are other activities in the period:
 
 - Define `sub_breaks_list` as the list of the intervals between such activities (*sub_break*).
-- Identify each *sub_break* > *Tfov* from the `sub_breaks_list` and label it based on the defined state diagram (Dt_inactive = Dt_non-coding = Tfov).
+- Identify each *sub_break* > *Tfov* from the `sub_breaks_list` and label it based on the defined state diagram (∆t_inactive = ∆t_non-coding = Tfov).
 
-![state diagram](https://www.dropbox.com/s/4jluvxonjv1mz9d/New_state_diagram.png?dl=1)
+![state diagram](https://dl.dropboxusercontent.com/s/4jluvxonjv1mz9d/New_state_diagram.png?dl=1)
