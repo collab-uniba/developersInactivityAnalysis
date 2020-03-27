@@ -182,6 +182,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
     util.add(chains_list, TFs_row)
     last_row = ['AVG']
     last_row += chains_list.mean().tolist()
+    print(chains_list, len(last_row), len(chains_list.columns), last_row)
     util.add(chains_list, last_row)
     chains_list.to_csv(cfg.main_folder + '/' + output_file_name + '.csv',
                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
@@ -199,8 +200,9 @@ def breaksDistributionStats(repos_list, output_file_name):
                 dev = file.split('_')[0]
 
                 dev_life = getLife(dev, organization)
-                if(dev_life==0):
+                if(dev_life<=1):
                     print('INVALID DEVELOPER LIFE')
+                    continue
 
                 breaks_list = pandas.read_csv(breaks_folder + '/' + file, sep=cfg.CSV_separator)
                 breaks_list = breaks_list[(breaks_list.label != 'ACTIVE') & (breaks_list.label != 'NOW')]
@@ -278,6 +280,7 @@ def breaksOccurrencesPlot(repos_list, output_file_name):
                 dev_life = getLife(dev, organization)
                 if (dev_life <= 1):
                     print('INVALID DEVELOPER LIFE')
+                    continue
 
                 dev_years = dev_life / 365
 
