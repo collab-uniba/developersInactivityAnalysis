@@ -57,12 +57,13 @@ def countAffected(repo, workingFolder):
     commit_history_table = pandas.read_csv(main_repo_folder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
     affected.append(len(commit_history_table))
 
-    TF_devs = pandas.read_csv(main_repo_folder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
+    TF_folder = cfg.main_folder + '/' + cfg.TF_report_folder + '/' + repo
+    TF_devs = pandas.read_csv(TF_folder + '/' + cfg.TF_developers_file, sep=cfg.CSV_separator)
     affected.append(len(TF_devs))
 
     dev_breaks_folder = workingFolder + '/' + cfg.labeled_breaks_folder_name
     non_coding = inactive = gone = 0
-    for file in dev_breaks_folder:
+    for file in os.listdir(dev_breaks_folder):
         if os.path.isfile(dev_breaks_folder + '/' + file):
             dev_breaks = pandas.read_csv(dev_breaks_folder + '/' + file, sep = cfg.CSV_separator)
             if cfg.NC in dev_breaks.label.tolist():
