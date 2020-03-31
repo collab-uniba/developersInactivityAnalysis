@@ -23,16 +23,34 @@ def getLife(dev, organization):
 def countOrganizationsAffected(repos_list, output_file_name):
     affected_summary = pandas.DataFrame(columns=['Project', 'Contributors', 'Sampled_Contributors', 'Non-Coding', 'Inactive', 'Gone'])
 
+    non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
+    inactive_affected = pandas.DataFrame(columns = ['repo','login'])
+    gone_affected = pandas.DataFrame(columns = ['repo','login'])
+
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
         workingFolder = cfg.main_folder + '/' + organization
 
         # Breaks occurrences
-        repo_affected = countAffected(gitRepoName, workingFolder)
+        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected = countAffected(gitRepoName, workingFolder)
         util.add(affected_summary, repo_affected)
+
+        non_coding_affected = pandas.concat([non_coding_affected, repo_non_coding_affected], ignore_index=True)
+        inactive_affected = pandas.concat([inactive_affected, repo_inactive_affected], ignore_index=True)
+        gone_affected = pandas.concat([gone_affected, repo_gone_affected], ignore_index=True)
 
     affected_summary.to_csv(cfg.main_folder + '/' + output_file_name + '.csv',
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+    non_coding_affected.to_csv(cfg.main_folder + '/non_coding_affected.csv',
+                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                            line_terminator='\n')
+    inactive_affected.to_csv(cfg.main_folder + '/inactive_affected.csv',
+                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                            line_terminator='\n')
+    gone_affected.to_csv(cfg.main_folder + '/gone_affected.csv',
+                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                            line_terminator='\n')
+
 
 def countOrganizationsTransitions(repos_list, output_file_name):
     transitions_summary = pandas.DataFrame(columns=['Project', '#breaks', 'A_to_NC', 'NC_to_A', 'A_to_I', 'I_to_A', 'NC_to_I', 'I_to_NC', 'I_to_G', 'G_to_A', 'G_to_NC'])
@@ -63,19 +81,26 @@ def countAffected(repo, workingFolder):
 
     dev_breaks_folder = workingFolder + '/' + cfg.labeled_breaks_folder_name
     non_coding = inactive = gone = 0
+    non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
+    inactive_affected = pandas.DataFrame(columns = ['repo','login'])
+    gone_affected = pandas.DataFrame(columns = ['repo','login'])
     for file in os.listdir(dev_breaks_folder):
         if os.path.isfile(dev_breaks_folder + '/' + file):
+            dev = file.split('_')[0]
             dev_breaks = pandas.read_csv(dev_breaks_folder + '/' + file, sep = cfg.CSV_separator)
             if cfg.NC in dev_breaks.label.tolist():
-                non_coding += 1
+                non_coding += 1  # Can be removed, the count is the len(non_coding_affected)
+                util.add(non_coding_affected, [repo, dev])
             if cfg.I in dev_breaks.label.tolist():
-                inactive += 1
+                inactive += 1  # Can be removed, the count is the len(inactive_affected)
+                util.add(inactive_affected, [repo, dev])
             if cfg.G in dev_breaks.label.tolist():
-                gone += 1
+                gone += 1  # Can be removed, the count is the len(gone_affected)
+                util.add(gone_affected, [repo, dev])
 
     affected += [non_coding, inactive, gone]
 
-    return affected
+    return affected, non_coding_affected, inactive_affected, gone_affected
 
 def countTransitions(repo, workingFolder):
     ''' Needed to calculate the percentages for the markov chains '''
@@ -471,9 +496,22 @@ def TFsBreaksDurationsPlot(repos_list, output_file_name):
     sns_plot.get_figure().savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
     sns_plot.get_figure().clf()
 
+def getTFlist(workingFolder, repos_list):
+    allTFs = pandas.DataFrame(columns = ['name', 'login'])
+    for repo in repos_list:
+        repo_TF_folder = workingFolder + '/' + repo
+        repo_TF = pandas.read_csv(repo_TF_folder + '/' + cfg.TF_developers_file, sep=cfg.CSV_separator)
+        allTFs = pandas.concat([allTFs, repo_TF], ignore_index=True)
+    return allTFs
+
 # MAIN FUNCTION
 def main(repos_list):
     transitions_summary_file_name = 'transitionsSummary'
+
+    workingFolder = cfg.main_folder + '/' + cfg.TF_report_folder
+    TF_list = getTFlist(workingFolder, repos_list)
+    TF_list.to_csv(workingFolder + '/TF_full_list.csv',
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
     countOrganizationsAffected(repos_list, 'affectedSummary')
     countOrganizationsTransitions(repos_list, transitions_summary_file_name)
@@ -496,3 +534,4 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     repos_list = util.getReposList()
     main(repos_list)
+
