@@ -425,8 +425,9 @@ def TFsBreaksOccurrencesPlot(repos_list, output_file_name):
                 dev = file.split('_')[0]
 
                 dev_life = getLife(dev, organization)
-                if (dev_life == 0):
+                if (dev_life <= 1):
                     print('INVALID DEVELOPER LIFE')
+                    continue
 
                 dev_years = dev_life / 365
 
@@ -471,7 +472,7 @@ def TFsBreaksOccurrencesPlot(repos_list, output_file_name):
                            hue_order=['non-coding', 'inactive', 'gone'],
                            data=data, palette=pal)
     # sns_plot.set_yscale('log')
-    # sns_plot.set(ylim=(0, 12))
+    # sns_plot.set(ylim=(0, 10))
     sns_plot.set_xticklabels(sns_plot.get_xticklabels())
     sns_plot.get_figure().savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
     sns_plot.get_figure().clf()
