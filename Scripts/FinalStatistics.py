@@ -120,9 +120,16 @@ def countTransitions(repo, workingFolder):
             ItoA += len(dev_breaks[(dev_breaks.previously == cfg.I) & (dev_breaks.label == cfg.A)])
             NCtoI += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.I)])
             ItoNC += len(dev_breaks[(dev_breaks.previously == cfg.I) & (dev_breaks.label == cfg.NC)])
-            ItoG += len(dev_breaks[(dev_breaks.previously == cfg.I) & (dev_breaks.label == cfg.G)])
             GtoA += len(dev_breaks[(dev_breaks.previously == cfg.G) & (dev_breaks.label == cfg.A)])
             GtoNC += len(dev_breaks[(dev_breaks.previously == cfg.G) & (dev_breaks.label == cfg.NC)])
+
+            ### ACTIVE -> GONE => ACTIVE -> INACTIVE -> GONE
+            AtoI += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.G)])
+            ItoG += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.G)])
+
+            ### NON_CODING -> GONE => NON_CODING -> INACTIVE -> GONE
+            NCtoI += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.G)])
+            ItoG += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.G)])
 
     transitions += [breaks, AtoNC, NCtoA, AtoI, ItoA, NCtoI, ItoNC, ItoG, GtoA, GtoNC]
     return transitions

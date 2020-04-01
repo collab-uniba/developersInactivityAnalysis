@@ -232,14 +232,14 @@ def main(repos_list):
                     inner_start = (datetime.strptime(break_range[0], "%Y-%m-%d") + dt.timedelta(days=1)).strftime("%Y-%m-%d")
                     inner_end = (datetime.strptime(break_range[1], "%Y-%m-%d") - dt.timedelta(days=1)).strftime("%Y-%m-%d")
 
-                    brake_actions = user_actions.loc[:, inner_start:inner_end]  # Gets only the chosen period
+                    break_actions = user_actions.loc[:, inner_start:inner_end]  # Gets only the chosen period
 
-                    brake_actions = brake_actions.loc[~(brake_actions == 0).all(axis=1)]  # Removes the actions not performed
+                    break_actions = break_actions.loc[~(break_actions == 0).all(axis=1)]  # Removes the actions not performed
 
-                    is_activity_day = (brake_actions != 0).any()  # List Of Columns With at least a Non-Zero Value
+                    is_activity_day = (break_actions != 0).any()  # List Of Columns With at least a Non-Zero Value
                     action_days = is_activity_day.index[is_activity_day].tolist()  # List Of Columns NAMES Having Column Names at least a Non-Zero Value
 
-                    if len(brake_actions) > 0:  # There are other activities: the Break is Non-coding
+                    if len(break_actions) > 0:  # There are other activities: the Break is Non-coding
                         break_detail = splitBreak(break_dates, action_days, threshold)
                         labeled_breaks = pandas.concat([labeled_breaks, break_detail], ignore_index=True)
                     else:  # No other activities: the Break is Inactive or Gone
