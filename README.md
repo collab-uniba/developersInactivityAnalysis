@@ -105,7 +105,7 @@ The goal is to select all the *breaks* (*pauses* that are larger than usual) ass
 - If `win_pauses` contains >=4 *pauses* then the **W** is valid, then use `win_pauses` to calculate *Tfov*. If *Tfov* is valid (i.e., *IQR*>1), then proceed to the breaks identification step (go to STEP 3).
 - Else, when `win_pauses` < 4 (i.e., *Tfov* cannot be calculated) or if *Tfov* is invalid (i.e., *IQR*<=1) for **W**, then:
   - If a previous *Tfov* exists, then consider it as the current *Tfov* and proceed to the next step for breaks identification (go to STEP 3).
-  - Otherwise, save into the list `clear_breaks` all the *pauses* from `partially_included` that are larger than **W** and have not been considered yet, ignore the other *pauses* in `win_pauses`; move forward **W** by *shift* days and RESTART (go back to STEP 1).
+  - Otherwise, save into the list `clear_breaks` all the *pauses* from `partially_included` that are larger than the window size and have not been considered yet, ignore the other *pauses* in `win_pauses`; move forward **W** by *shift* days and RESTART (go back to STEP 1).
 
   (Note: The *pauses* that are larger than *shift* days will be considered in the next **W** and so on, whereas the smaller ones are not breaks and can be safely ignored).
 
