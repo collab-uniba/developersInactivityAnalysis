@@ -118,7 +118,7 @@ def main(repos_list):
     for gitRepoName in repos_list:
         organization, project = gitRepoName.split('/')
 
-        devs_df = pandas.read_csv(workingFolder + '/' + organization + '/' + project + '/' + cfg.TF_developers_file, sep=cfg.CSV_separator)
+        devs_df = pandas.read_csv(os.path.join(workingFolder,cfg.TF_report_folder,organization,project,cfg.TF_developers_file), sep=cfg.CSV_separator)
 
         win = cfg.sliding_window_size
         shift = cfg.shift

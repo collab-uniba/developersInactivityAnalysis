@@ -234,7 +234,7 @@ def breaksDistributionStats(repos_list, output_file_name):
 
                 dev_life = getLife(dev, organization)
                 if(dev_life<=1):
-                    print('INVALID DEVELOPER LIFE')
+                    print('INVALID DEVELOPER LIFE:', dev)
                     continue
 
                 breaks_list = pandas.read_csv(breaks_folder + '/' + file, sep=cfg.CSV_separator)
@@ -312,7 +312,7 @@ def breaksOccurrencesPlot(repos_list, output_file_name):
 
                 dev_life = getLife(dev, organization)
                 if (dev_life <= 1):
-                    print('INVALID DEVELOPER LIFE')
+                    print('INVALID DEVELOPER LIFE:', dev)
                     continue
 
                 dev_years = dev_life / 365
@@ -426,7 +426,7 @@ def TFsBreaksOccurrencesPlot(repos_list, output_file_name):
 
                 dev_life = getLife(dev, organization)
                 if (dev_life <= 1):
-                    print('INVALID DEVELOPER LIFE')
+                    print('INVALID DEVELOPER LIFE:', dev)
                     continue
 
                 dev_years = dev_life / 365
