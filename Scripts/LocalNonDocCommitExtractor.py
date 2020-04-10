@@ -84,8 +84,9 @@ def main(gitRepoURL):
     grouped_contributions.to_csv(aggregated_contributions_destination,
                                  sep=';', na_rep='N/A', index=True, quoting=None, line_terminator='\n')
     print('Grouped Contributions Written: ', aggregated_contributions_destination)
-    shutil.rmtree(repoDir)
-    print('Local Repository REMOVED')
+
+    #shutil.rmtree(repoDir)
+    #print('Local Repository REMOVED')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))

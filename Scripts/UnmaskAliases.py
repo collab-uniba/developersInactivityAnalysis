@@ -26,9 +26,15 @@ class Alias:
             self.login = str(login).strip()
         else:
             self.login = None
-        self.name = name.strip()
+        if name is not None:
+            self.name = name.strip()
+        else:
+            self.name = None
         self.record_type = record_type
-        self.email, self.email_prefix, self.email_domain = self.parse_email(email)
+        if email is not None:
+            self.email, self.email_prefix, self.email_domain = self.parse_email(email)
+        else:
+            self.email = self.email_prefix = self.email_domain = None
 
     @staticmethod
     def parse_email(email):
@@ -484,7 +490,7 @@ def main(repoName):
     print('Done: unmatched %s' % len(unmatched))
 
     ### Read Result CSV
-    couplesFile = os.path.join(sourceFolder, repo+'_idm', 'idm_map.csv')
+    couplesFile = os.path.join(sourceFolder, 'idm', 'idm_map.csv')
     with open(couplesFile, 'r') as f:
         alias_couples = [rec for rec in csv.reader(f, delimiter=';')]
     #alias_couples = pandas.read_csv(couplesFile, sep=';', header=None,  names=['a', 'b'])
@@ -515,9 +521,6 @@ def main(repoName):
     ### (AGGREGATE and) Write final CSV
     resolved = devsMapData[devsMapData['login'].notnull()]
     not_resolved = devsMapData[devsMapData['login'].isnull()]
-
-    resolved = resolved.drop(columns=['id', 'name', 'email'])
-    resolved = resolved.groupby(['login']).sum()
 
     devsMapData.to_csv(os.path.join(sourceFolder, 'unmasking_results.csv'),
                                  sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
