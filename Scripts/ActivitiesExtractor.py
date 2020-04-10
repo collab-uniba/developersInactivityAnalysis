@@ -525,7 +525,6 @@ if __name__ == "__main__":
     # python script.py repoName(format: organization/project) tokenNumber
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
     gitRepoName = sys.argv[1]
-    gitRepoName = sys.argv[1]
     try:
         token = util.getToken(int(sys.argv[2]))
     except:
