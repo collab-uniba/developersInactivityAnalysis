@@ -1,10 +1,5 @@
-### IMPORT EXCEPTION MODULES
-from requests.exceptions import Timeout
-from github import GithubException
-
 ### IMPORT SYSTEM MODULES
-from github import Github
-import os, logging, pandas
+import os, logging, pandas, sys
 from datetime import datetime
 import datetime as dt
 
@@ -19,7 +14,7 @@ def get_issues_prs(organizationFolder, developer_login):
     issues_prs_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
     for dir in os.listdir(organizationFolder):
-        path = organizationFolder + '/' + dir
+        path = os.path.join(organizationFolder,dir)
         if os.path.isdir(path):
             try:
                 issues_prs = pandas.read_csv(path + '/Other_Activities/' + cfg.issue_pr_list_file_name, sep=cfg.CSV_separator)
@@ -34,7 +29,7 @@ def get_issues_comments_dev(organizationFolder, developer_login):
     issues_comments_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
     for dir in os.listdir(organizationFolder):
-        path = organizationFolder + '/' + dir
+        path = os.path.join(organizationFolder,dir)
         if os.path.isdir(path):
             try:
                 issues_comments = pandas.read_csv(path + '/Other_Activities/' + cfg.issue_comments_list_file_name, sep=cfg.CSV_separator)
@@ -49,7 +44,7 @@ def get_pulls_comments_dev(organizationFolder, developer_login):
     pulls_comments_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
     for dir in os.listdir(organizationFolder):
-        path = organizationFolder + '/' + dir
+        path = os.path.join(organizationFolder,dir)
         if os.path.isdir(path):
             try:
                 pulls_comments = pandas.read_csv(path + '/Other_Activities/' + cfg.pulls_comments_list_file_name, sep=cfg.CSV_separator)
@@ -64,7 +59,7 @@ def get_issue_events_dev(organizationFolder, developer_login):
     issue_events_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
     for dir in os.listdir(organizationFolder):
-        path = organizationFolder + '/' + dir
+        path = os.path.join(organizationFolder,dir)
         if os.path.isdir(path):
             try:
                 issue_events = pandas.read_csv(path + '/Other_Activities/' + cfg.issue_events_list_file_name, sep=cfg.CSV_separator)
@@ -93,7 +88,7 @@ def get_activities(organizationFolder, developer_login):
     pulls_comments = get_pulls_comments_dev(organizationFolder, developer_login)
     issue_events = get_issue_events_dev(organizationFolder, developer_login)
 
-    commit_history = pandas.read_csv(organizationFolder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
+    commit_history = pandas.read_csv(os.path.join(organizationFolder,cfg.commit_history_table_file_name), sep=cfg.CSV_separator)
 
     column_names = ['action'] + commit_history.columns[1:].tolist()
 
@@ -111,9 +106,9 @@ def get_activities(organizationFolder, developer_login):
     actions_table = pandas.DataFrame(actions_data, columns=column_names)
     actions_table = actions_table.set_index('action')
 
-    dest = organizationFolder + '/' + cfg.actions_folder_name
+    dest = os.path.join(organizationFolder, cfg.actions_folder_name)
     os.makedirs(dest, exist_ok=True)
-    actions_table.to_csv(organizationFolder + '/'+ cfg.actions_folder_name + '/' + developer_login + '_actions_table.csv',
+    actions_table.to_csv(os.path.join(organizationFolder, cfg.actions_folder_name, developer_login + '_actions_table.csv'),
                          sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
     return actions_table
 
@@ -191,34 +186,35 @@ def splitBreak(break_limits, action_days, th):
             new_end = action_days[i + 1]
             period_detail.at[0, 'len'] = util.daysBetween(break_start, new_end)  # New size
             period_detail.at[0, 'dates'] = break_start + '/' + new_end  # New dates
+            last_end = new_end
             # Same th
             # Same status
             # Same previously
     if last_end == cfg.data_collection_date:
-        period_detail.at[0, 'label'] = 'NOW'
+        period_detail.at[0, 'label'] += '(NOW)'
     else:
         util.add(period_detail, [0, last_end, 0, 'ACTIVE', status])
     return period_detail
 
 ### MAIN FUNCTION
-def main(repos_list):
+def main(repos_list, mode):
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
-        workingFolder = cfg.main_folder + '/' + organization
-        actionsFolder = workingFolder + '/' + cfg.actions_folder_name
-        breaksFolder = workingFolder + '/' + cfg.breaks_folder_name
-        labeledBreaksFolder = workingFolder + '/' + cfg.labeled_breaks_folder_name
+        workingFolder = os.path.join(cfg.main_folder, organization)
+        actionsFolder = os.path.join(workingFolder, cfg.actions_folder_name)
+        breaksFolder = os.path.join(workingFolder, cfg.breaks_folder_name, mode.upper())
+        labeledBreaksFolder = os.path.join(workingFolder, cfg.labeled_breaks_folder_name, mode.upper())
         os.makedirs(labeledBreaksFolder, exist_ok=True)
 
         for file in os.listdir(breaksFolder):
-            if os.path.isfile(breaksFolder + '/' + file):
+            if os.path.isfile(os.path.join(breaksFolder,file)):
                 dev = file.split('_')[0]
 
-                breaks_df = pandas.read_csv(breaksFolder + '/' + file, sep=cfg.CSV_separator)
+                breaks_df = pandas.read_csv(os.path.join(breaksFolder,file), sep=cfg.CSV_separator)
 
                 devActionsFile = '{}_actions_table.csv'.format(dev)
                 if devActionsFile in actionsFolder:
-                    user_actions = pandas.read_csv(actionsFolder+'/'+devActionsFile, sep=cfg.CSV_separator)
+                    user_actions = pandas.read_csv(os.path.join(actionsFolder,devActionsFile), sep=cfg.CSV_separator)
                 else:
                     user_actions = get_activities(workingFolder, dev)
 
@@ -254,17 +250,26 @@ def main(repos_list):
 
                         break_end = break_dates.split('/')[1]
                         if break_end == cfg.data_collection_date:
-                            labeled_breaks.at[0, 'label'] = 'NOW'
+                            labeled_breaks.at[0, 'label'] += '(NOW)'
                         else:
                             util.add(labeled_breaks, [0, break_end, 0, 'ACTIVE', status])
 
-                labeled_breaks.to_csv(labeledBreaksFolder + '/' + dev + '_labeled_breaks.csv',
+                labeled_breaks.to_csv(os.path.join(labeledBreaksFolder, dev + '_labeled_breaks.csv'),
                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
         print('{} Breaks Labeling Complete!'.format(gitRepoName))
+
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
 
     ### ARGUMENTS MANAGEMENT
-    repos_list = util.getReposList()
-    main(repos_list)
+    # python script.py gitCloneURL
+    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
+    mode = sys.argv[1]
+    if(mode.lower() != 'tf') and (mode.lower() != 'a80'):
+        print('ERROR: Not valid mode! (use \'TF\' or \'A80\')')
+        sys.exit(0)
+    print('Selected Mode: ', mode.upper())
+
+    repos_list=util.getReposList()
+    main(repos_list, mode)

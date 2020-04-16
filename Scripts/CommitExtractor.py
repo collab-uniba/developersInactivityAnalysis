@@ -20,13 +20,13 @@ COMPLETE = "COMPLETE"
 def getCommitExtractionStatus(folder, statusFile):
     status = "NOT-STARTED"
     if(statusFile in os.listdir(folder)):
-        with open(folder+'/'+statusFile) as f:
+        with open(os.path.join(folder, statusFile)) as f:
             content = f.readline().strip()
         status,ref_date = content.split(';')
     return status
 
 def runCommitExtractionRoutine(g, organizationFolder, organization, project):
-    workingFolder = (organizationFolder + '/' + project)
+    workingFolder = (os.path.join(organizationFolder, project))
     os.makedirs(workingFolder, exist_ok=True)
 
     logging.info('Commit Extraction for {}'.format(project))
@@ -44,10 +44,10 @@ def runCommitExtractionRoutine(g, organizationFolder, organization, project):
         util.waitRateLimit(g)
         updateCommitListFile(g, repoName, project_start_dt, collection_day, workingFolder)
     try:
-        commits_data = pandas.read_csv(workingFolder + '/' + cfg.commit_list_file_name, sep=cfg.CSV_separator)
+        commits_data = pandas.read_csv(os.path.join(workingFolder, cfg.commit_list_file_name), sep=cfg.CSV_separator)
 
         if (cfg.commit_history_table_file_name in os.listdir(workingFolder)):
-            commit_table = pandas.read_csv(workingFolder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
+            commit_table = pandas.read_csv(os.path.join(workingFolder, cfg.commit_history_table_file_name), sep=cfg.CSV_separator)
         else:
             logging.info("Start Writing Commit History Table for {}".format(project))
             commit_table = writeCommitHistoryTable(workingFolder, commits_data)
@@ -68,7 +68,7 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
 
     status = getCommitExtractionStatus(workingFolder, tmpStatusFile)
     if(status != COMPLETE):
-        with open(workingFolder + '/' + tmpStatusFile, "w") as statusSaver:
+        with open(os.path.join(workingFolder, tmpStatusFile), "w") as statusSaver:
             statusSaver.write('INCOMPLETE;{}'.format(datetime.today().strftime('%Y-%m-%d %H:%M:%S')))
 
         exception_thrown = True
@@ -108,16 +108,16 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
             last_page_read = 0
 
             if (outputFileName in os.listdir(workingFolder)):
-                commits_data = pandas.read_csv(workingFolder + '/' + outputFileName, sep=cfg.CSV_separator)
+                commits_data = pandas.read_csv(os.path.join(workingFolder, outputFileName), sep=cfg.CSV_separator)
                 if (tmpSavefile in os.listdir(workingFolder)):
-                    last_page_read = util.getLastPageRead(workingFolder + '/' + tmpSavefile)
+                    last_page_read = util.getLastPageRead(os.path.join(workingFolder, tmpSavefile))
                 logging.info("Resuming Extraction")
             else:
                 commits_data = pandas.DataFrame(columns=['sha', 'author_id', 'date'])
                 logging.info("Starting New Extraction")
 
             if tmpExcludedCommits in os.listdir(workingFolder):
-                excluded_commits = pandas.read_csv(workingFolder + '/' + tmpExcludedCommits, sep=cfg.CSV_separator)
+                excluded_commits = pandas.read_csv(os.path.join(workingFolder, tmpExcludedCommits), sep=cfg.CSV_separator)
             else:
                 excluded_commits = pandas.DataFrame(columns=['sha'])
 
@@ -135,35 +135,35 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                                     date = commit.commit.author.date
                                     util.add(commits_data, [sha, author_id, date])
                     if (len(commits_data) > 0):
-                        commits_data.to_csv(workingFolder + '/' + outputFileName,
+                        commits_data.to_csv(os.path.join(workingFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 except IncompletableObject:
                     logging.warning('Github Exception 400: Returned object contains no URL. SHA: {}'.format(sha))
                     util.add(excluded_commits, [sha])
                     if (len(commits_data) > 0):
-                        commits_data.to_csv(workingFolder + '/' + outputFileName,
+                        commits_data.to_csv(os.path.join(workingFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    excluded_commits.to_csv(workingFolder + '/' + tmpExcludedCommits,
+                    excluded_commits.to_csv(os.path.join(workingFolder, tmpExcludedCommits),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    with open(workingFolder + '/' + tmpSavefile, "w") as statusSaver:
+                    with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
                     pass
                 except GithubException as ghe:
                     logging.warning('Exception Occurred While Getting COMMITS: Github {}'.format(ghe))
                     if (len(commits_data) > 0):
-                        commits_data.to_csv(workingFolder + '/' + outputFileName,
+                        commits_data.to_csv(os.path.join(workingFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    with open(workingFolder + '/' + tmpSavefile, "w") as statusSaver:
+                    with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
                     pass
                 except Timeout:
                     logging.warning('Exception Occurred While Getting COMMITS: Timeout')
                     if (len(commits_data) > 0):
-                        commits_data.to_csv(workingFolder + '/' + outputFileName,
+                        commits_data.to_csv(os.path.join(workingFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    with open(workingFolder + '/' + tmpSavefile, "w") as statusSaver:
+                    with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
                     pass
@@ -171,24 +171,24 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                     logging.warning('Exception Occurred While Getting COMMIT DATA: NoneType for Author. SHA: {}'.format(sha))
                     util.add(excluded_commits, [sha])
                     if (len(commits_data) > 0):
-                        commits_data.to_csv(workingFolder + '/' + outputFileName,
+                        commits_data.to_csv(os.path.join(workingFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    excluded_commits.to_csv(workingFolder + '/' + tmpExcludedCommits,
+                    excluded_commits.to_csv(os.path.join(workingFolder, tmpExcludedCommits),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    with open(workingFolder + '/' + tmpSavefile, "w") as statusSaver:
+                    with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
                     pass
                 except:
                     logging.warning('Execution Interrupted While Getting COMMITS')
                     if (len(commits_data) > 0):
-                        commits_data.to_csv(workingFolder + '/' + outputFileName,
+                        commits_data.to_csv(os.path.join(workingFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    with open(workingFolder + '/' + tmpSavefile, "w") as statusSaver:
+                    with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     raise
         logging.info("Commit Extraction Complete")
-        with open(workingFolder + '/' + tmpStatusFile, "w") as statusSaver:
+        with open(os.path.join(workingFolder, tmpStatusFile), "w") as statusSaver:
             statusSaver.write('COMPLETE;{}'.format(cfg.data_collection_date))
 
 def writeCommitHistoryTable(workingFolder, commits_data):
@@ -220,7 +220,7 @@ def writeCommitHistoryTable(workingFolder, commits_data):
         u_data.append(cur_user_data)
 
     commit_table = pandas.DataFrame(u_data, columns=column_names)
-    commit_table.to_csv(workingFolder + '/' + cfg.commit_history_table_file_name,
+    commit_table.to_csv(os.path.join(workingFolder, cfg.commit_history_table_file_name),
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
     logging.info("Commit History Table Written")
     return commit_table
@@ -261,56 +261,33 @@ def writePauses(workingFolder, commit_table):
         row.append(commit_frequency)
     logging.info('Inactivity Computation Done')
 
-    with open(workingFolder + '/' + cfg.pauses_list_file_name, 'w', newline='') as outcsv:
+    with open(os.path.join(workingFolder, cfg.pauses_list_file_name), 'w', newline='') as outcsv:
         # configure writer to write standard csv file
         writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, delimiter=cfg.CSV_separator, quotechar='"', escapechar='\\')
         for r in pauses_duration_list:
             # Write item to outcsv
             writer.writerow(r)
 
-    with open(workingFolder + '/' + cfg.pauses_dates_file_name, 'w', newline='') as outcsv:
+    with open(os.path.join(workingFolder, cfg.pauses_dates_file_name), 'w', newline='') as outcsv:
         # configure writer to write standard csv file
         writer = csv.writer(outcsv, quoting=csv.QUOTE_NONE, delimiter=cfg.CSV_separator, quotechar='"', escapechar='\\')
         for r in pauses_dates_list:
             # Write item to outcsv
             writer.writerow(r)
 
-def findCoreDevelopers(workingFolder, project): # XXX A80 METHOD
-    '''NOT USED METHOD'''
-    commit_table = pandas.read_csv(workingFolder + '/' + project + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
-
-    devs_commits = pandas.DataFrame(columns=['dev','commits'])
-    for index, row in commit_table.iterrows():
-        dev = row['user_id']
-        num_commits = sum(row[1:].astype(int))
-        util.add(devs_commits, [dev, num_commits])
-    devs_commits = devs_commits.sort_values(by=['commits'], ascending=False).reset_index(drop=True)
-    commit_count = sum(devs_commits.commits)
-
-    commit_th = int(commit_count*cfg.core_commit_coverage)
-    commit_acc = 0
-    devs = 0
-    for index, row in devs_commits.iterrows():
-        commit_acc += row['commits']
-        if(commit_acc>=commit_th):
-            devs = index
-            break
-    core_devs = devs_commits[:devs+1]
-    return core_devs
-
 def mergeProjectsCommits(path, main_project_name):  # No filter on core_devs_df. All developers are taken
-    proj_path = path + '/' + main_project_name
-    commits_data = pandas.read_csv(proj_path + '/' + cfg.commit_list_file_name, sep=cfg.CSV_separator)
+    proj_path = os.path.join(path, main_project_name)
+    commits_data = pandas.read_csv(os.path.join(proj_path, cfg.commit_list_file_name), sep=cfg.CSV_separator)
 
     projects = os.listdir(path)
     for project in projects:
         if ((project != main_project_name) and (os.path.isdir(os.path.join(path, project)))):
-            proj_path = path + '/' + project
+            proj_path = os.path.join(path, project)
             if cfg.commit_list_file_name in os.listdir(proj_path):
-                project_commits = pandas.read_csv(proj_path + '/' + cfg.commit_list_file_name, sep=cfg.CSV_separator)
+                project_commits = pandas.read_csv(os.path.join(proj_path, cfg.commit_list_file_name), sep=cfg.CSV_separator)
                 commits_data = pandas.concat([commits_data, project_commits], ignore_index=True)
 
-    commits_data.to_csv(path + '/' + cfg.commit_list_file_name,
+    commits_data.to_csv(os.path.join(path, cfg.commit_list_file_name),
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
     logging.info('All the Organization commits have been merged with '.format(main_project_name))
 
@@ -340,7 +317,7 @@ def main(gitRepoName, token):
     organizationsFolder = cfg.main_folder
     os.makedirs(organizationsFolder, exist_ok=True)
 
-    organizationFolder = organizationsFolder + '/' + organization
+    organizationFolder = os.path.join(organizationsFolder, organization)
     os.makedirs(organizationsFolder, exist_ok=True)
 
     runCommitExtractionRoutine(g, organizationFolder, organization, project)
@@ -370,11 +347,11 @@ def main(gitRepoName, token):
     mergeProjectsCommits(organizationFolder, project)  # No filter on core_devs_df. All developers are taken
 
     if cfg.commit_list_file_name in os.listdir(organizationFolder):
-        commits_data = pandas.read_csv(organizationFolder + '/' + cfg.commit_list_file_name, sep=cfg.CSV_separator)
+        commits_data = pandas.read_csv(os.path.join(organizationFolder, cfg.commit_list_file_name), sep=cfg.CSV_separator)
         writeCommitHistoryTable(organizationFolder, commits_data)
 
     if cfg.commit_history_table_file_name in os.listdir(organizationFolder):
-        commit_table = pandas.read_csv(organizationFolder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
+        commit_table = pandas.read_csv(os.path.join(organizationFolder, cfg.commit_history_table_file_name), sep=cfg.CSV_separator)
         writePauses(organizationFolder, commit_table)
 
     logging.info('Commit Extraction SUCCESSFULLY COMPLETED')

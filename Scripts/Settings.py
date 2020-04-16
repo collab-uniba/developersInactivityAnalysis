@@ -8,9 +8,12 @@ repos_file = "../Resources/repositories.txt"  # The relative path of the file co
 main_folder = "../Organizations"  # The main folder where results will be archived
 logs_folder = "../logs"  # The folder where the logs will be archived
 
-TF_report_folder = "TF_Results"  # The folder where the TF/core developers are archived
-TF_developers_file = "TF_devs.csv" # The file where the TF/core developers are listed as <name;login>
+TF_report_folder = "../TF_Results"  # The folder where the TF/core developers are archived
+TF_developers_file = "TF_devs.csv" # The file where the TF/core developers are listed as <name;login>ù
 ## WARNING: The correct path to save the <TF_developers_file> is <TF_report_folder>/<organization/mainRepo>/<TF_developers_file>
+
+A80_report_folder = "../A80_Results"  # The folder where the TF/core developers are archived
+A80_developers_file = "A80_devs.csv" # The file where the TF/core developers are listed as <name;login>
 
 commit_list_file_name = "commit_list.csv"  # The file where the repo commits will be archived
 commit_history_table_file_name = "commit_history_table.csv"  # The file where the 'devs by dates' table for each repo will be archived

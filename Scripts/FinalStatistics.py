@@ -1,6 +1,5 @@
 ### IMPORT SYSTEM MODULES
-import os, pandas, numpy, csv
-import matplotlib.pyplot as plt
+import os, pandas, numpy, csv, sys
 import seaborn as sns
 
 ### IMPORT CUSTOM MODULES
@@ -10,7 +9,7 @@ import Utilities as util
 def getLife(dev, organization):
     dev_life = 0
     # Read Breaks Table
-    with open(cfg.main_folder + '/' + organization + '/' + cfg.pauses_list_file_name) as inactivities_file:
+    with open(os.path.join(cfg.main_folder, organization, cfg.pauses_list_file_name)) as inactivities_file:
         devs_inactivities = [list(map(str, rec)) for rec in csv.reader(inactivities_file, delimiter=';')]
 
     for d in devs_inactivities:
@@ -20,7 +19,7 @@ def getLife(dev, organization):
             break
     return dev_life
 
-def countOrganizationsAffected(repos_list, output_file_name):
+def countOrganizationsAffected(repos_list, output_file_name, mode):
     affected_summary = pandas.DataFrame(columns=['Project', 'Contributors', 'Sampled_Contributors', 'Non-Coding', 'Inactive', 'Gone'])
 
     non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
@@ -29,57 +28,61 @@ def countOrganizationsAffected(repos_list, output_file_name):
 
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
-        workingFolder = cfg.main_folder + '/' + organization
+        workingFolder = os.path.join(cfg.main_folder, organization)
 
         # Breaks occurrences
-        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected = countAffected(gitRepoName, workingFolder)
+        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected = countAffected(gitRepoName, workingFolder, mode)
         util.add(affected_summary, repo_affected)
 
         non_coding_affected = pandas.concat([non_coding_affected, repo_non_coding_affected], ignore_index=True)
         inactive_affected = pandas.concat([inactive_affected, repo_inactive_affected], ignore_index=True)
         gone_affected = pandas.concat([gone_affected, repo_gone_affected], ignore_index=True)
 
-    affected_summary.to_csv(cfg.main_folder + '/' + output_file_name + '.csv',
+    affected_summary.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-    non_coding_affected.to_csv(cfg.main_folder + '/non_coding_affected.csv',
+    non_coding_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'non_coding_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
                             line_terminator='\n')
-    inactive_affected.to_csv(cfg.main_folder + '/inactive_affected.csv',
+    inactive_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'inactive_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
                             line_terminator='\n')
-    gone_affected.to_csv(cfg.main_folder + '/gone_affected.csv',
+    gone_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'gone_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
                             line_terminator='\n')
 
-
-def countOrganizationsTransitions(repos_list, output_file_name):
+def countOrganizationsTransitions(repos_list, output_file_name, mode):
     transitions_summary = pandas.DataFrame(columns=['Project', '#breaks', 'A_to_NC', 'NC_to_A', 'A_to_I', 'I_to_A', 'NC_to_I', 'I_to_NC', 'I_to_G', 'G_to_A', 'G_to_NC'])
 
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
-        workingFolder = cfg.main_folder + '/' + organization
+        workingFolder = os.path.join(cfg.main_folder, organization)
 
         # Transition occurrences
-        repo_transitions = countTransitions(gitRepoName, workingFolder)
+        repo_transitions = countTransitions(gitRepoName, workingFolder, mode)
         util.add(transitions_summary, repo_transitions)
 
-    transitions_summary.to_csv(cfg.main_folder + '/' + output_file_name + '.csv',
+    transitions_summary.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
     return transitions_summary
 
-def countAffected(repo, workingFolder):
+def countAffected(repo, workingFolder, mode):
     ''' Developers who have been inactive per organization '''
+    org, repoName = repo.split('/')
+
     affected = [repo]
 
-    main_repo_folder = cfg.main_folder + '/' + repo
+    main_repo_folder = os.path.join(cfg.main_folder, repo)
     commit_history_table = pandas.read_csv(main_repo_folder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
     affected.append(len(commit_history_table))
 
-    TF_folder = cfg.main_folder + '/' + cfg.TF_report_folder + '/' + repo
-    TF_devs = pandas.read_csv(TF_folder + '/' + cfg.TF_developers_file, sep=cfg.CSV_separator)
-    affected.append(len(TF_devs))
+    if mode.lower() == 'tf':
+        core_devs = pandas.read_csv(os.path.join(cfg.TF_report_folder, repoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
+    else:
+        core_devs = pandas.read_csv(os.path.join(cfg.A80_report_folder, repoName, cfg.A80_developers_file), sep=cfg.CSV_separator)
 
-    dev_breaks_folder = workingFolder + '/' + cfg.labeled_breaks_folder_name
+    affected.append(len(core_devs))
+
+    dev_breaks_folder = os.path.join(workingFolder, cfg.labeled_breaks_folder_name, mode.upper())
     non_coding = inactive = gone = 0
     non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
     inactive_affected = pandas.DataFrame(columns = ['repo','login'])
@@ -88,13 +91,13 @@ def countAffected(repo, workingFolder):
         if os.path.isfile(dev_breaks_folder + '/' + file):
             dev = file.split('_')[0]
             dev_breaks = pandas.read_csv(dev_breaks_folder + '/' + file, sep = cfg.CSV_separator)
-            if cfg.NC in dev_breaks.label.tolist():
+            if cfg.NC in dev_breaks.label.tolist() or cfg.NC + '(NOW)' in dev_breaks.label.tolist():
                 non_coding += 1  # Can be removed, the count is the len(non_coding_affected)
                 util.add(non_coding_affected, [repo, dev])
-            if cfg.I in dev_breaks.label.tolist():
+            if cfg.I in dev_breaks.label.tolist() or cfg.I + '(NOW)' in dev_breaks.label.tolist():
                 inactive += 1  # Can be removed, the count is the len(inactive_affected)
                 util.add(inactive_affected, [repo, dev])
-            if cfg.G in dev_breaks.label.tolist():
+            if cfg.G in dev_breaks.label.tolist() or cfg.G + '(NOW)' in dev_breaks.label.tolist():
                 gone += 1  # Can be removed, the count is the len(gone_affected)
                 util.add(gone_affected, [repo, dev])
 
@@ -102,12 +105,12 @@ def countAffected(repo, workingFolder):
 
     return affected, non_coding_affected, inactive_affected, gone_affected
 
-def countTransitions(repo, workingFolder):
+def countTransitions(repo, workingFolder, mode):
     ''' Needed to calculate the percentages for the markov chains '''
     transitions = [repo]
 
     org = repo.split('/')[0]
-    dev_breaks_folder = workingFolder + '/' + cfg.labeled_breaks_folder_name
+    dev_breaks_folder = os.path.join(workingFolder, cfg.labeled_breaks_folder_name, mode.upper())
     breaks = 0
     AtoNC = NCtoA = AtoI = ItoA = NCtoI = ItoNC = ItoG = GtoA = GtoNC = 0
     for file in os.listdir(dev_breaks_folder):
@@ -115,26 +118,42 @@ def countTransitions(repo, workingFolder):
             dev_breaks = pandas.read_csv(dev_breaks_folder + '/' + file, sep=cfg.CSV_separator)
             breaks += len(dev_breaks)
             AtoNC += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.NC)])
+            AtoNC += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.NC + '(NOW)')])
+
             NCtoA += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.A)])
+
             AtoI += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.I)])
+            AtoI += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.I + '(NOW)')])
+
             ItoA += len(dev_breaks[(dev_breaks.previously == cfg.I) & (dev_breaks.label == cfg.A)])
+
             NCtoI += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.I)])
+            NCtoI += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.I + '(NOW)')])
+
             ItoNC += len(dev_breaks[(dev_breaks.previously == cfg.I) & (dev_breaks.label == cfg.NC)])
+            ItoNC += len(dev_breaks[(dev_breaks.previously == cfg.I) & (dev_breaks.label == cfg.NC + '(NOW)')])
+
             GtoA += len(dev_breaks[(dev_breaks.previously == cfg.G) & (dev_breaks.label == cfg.A)])
+
             GtoNC += len(dev_breaks[(dev_breaks.previously == cfg.G) & (dev_breaks.label == cfg.NC)])
+            GtoNC += len(dev_breaks[(dev_breaks.previously == cfg.G) & (dev_breaks.label == cfg.NC + '(NOW)')])
 
             ### ACTIVE -> GONE => ACTIVE -> INACTIVE -> GONE
             AtoI += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.G)])
+            AtoI += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.G + '(NOW)')])
             ItoG += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.G)])
+            ItoG += len(dev_breaks[(dev_breaks.previously == cfg.A) & (dev_breaks.label == cfg.G + '(NOW)')])
 
             ### NON_CODING -> GONE => NON_CODING -> INACTIVE -> GONE
             NCtoI += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.G)])
+            NCtoI += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.G + '(NOW)')])
             ItoG += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.G)])
+            ItoG += len(dev_breaks[(dev_breaks.previously == cfg.NC) & (dev_breaks.label == cfg.G + '(NOW)')])
 
     transitions += [breaks, AtoNC, NCtoA, AtoI, ItoA, NCtoI, ItoNC, ItoG, GtoA, GtoNC]
     return transitions
 
-def organizationsTransitionsPercentages(transitions_summary_file_name, output_file_name):
+def organizationsTransitionsPercentages(transitions_summary_file_name, output_file_name, mode):
     ''' Writes the chain table for each organization and returns the chains in a list needed to draw the markov chains '''
     labels = ['Project', 'A_to_A', 'A_to_NC', 'A_to_I',
               'NC_to_A', 'NC_to_NC', 'NC_to_I',
@@ -142,7 +161,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
               'G_to_A', 'G_to_NC', 'G_to_G']
     chains_list = pandas.DataFrame(columns=labels)
 
-    transitions_summary = pandas.read_csv(cfg.main_folder + '/' + transitions_summary_file_name + '.csv', sep=cfg.CSV_separator)
+    transitions_summary = pandas.read_csv(os.path.join(cfg.main_folder, mode.upper(), transitions_summary_file_name + '.csv'), sep=cfg.CSV_separator)
 
     for index, proj in transitions_summary.iterrows():
         in_G = proj['I_to_G']
@@ -200,7 +219,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
         row = ['Gone', GtoA, GtoNC, '-', GtoG]
         util.add(matrix, row)
 
-        destinationFolder = cfg.main_folder + '/' + cfg.chains_folder_name
+        destinationFolder = os.path.join(cfg.main_folder, cfg.chains_folder_name, mode.upper())
         os.makedirs(destinationFolder, exist_ok=True)
 
         util.add(chains_list, [proj['Project'], AtoA, AtoNC, AtoI,
@@ -209,7 +228,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
                              GtoA, GtoNC, GtoG])
 
         organization = proj['Project'].split('/')[0]
-        matrix.to_csv(destinationFolder + '/' + organization + '_markov.csv',
+        matrix.to_csv(os.path.join(destinationFolder, organization + '_markov.csv'),
                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
     TFs_row = TFsTransitionsPercentages(transitions_summary)
     util.add(chains_list, TFs_row)
@@ -217,19 +236,19 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
     last_row += chains_list.mean().tolist()
     print(chains_list, len(last_row), len(chains_list.columns), last_row)
     util.add(chains_list, last_row)
-    chains_list.to_csv(cfg.main_folder + '/' + output_file_name + '.csv',
+    chains_list.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
-def breaksDistributionStats(repos_list, output_file_name):
+def breaksDistributionStats(repos_list, output_file_name, mode):
     breaks_stats = pandas.DataFrame(columns=['Project', 'mean', 'st_dev', 'var', 'median', 'breaks_devlife_corr'])
     projects_counts = []
     for repo in repos_list:
         organization, project = repo.split('/')
 
-        breaks_folder = cfg.main_folder + '/' + organization + '/' + cfg.labeled_breaks_folder_name
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         breaks_lifetime = pandas.DataFrame(columns=['BpY', 'life'])
         for file in os.listdir(breaks_folder):
-            if(os.path.isfile(breaks_folder + '/' + file)):
+            if(os.path.isfile(os.path.join(breaks_folder, file))):
                 dev = file.split('_')[0]
 
                 dev_life = getLife(dev, organization)
@@ -237,7 +256,7 @@ def breaksDistributionStats(repos_list, output_file_name):
                     print('INVALID DEVELOPER LIFE:', dev)
                     continue
 
-                breaks_list = pandas.read_csv(breaks_folder + '/' + file, sep=cfg.CSV_separator)
+                breaks_list = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
                 breaks_list = breaks_list[(breaks_list.label != 'ACTIVE') & (breaks_list.label != 'NOW')]
                 num_breaks = len(breaks_list)
                 years = dev_life / 365
@@ -252,7 +271,7 @@ def breaksDistributionStats(repos_list, output_file_name):
                            numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])[1][0]])
         projects_counts.append(breaks_lifetime.BpY)
 
-    breaks_stats.to_csv(cfg.main_folder + '/' + output_file_name + '.csv',
+    breaks_stats.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
     ###
@@ -267,19 +286,19 @@ def breaksDistributionStats(repos_list, output_file_name):
     # plt.savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
     # plt.clf()
 
-def breaksDurationsPlot(repos_list, output_file_name):
+def breaksDurationsPlot(repos_list, output_file_name, mode):
     data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
     for repo in repos_list:
         organization, project = repo.split('/')
 
-        breaks_folder = cfg.main_folder + '/' + organization + '/' + cfg.labeled_breaks_folder_name
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC_list = []
         I_list = []
         for file in os.listdir(breaks_folder):
-            if (os.path.isfile(breaks_folder + '/' + file)):
-                dev_breaks = pandas.read_csv(breaks_folder + '/' + file, sep=cfg.CSV_separator)
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
 
-                NC_list.append(dev_breaks[dev_breaks.label=='NON_CODING'].len.mean())
+                NC_list.append(dev_breaks[dev_breaks.label == 'NON_CODING'].len.mean())
                 I_list.append(dev_breaks[dev_breaks.label == 'INACTIVE'].len.mean())
 
         for dev_avg in NC_list:
@@ -294,10 +313,10 @@ def breaksDurationsPlot(repos_list, output_file_name):
     sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal)
     sns_plot.set_yscale('log')
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
-    sns_plot.get_figure().savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
+    sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
     sns_plot.get_figure().clf()
 
-def breaksOccurrencesPlot(repos_list, output_file_name):
+def breaksOccurrencesPlot(repos_list, output_file_name, mode):
     dataframes = []
     for repo in repos_list:
         organization, project = repo.split('/')
@@ -305,9 +324,9 @@ def breaksOccurrencesPlot(repos_list, output_file_name):
         labels = ['dev', 'organization', 'NCs', 'Is', 'Gs']
         inactivities_df = pandas.DataFrame(columns=labels)
 
-        breaks_folder = cfg.main_folder + '/' + organization + '/' + cfg.labeled_breaks_folder_name
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         for file in os.listdir(breaks_folder):
-            if (os.path.isfile(breaks_folder + '/' + file)):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
                 dev = file.split('_')[0]
 
                 dev_life = getLife(dev, organization)
@@ -317,7 +336,7 @@ def breaksOccurrencesPlot(repos_list, output_file_name):
 
                 dev_years = dev_life / 365
 
-                breaks_list = pandas.read_csv(breaks_folder + '/' + file, sep=cfg.CSV_separator)
+                breaks_list = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
 
                 NCs = len(breaks_list[breaks_list.label == 'NON_CODING'])
                 try:
@@ -356,7 +375,7 @@ def breaksOccurrencesPlot(repos_list, output_file_name):
     # sns_plot.set_yscale('log')
     #sns_plot.set(ylim=(0, 13))
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
-    sns_plot.get_figure().savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
+    sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
     sns_plot.get_figure().clf()
 
 def TFsTransitionsPercentages(transitions_summary):
@@ -504,29 +523,37 @@ def TFsBreaksDurationsPlot(repos_list, output_file_name):
     sns_plot.get_figure().savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
     sns_plot.get_figure().clf()
 
-def getTFlist(workingFolder, repos_list):
-    allTFs = pandas.DataFrame(columns = ['name', 'login'])
+def writeDevslist(mode, repos_list):
+    allDevs = pandas.DataFrame(columns = ['login'])
     for repo in repos_list:
-        repo_TF_folder = workingFolder + '/' + repo
-        repo_TF = pandas.read_csv(repo_TF_folder + '/' + cfg.TF_developers_file, sep=cfg.CSV_separator)
-        allTFs = pandas.concat([allTFs, repo_TF], ignore_index=True)
-    return allTFs
+        organization, repoName = repo.split('/')
 
-# MAIN FUNCTION
-def main(repos_list):
-    transitions_summary_file_name = 'transitionsSummary'
+        if mode.lower() == 'tf':
+            repo_devs = pandas.read_csv(os.path.join(cfg.TF_report_folder, repoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
+            allDevs = pandas.concat([allDevs, repo_devs['login']], ignore_index=True)
+        else:
+            repo_devs = pandas.read_csv(os.path.join(cfg.A80_report_folder, repoName, cfg.A80_developers_file), sep=cfg.CSV_separator)
+            allDevs = pandas.concat([allDevs, repo_devs['login']], ignore_index=True)
 
-    workingFolder = cfg.main_folder + '/' + cfg.TF_report_folder
-    TF_list = getTFlist(workingFolder, repos_list)
-    TF_list.to_csv(workingFolder + '/TF_full_list.csv',
+    allDevs.to_csv(os.path.join('..', mode.upper()+'_Results', 'devs_full_list.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
-    countOrganizationsAffected(repos_list, 'affectedSummary')
-    countOrganizationsTransitions(repos_list, transitions_summary_file_name)
-    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list')
-    breaksDistributionStats(repos_list, 'BreaksDistributions')
-    breaksOccurrencesPlot(repos_list, 'BreaksOccurrences')
-    breaksDurationsPlot(repos_list, 'DurationsDistributions')
+# MAIN FUNCTION
+def main(repos_list, mode):
+    transitions_summary_file_name = 'transitionsSummary'
+
+    writeDevslist(mode, repos_list)
+
+    outputFolder = os.path.join(cfg.main_folder, mode.upper())
+    os.makedirs(outputFolder, exist_ok=True)
+
+    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
+    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
+    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
+
+    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
+    breaksOccurrencesPlot(repos_list, 'BreaksOccurrences', mode)
+    breaksDurationsPlot(repos_list, 'DurationsDistributions', mode)
 
     TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
     TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
@@ -540,6 +567,13 @@ if __name__ == "__main__":
     os.chdir(THIS_FOLDER)
 
     ### ARGUMENTS MANAGEMENT
-    repos_list = util.getReposList()
-    main(repos_list)
+    # python script.py gitCloneURL
+    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
+    mode = sys.argv[1]
+    if(mode.lower() != 'tf') and (mode.lower() != 'a80'):
+        print('ERROR: Not valid mode! (use \'TF\' or \'A80\')')
+        sys.exit(0)
+    print('Selected Mode: ', mode.upper())
 
+    repos_list=util.getReposList()
+    main(repos_list, mode)

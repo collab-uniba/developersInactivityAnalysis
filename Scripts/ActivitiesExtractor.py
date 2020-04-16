@@ -17,7 +17,7 @@ COMPLETE = "COMPLETE"
 def getActivityExtractionStatus(folder, statusFile):
     status = "NOT-STARTED"
     if(statusFile in os.listdir(folder)):
-        with open(folder+'/'+statusFile) as f:
+        with open(os.path.join(folder, statusFile)) as f:
             content = f.readline().strip()
         status,ref_date = content.split(';')
     return status
@@ -35,19 +35,19 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
             exception_thrown = False
 
             if outputFileName in os.listdir(outputFolder):
-                issues_comments_data = pandas.read_csv(outputFolder + '/' + outputFileName, sep=cfg.CSV_separator)
+                issues_comments_data = pandas.read_csv(os.path.join(outputFolder,outputFileName), sep=cfg.CSV_separator)
             else:
                 issues_comments_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
             if tmpSavefile in os.listdir(outputFolder):
-                last_issues_page, last_issue, last_comments_page = util.getLastActivitiesPageRead(outputFolder + '/' + tmpSavefile)
+                last_issues_page, last_issue, last_comments_page = util.getLastActivitiesPageRead(os.path.join(outputFolder, tmpSavefile))
             else:
                 last_issues_page = 0
                 last_issue = ''
                 last_comments_page = 0
 
             if tmpCompletedIssues in os.listdir(outputFolder):
-                completed_issues = pandas.read_csv(outputFolder + '/' + tmpCompletedIssues, sep=cfg.CSV_separator)
+                completed_issues = pandas.read_csv(os.path.join(outputFolder, tmpCompletedIssues), sep=cfg.CSV_separator)
             else:
                 completed_issues = pandas.DataFrame(columns=['id'])
 
@@ -97,46 +97,46 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                                             util.add(issues_comments_data, [comment_id, comment.created_at, user_login])
                             util.add(completed_issues, issue_id)
                 if (len(issues_comments_data) > 0):
-                    issues_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                with open(outputFolder + '/' + tmpStatusFile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Issues Comments Extraction Complete')
             except GithubException as ghe:
                 logging.warning('Exception Occurred While Getting ISSUES COMMENTS: Github {}'.format(ghe))
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if str(ghe).startswith('500'):  # former == '500 None':
                     logging.warning('PROBLEMS ON ISSUE: {} Excluded From Comments Extraction'.format(issue_id))
                     util.add(completed_issues, issue_id)
                 if (len(issues_comments_data) > 0):
-                    issues_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
                 logging.warning('Exception Occurred While Getting ISSUES COMMENTS: Timeout')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_comments_data) > 0):
-                    issues_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except:
                 logging.warning('Execution Interrupted While Getting ISSUES COMMENTS')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_comments_data) > 0):
-                    issues_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 raise
 
@@ -153,19 +153,19 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
             exception_thrown = False
 
             if outputFileName in os.listdir(outputFolder):
-                pulls_comments_data = pandas.read_csv(outputFolder + '/' + outputFileName, sep=cfg.CSV_separator)
+                pulls_comments_data = pandas.read_csv(os.path.join(outputFolder,outputFileName), sep=cfg.CSV_separator)
             else:
                 pulls_comments_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
             if tmpSavefile in os.listdir(outputFolder):
-                last_pulls_page, last_pull, last_comments_page = util.getLastActivitiesPageRead(outputFolder + '/' + tmpSavefile)
+                last_pulls_page, last_pull, last_comments_page = util.getLastActivitiesPageRead(os.path.join(outputFolder, tmpSavefile))
             else:
                 last_pulls_page = 0
                 last_pull = ''
                 last_comments_page = 0
 
             if tmpCompletedPulls in os.listdir(outputFolder):
-                completed_pulls = pandas.read_csv(outputFolder + '/' + tmpCompletedPulls, sep=cfg.CSV_separator)
+                completed_pulls = pandas.read_csv(os.path.join(outputFolder, tmpCompletedPulls), sep=cfg.CSV_separator)
             else:
                 completed_pulls = pandas.DataFrame(columns=['id'])
 
@@ -213,46 +213,46 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                                             util.add(pulls_comments_data, [comment_id, comment.created_at, user_login])
                             util.add(completed_pulls, pull_id)
                 if (len(pulls_comments_data) > 0):
-                    pulls_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_pulls.to_csv(outputFolder + '/' + tmpCompletedPulls,
+                    completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                with open(outputFolder + '/' + tmpStatusFile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Pulls Comments Extraction Complete')
             except GithubException as ghe:
                 logging.warning('Exception Occurred While Getting PULLS COMMENTS: Github {}'.format(ghe))
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_pulls_page:{},last_pull:{},last_comment_page:{}'.format(pulls_page, pull_id, page))
                 if str(ghe).startswith('500'):  # former == '500 None':
                     logging.warning('PROBLEMS ON PULL: {} Excluded From Comments Extraction'.format(pull_id))
                     util.add(completed_pulls, pull_id)
                 if (len(pulls_comments_data) > 0):
-                    pulls_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_pulls.to_csv(outputFolder + '/' + tmpCompletedPulls,
+                    completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
                 logging.warning('Exception Occurred While Getting PULLS COMMENTS: Timeout')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_pulls_page:{},last_pull:{},last_comment_page:{}'.format(pulls_page, pull_id, page))
                 if (len(pulls_comments_data) > 0):
-                    pulls_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_pulls.to_csv(outputFolder + '/' + tmpCompletedPulls,
+                    completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except:
                 logging.warning('Execution Interrupted While Getting PULLS COMMENTS')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_pulls_page:{},last_pull:{},last_comment_page:{}'.format(pulls_page, pull_id, page))
                 if (len(pulls_comments_data) > 0):
-                    pulls_comments_data.to_csv(outputFolder + '/' + outputFileName,
+                    pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_pulls.to_csv(outputFolder + '/' + tmpCompletedPulls,
+                    completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 raise
 
@@ -271,19 +271,19 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
             exception_thrown = False
 
             if outputFileName in os.listdir(outputFolder):
-                issues_events_data = pandas.read_csv(outputFolder + '/' + outputFileName, sep=cfg.CSV_separator)
+                issues_events_data = pandas.read_csv(os.path.join(outputFolder,outputFileName), sep=cfg.CSV_separator)
             else:
                 issues_events_data = pandas.DataFrame(columns=['id', 'date', 'event', 'creator_login'])
 
             if 'issues_events_extraction.log' in os.listdir(outputFolder):
-                last_issues_page, last_issue, last_events_page = util.getLastActivitiesPageRead(outputFolder + '/' +tmpSavefile)
+                last_issues_page, last_issue, last_events_page = util.getLastActivitiesPageRead(os.path.join(outputFolder, tmpSavefile))
             else:
                 last_issues_page = 0
                 last_issue = ''
                 last_events_page = 0
 
             if tmpCompletedIssues in os.listdir(outputFolder):
-                completed_issues = pandas.read_csv(outputFolder + '/' + tmpCompletedIssues, sep=cfg.CSV_separator)
+                completed_issues = pandas.read_csv(os.path.join(outputFolder, tmpCompletedIssues), sep=cfg.CSV_separator)
             else:
                 completed_issues = pandas.DataFrame(columns=['id'])
 
@@ -331,56 +331,56 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                                             util.add(issues_events_data, [event_id, event.created_at, event.event, actor_login])
                             util.add(completed_issues, issue_id)
                 if (len(issues_events_data) > 0):
-                    issues_events_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
                                                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                with open(outputFolder + '/' + tmpStatusFile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Issues Events Extraction Complete')
 
             #        except github.UnknownObjectException:
             #            logging.warning('Exception Occurred While Getting ISSUES EVENTS: UnknownObject (Skipped)')
-            #            with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+            #            with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
             #                statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
             #            if (len(issues_events_data) > 0):
-            #                issues_events_data.to_csv(outputFolder + '/' + outputFileName, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-            #                completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+            #                issues_events_data.to_csv(os.path.join(outputFolder,outputFileName, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+            #                completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues), sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
             #            exception_thrown=True
             #            pass
             except GithubException as ghe:
                 logging.warning('Exception Occurred While Getting ISSUES EVENTS: Github {}'.format(ghe))
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if str(ghe).startswith('500'):  # former == '500 None':
                     logging.warning('PROBLEMS ON ISSUE: {} Excluded From Events Extraction'.format(issue_id))
                     util.add(completed_issues, issue_id)
                 if (len(issues_events_data) > 0):
-                    issues_events_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
                 logging.warning('Exception Occurred While Getting ISSUES EVENTS: Timeout')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_events_data) > 0):
-                    issues_events_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except:
                 logging.warning('Execution Interrupted While Getting ISSUES EVENTS')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_events_data) > 0):
-                    issues_events_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                    completed_issues.to_csv(outputFolder + '/' + tmpCompletedIssues,
+                    completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 raise
 
@@ -402,8 +402,8 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
 
             last_page_read = 0
             if outputFileName in os.listdir(outputFolder):
-                issues_prs_data = pandas.read_csv(outputFolder + '/' +outputFileName, sep=cfg.CSV_separator)
-                last_page_read = util.getLastPageRead(outputFolder + '/' + tmpSavefile)
+                issues_prs_data = pandas.read_csv(os.path.join(outputFolder, outputFileName), sep=cfg.CSV_separator)
+                last_page_read = util.getLastPageRead(os.path.join(outputFolder, tmpSavefile))
             else:
                 issues_prs_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
             try:
@@ -418,37 +418,37 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                             if (issue.user):
                                 util.waitRateLimit(gith)
                                 util.add(issues_prs_data, [issue_id, issue.created_at, issue.user.login])
-                    with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                    with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page_read:{}'.format(page))
                 if (len(issues_prs_data) > 0):
-                    issues_prs_data.to_csv(outputFolder + '/' +outputFileName,
+                    issues_prs_data.to_csv(os.path.join(outputFolder, outputFileName),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-                with open(outputFolder + '/' + tmpStatusFile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Issues/Pulls Extraction Complete')
             except GithubException as ghe:
                 logging.warning('Exception Occurred While Getting ISSUES/PULLS: Github {}'.format(ghe))
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page_read:{}'.format(page))
-                issues_prs_data.to_csv(outputFolder + '/' + outputFileName,
+                issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
                                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
                 logging.warning('Exception Occurred While Getting ISSUES/PULLS: Timeout')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(issues_prs_data) > 0):
-                    issues_prs_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 exception_thrown = True
                 pass
             except:
                 print('Execution Interrupted While Getting ISSUES/PULLS')
-                with open(outputFolder + '/' + tmpSavefile, "w") as statusSaver:
+                with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(issues_prs_data) > 0):
-                    issues_prs_data.to_csv(outputFolder + '/' + outputFileName,
+                    issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
                 raise
 
@@ -488,7 +488,7 @@ def main(gitRepoName, token):
 
     workingFolder = cfg.main_folder
 
-    devs_df = pandas.read_csv(workingFolder + '/' + gitRepoName + '/' + cfg.TF_developers_file, sep=cfg.CSV_separator)
+    devs_df = pandas.read_csv(os.path.join(workingFolder, gitRepoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
     devs = devs_df.login.tolist()
 
     util.waitRateLimit(g)
@@ -510,7 +510,7 @@ def main(gitRepoName, token):
 
         logging.info('Project {} Started Activities Extraction. {} of {}'.format(repo_name, repo_num, num_repos))
 
-        outputFolder = workingFolder + '/' + repo_name + '/Other_Activities'
+        outputFolder = os.path.join(workingFolder, repo_name, 'Other_Activities')
         os.makedirs(outputFolder, exist_ok=True)
 
         get_repo_activities(g, outputFolder, repo)  # developers is a previously used param representing the list of core developers

@@ -1,14 +1,13 @@
 ### IMPORT EXCEPTION MODULES
 
 ### IMPORT SYSTEM MODULES
-import os, pandas, csv
+import os, pandas, csv, sys
 from datetime import datetime
 import datetime as dt
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
 import Utilities as util
-windows_log_df = pandas.DataFrame(columns=['DEV','Q1','Q3','IQR','Tfov','Values'])
 
 def getFarOutThreshold(values, dev): ### If it is satisfying, move the function into UTILITIES
     import numpy
@@ -18,8 +17,6 @@ def getFarOutThreshold(values, dev): ### If it is satisfying, move the function 
     iqr = q_3rd-q_1st
     if iqr > 1:
         th = q_3rd + 3*iqr
-    line = "{};{};{};{};{};{}\n".format(dev, q_1st, q_3rd, iqr, th, values.tolist())
-    util.add(windows_log_df, line)
     return th
 
 def addToBreaksList(pauses, currentBreaks, th):
@@ -84,9 +81,6 @@ def identifyBreaks(pauses_dates_list, developer, window, shift):
                         if last_th > 0:
                             breaks_df = addToBreaksList(pauses, breaks_df, last_th)
 
-                        line = '{};{};{};{};{};{}'.format(dev,'N/A','N/A','N/A',last_th,win_pauses_list.len.tolist()) ### REMOVE, Not contributing to the algoryhtm
-                        util.add(windows_log_df, line) ### REMOVE, Not contributing to the algoryhtm
-
                         clear_breaks = cleanClearBreaks(clear_breaks, breaks_df)
                         for i, p in pauses.iterrows():
                             if (p['len'] >= window) and (p['dates'] not in clear_breaks.dates.tolist()) and (p['dates'] not in breaks_df.dates.tolist()):
@@ -112,30 +106,31 @@ def identifyBreaks(pauses_dates_list, developer, window, shift):
     return breaks_df
 
 ### MAIN FUNCTION
-def main(repos_list):
+def main(repos_list, mode):
     workingFolder = cfg.main_folder
 
     for gitRepoName in repos_list:
         organization, project = gitRepoName.split('/')
 
-        devs_df = pandas.read_csv(os.path.join(workingFolder,cfg.TF_report_folder,organization,project,cfg.TF_developers_file), sep=cfg.CSV_separator)
+        if mode.lower() == 'tf':
+            devs_df = pandas.read_csv(os.path.join(cfg.TF_report_folder, project, cfg.TF_developers_file), sep=cfg.CSV_separator)
+        else:
+            devs_df = pandas.read_csv(os.path.join(cfg.A80_report_folder, project, cfg.A80_developers_file), sep=cfg.CSV_separator)
 
         win = cfg.sliding_window_size
         shift = cfg.shift
 
         for dev in devs_df.login.tolist():
             print(dev, ' Checking')
-            with open(workingFolder + '/' + organization + '/' + cfg.pauses_dates_file_name, 'r') as f:
+            with open(os.path.join(workingFolder,organization,cfg.pauses_dates_file_name), 'r') as f:
                 pauses_dates_list = [list(map(str, rec)) for rec in csv.reader(f, delimiter=cfg.CSV_separator)]
 
             breaks_df = identifyBreaks(pauses_dates_list, dev, win, shift)
 
-            output_folder = workingFolder + '/' + organization + '/' + cfg.breaks_folder_name#/IQRcut'
+            output_folder = os.path.join(workingFolder, organization, cfg.breaks_folder_name, mode.upper())
             os.makedirs(output_folder, exist_ok=True)
 
-            breaks_df.to_csv(output_folder + '/' + dev + '_breaks.csv',
-                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-            windows_log_df.to_csv(cfg.logs_folder + '/Windows_Tfov_logs.csv',
+            breaks_df.to_csv(os.path.join(output_folder, dev + '_breaks.csv'),
                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 if __name__ == "__main__":
@@ -143,5 +138,13 @@ if __name__ == "__main__":
     os.chdir(THIS_FOLDER)
 
     ### ARGUMENTS MANAGEMENT
+    # python script.py gitCloneURL
+    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
+    mode = sys.argv[1]
+    if(mode.lower() != 'tf') and (mode.lower() != 'a80'):
+        print('ERROR: Not valid mode! (use \'TF\' or \'A80\')')
+        sys.exit(0)
+    print('Selected Mode: ', mode.upper())
+
     repos_list=util.getReposList()
-    main(repos_list)
+    main(repos_list, mode)
