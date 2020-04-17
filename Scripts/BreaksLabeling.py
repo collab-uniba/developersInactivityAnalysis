@@ -177,9 +177,10 @@ def splitBreak(break_limits, action_days, th):
     last_end = period_detail.at[0, 'dates'].split('/')[1]
     if status == 'NCUT':
         if last_end == cfg.data_collection_date:
+            status = cfg.NC
             start = period_detail.at[0, 'dates'].split('/')[1]
             size = util.daysBetween(start, last_end)
-            util.add(period_detail, [size, start+'/'+last_end, th, 'NOW', 'NON_CODING'])
+            util.add(period_detail, [size, start+'/'+last_end, th, status, previously])
         else:
             status = previously
             break_start = period_detail.at[0, 'dates'].split('/')[0]

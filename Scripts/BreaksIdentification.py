@@ -98,7 +98,7 @@ def identifyBreaks(pauses_dates_list, developer, window, shift):
                         avg_th = 7
                     for i, p in clear_breaks.iterrows():
                         print('adding remaining clear breaks from the list')
-                        if(p['dates'] not in breaks_df.dates.tolist()):
+                        if(p['dates'] not in breaks_df.dates.tolist() and p['len'] > avg_th):
                             util.add(breaks_df, [p['len'], p['dates'], avg_th])
                 print(developer, ' Done')
             else:
