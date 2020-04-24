@@ -1,0 +1,23 @@
+active:
+  to-self: Ih3rcroOnMGSitw1VyhI-24
+  to-non-coding: Ih3rcroOnMGSitw1VyhI-2
+  to-inactive: Ih3rcroOnMGSitw1VyhI-4
+
+non-coding:
+  to-self: Ih3rcroOnMGSitw1VyhI-30
+  to-inactive: Ih3rcroOnMGSitw1VyhI-9
+  to-active: Ih3rcroOnMGSitw1VyhI-7
+
+inactive:
+  to-self: Ih3rcroOnMGSitw1VyhI-26
+  to-active: Ih3rcroOnMGSitw1VyhI-17
+  to-gone: Ih3rcroOnMGSitw1VyhI-19
+  to-non-coding: Ih3rcroOnMGSitw1VyhI-21
+
+gone:
+  to-self: Ih3rcroOnMGSitw1VyhI-28
+  to-non-coding: Ih3rcroOnMGSitw1VyhI-12
+  to-active: Ih3rcroOnMGSitw1VyhI-14
+
+edge:
+  style: dashed=1;

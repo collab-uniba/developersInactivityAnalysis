@@ -1,0 +1,51 @@
+A_to_A:
+  - active
+  - to-self
+
+A_to_NC:
+  - active
+  - to-non-coding
+
+A_to_I:
+  - active
+  - to-inactive
+
+NC_to_A:
+  - non-coding
+  - to-active
+
+NC_to_NC:
+  - non-coding
+  - to-self
+
+NC_to_I:
+  - non-coding
+  - to-inactive
+
+I_to_A:
+  - inactive
+  - to-active
+
+I_to_NC:
+  - inactive
+  - to-non-coding
+
+I_to_I:
+  - inactive
+  - to-self
+
+I_to_G:
+  - inactive
+  - to-gone
+
+G_to_A:
+  - gone
+  - to-active
+
+G_to_NC:
+  - gone
+  - to-non-coding
+
+G_to_G:
+  - gone
+  - to-self
