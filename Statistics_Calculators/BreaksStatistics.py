@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import Settings as cfg
 import Utilities as util
 
+### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
+
 ### MAIN FUNCTION
 def main(repos_list):
     all_th = []
@@ -50,3 +52,6 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     repos_list = util.getReposList()
     main(repos_list)
+
+### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
+

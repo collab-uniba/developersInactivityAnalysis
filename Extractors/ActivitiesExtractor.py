@@ -4,7 +4,7 @@ from github import GithubException
 
 ### IMPORT SYSTEM MODULES
 from github import Github
-import os, sys, logging, pandas, csv
+import os, sys, logging, pandas
 from datetime import datetime
 
 ### IMPORT CUSTOM MODULES

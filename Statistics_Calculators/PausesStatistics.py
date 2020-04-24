@@ -15,6 +15,7 @@ import Utilities as util
 #with open(workingFolder + '/' + organization + '/' + project + '/ ' + cfg.pauses_dates_file_name, 'r') as f:
 #    pauses_dates_list = [list(map(str,rec)) for rec in csv.reader(f, delimiter=cfg.CSV_separator)]
 
+### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
 def getOrganizationStats(organization, project, pauses_duration_list):
     stats = [organization+'/'+project]
 
@@ -114,3 +115,5 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     repos_list=util.getReposList()
     main(repos_list)
+
+### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###

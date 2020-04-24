@@ -12,6 +12,8 @@ import datetime as dt
 import Settings as cfg
 import Utilities as util
 
+### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
+
 def getDeveloperStats(developer, organization, project, pauses_df, win):
     shift_days = 7
 
@@ -129,3 +131,5 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     repos_list=util.getReposList()
     main(repos_list)
+
+### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###

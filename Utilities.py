@@ -46,8 +46,8 @@ def waitRateLimit(ghub):
 
 def getReposList():
     """Return the repos name list at the chosen index."""
-    filename = cfg.repos_file
-    with open(filename) as rf:
+    filename = cfg.repos_file# "Resources/repositories.txt"
+    with open(os.path.join(os.path.dirname(__file__), filename)) as rf:
         reposNameList = rf.readlines()
     reposNameList = [repoName.strip() for repoName in reposNameList] # Remove whitespace characters like `\n` at the end of each line
     return reposNameList
@@ -126,7 +126,7 @@ def getFarOutThreshold(values):
 
 def parse_TF_results(results_folder, destination_folder):
     # Read TF from the Reports Folder
-    tf_report = open(results_folder + '/TF_report.txt', 'r', encoding="utf8")
+    tf_report = open(os.path.join(results_folder,'TF_report.txt'), 'r', encoding="utf8")
 
     record = False
     for line in tf_report:
@@ -139,12 +139,12 @@ def parse_TF_results(results_folder, destination_folder):
             TF_devs = pandas.DataFrame(columns=TF_header)
             record = True
     print(TF_devs)
-    TF_devs.to_csv(destination_folder + '/TF_devs_names.csv',
+    TF_devs.to_csv(os.path.join(destination_folder,'TF_devs_names.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 def map_name_login(results_folder, repo_name, destination_folder):
     # Find TF login from Names
-    TF_devs = pandas.read_csv(results_folder+'/TF_devs_names.csv', sep=cfg.CSV_separator)
+    TF_devs = pandas.read_csv(os.path.join(results_folder,'TF_devs_names.csv'), sep=cfg.CSV_separator)
     TF_names_list = TF_devs.Developer.tolist()
     TF_name_login_map = pandas.DataFrame(columns=['name', 'login'])
 
@@ -161,13 +161,13 @@ def map_name_login(results_folder, repo_name, destination_folder):
                 add(TF_name_login_map, [name, contributor.login])
         if (len(TF_name_login_map) == len(TF_names_list)):
             break;
-    TF_name_login_map.to_csv(destination_folder + '/TF_devs.csv',
+    TF_name_login_map.to_csv(os.path.join(destination_folder,'TF_devs.csv'),
                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 def unmask_TF_routine():
     repos = getReposList()
     for r in repos:
-        working_folder = cfg.main_folder+'/'+cfg.TF_report_folder+'/'+r
+        working_folder = os.path.join(cfg.main_folder, cfg.TF_report_folder,r)
         if ('TF_devs_names.csv' not in os.listdir(working_folder)):
             parse_TF_results(working_folder, working_folder)
         if ('TF_devs.csv' not in os.listdir(working_folder)):

@@ -1,6 +1,7 @@
 ### IMPORT SYSTEM MODULES
-import os, pandas, numpy, csv, sys
+import os, pandas, numpy, csv, sys, scipy
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -20,23 +21,25 @@ def getLife(dev, organization):
     return dev_life
 
 def countOrganizationsAffected(repos_list, output_file_name, mode):
-    affected_summary = pandas.DataFrame(columns=['Project', 'Contributors', 'Sampled_Contributors', 'Non-Coding', 'Inactive', 'Gone'])
+    affected_summary = pandas.DataFrame(columns=['Project', 'Contributors', 'Sampled_Contributors', 'Non-Coding', 'Inactive', 'Gone', 'Still_Gone'])
 
     non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
     inactive_affected = pandas.DataFrame(columns = ['repo','login'])
     gone_affected = pandas.DataFrame(columns = ['repo','login'])
+    still_gone_affected = pandas.DataFrame(columns = ['repo','login'])
 
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
         workingFolder = os.path.join(cfg.main_folder, organization)
 
         # Breaks occurrences
-        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected = countAffected(gitRepoName, workingFolder, mode)
+        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected, repo_still_gone = countAffected(gitRepoName, workingFolder, mode)
         util.add(affected_summary, repo_affected)
 
         non_coding_affected = pandas.concat([non_coding_affected, repo_non_coding_affected], ignore_index=True)
         inactive_affected = pandas.concat([inactive_affected, repo_inactive_affected], ignore_index=True)
         gone_affected = pandas.concat([gone_affected, repo_gone_affected], ignore_index=True)
+        still_gone_affected = pandas.concat([still_gone_affected, repo_still_gone], ignore_index=True)
 
     affected_summary.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
@@ -49,6 +52,9 @@ def countOrganizationsAffected(repos_list, output_file_name, mode):
     gone_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'gone_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
                             line_terminator='\n')
+    still_gone_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'still_gone_affected.csv'),
+                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                         line_terminator='\n')
 
 def countOrganizationsTransitions(repos_list, output_file_name, mode):
     transitions_summary = pandas.DataFrame(columns=['Project', '#breaks', 'A_to_NC', 'NC_to_A', 'A_to_I', 'I_to_A', 'NC_to_I', 'I_to_NC', 'I_to_G', 'G_to_A', 'G_to_NC'])
@@ -77,16 +83,21 @@ def countAffected(repo, workingFolder, mode):
 
     if mode.lower() == 'tf':
         core_devs = pandas.read_csv(os.path.join(cfg.TF_report_folder, repoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
-    else:
+    elif mode.lower() == 'a80':
         core_devs = pandas.read_csv(os.path.join(cfg.A80_report_folder, repoName, cfg.A80_developers_file), sep=cfg.CSV_separator)
+    elif mode.lower() == 'a80mod':
+        core_devs = pandas.read_csv(os.path.join(cfg.A80mod_report_folder, repoName, cfg.A80mod_developers_file), sep=cfg.CSV_separator)
+    else:  # elif mode.lower() == 'api':
+        core_devs = pandas.read_csv(os.path.join(cfg.A80api_report_folder, repoName, cfg.A80api_developers_file), sep=cfg.CSV_separator)
 
     affected.append(len(core_devs))
 
     dev_breaks_folder = os.path.join(workingFolder, cfg.labeled_breaks_folder_name, mode.upper())
-    non_coding = inactive = gone = 0
+    non_coding = inactive = gone = still_gone = 0
     non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
     inactive_affected = pandas.DataFrame(columns = ['repo','login'])
     gone_affected = pandas.DataFrame(columns = ['repo','login'])
+    still_gone_affected = pandas.DataFrame(columns = ['repo','login'])
     for file in os.listdir(dev_breaks_folder):
         if os.path.isfile(dev_breaks_folder + '/' + file):
             dev = file.split('_')[0]
@@ -100,10 +111,13 @@ def countAffected(repo, workingFolder, mode):
             if cfg.G in dev_breaks.label.tolist() or cfg.G + '(NOW)' in dev_breaks.label.tolist():
                 gone += 1  # Can be removed, the count is the len(gone_affected)
                 util.add(gone_affected, [repo, dev])
+            if cfg.G + '(NOW)' in dev_breaks.label.tolist():
+                still_gone += 1  # Can be removed, the count is the len(gone_affected)
+                util.add(still_gone_affected, [repo, dev])
 
-    affected += [non_coding, inactive, gone]
+    affected += [non_coding, inactive, gone, still_gone]
 
-    return affected, non_coding_affected, inactive_affected, gone_affected
+    return affected, non_coding_affected, inactive_affected, gone_affected, still_gone_affected
 
 def countTransitions(repo, workingFolder, mode):
     ''' Needed to calculate the percentages for the markov chains '''
@@ -287,7 +301,7 @@ def breaksDistributionStats(repos_list, output_file_name, mode):
     # plt.clf()
 
 def breaksDurationsPlot(repos_list, output_file_name, mode):
-    data = pandas.DataFrame(columns=['project', 'status', 'average_duration'])
+    data = pandas.DataFrame(columns=['organization', 'status', 'average_duration'])
     for repo in repos_list:
         organization, project = repo.split('/')
 
@@ -306,15 +320,86 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
         for dev_avg in I_list:
             util.add(data, [organization, 'inactive', dev_avg])
 
+    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data.csv'),
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+
     print('S: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
     print('H: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
 
+    plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal)
+    sns_plot = sns.boxplot(x='organization', y='average_duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal, linewidth=1, fliersize=1)
     sns_plot.set_yscale('log')
-    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
     sns_plot.get_figure().clf()
+
+    plt.figure(figsize=(12, 9))
+    pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
+    sns_plot = sns.boxplot(x='average_duration', y='organization', hue="status", hue_order=['non-coding', 'inactive'],
+                           data=data, palette=pal, linewidth=1, fliersize=1)
+    sns_plot.set_xscale('log')
+    sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'_H'), dpi=600)
+    sns_plot.get_figure().clf()
+
+def breaksOccurrencesPlotNotNormalized(repos_list, output_file_name, mode):
+    dataframes = []
+    for repo in repos_list:
+        organization, project = repo.split('/')
+
+        labels = ['dev', 'organization', 'NCs', 'Is', 'Gs']
+        inactivities_df = pandas.DataFrame(columns=labels)
+
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev = file.split('_')[0]
+
+                breaks_list = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                NCs = len(breaks_list[breaks_list.label == 'NON_CODING'])
+
+                Is = len(breaks_list[breaks_list.label == 'INACTIVE'])
+
+                Gs = len(breaks_list[breaks_list.label == 'GONE'])
+
+                util.add(inactivities_df, [dev, organization, NCs, Is, Gs])
+        dataframes.append(inactivities_df)
+    aggregated_data = pandas.concat(dataframes, ignore_index=True)
+
+    data = pandas.DataFrame(columns=['organization', 'status', 'occurrences'])
+    for index, dev_row in aggregated_data.iterrows():
+        if (dev_row.NCs > 0):
+            util.add(data, [dev_row.organization, 'non-coding', dev_row.NCs])
+        if (dev_row.Is > 0):
+            util.add(data, [dev_row.organization, 'inactive', dev_row.Is])
+        if (dev_row.Gs > 0):
+            util.add(data, [dev_row.organization, 'gone', dev_row.Gs])
+
+    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_occurrences_not_normalized_data.csv'),
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+
+    plt.figure(figsize=(10, 8))
+    pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
+    sns_plot = sns.boxplot(x='organization', y='occurrences', hue="status", hue_order=['non-coding', 'inactive', 'gone'],
+                           data=data, palette=pal, linewidth=1, fliersize=1)
+    # sns_plot.set_yscale('log')
+    # sns_plot.set(ylim=(0, 20))
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
+    sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
+    sns_plot.get_figure().clf()
+
+    plt.figure(figsize=(12, 9))
+    pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
+    sns_plot = sns.boxplot(x='occurrences', y='organization', hue="status",
+                           hue_order=['non-coding', 'inactive', 'gone'],
+                           data=data, palette=pal, linewidth=1, fliersize=1, orient="h")
+    # sns_plot.set_yscale('log')
+    # sns_plot.set(ylim=(0, 20))
+    # sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
+    sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'_H'), dpi=600)
+    sns_plot.get_figure().clf()
+
 
 def breaksOccurrencesPlot(repos_list, output_file_name, mode):
     dataframes = []
@@ -369,14 +454,62 @@ def breaksOccurrencesPlot(repos_list, output_file_name, mode):
         if (dev_row.Gs > 0):
             util.add(data, [dev_row.organization, 'gone', dev_row.Gs])
 
+    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_occurrences_data.csv'),
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+
+    plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
     sns_plot = sns.boxplot(x='organization', y='occurrences', hue="status", hue_order=['non-coding', 'inactive', 'gone'],
-                           data=data, palette=pal)
+                           data=data, palette=pal, linewidth=1, fliersize=1)
     # sns_plot.set_yscale('log')
-    #sns_plot.set(ylim=(0, 13))
-    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20)
+    # sns_plot.set(ylim=(0, 50))
+    sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
     sns_plot.get_figure().clf()
+
+def meanDifferenceTest(repos_list, output_file_name, mode):
+    data = pandas.DataFrame(columns=['project', 'non_coding', 'inactive', 'both', 'w', 'p'])
+    for repo in repos_list:
+        organization, project = repo.split('/')
+
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        NC_avgs = pandas.DataFrame(columns=['dev', 'avg_duration'])
+        I_avgs = pandas.DataFrame(columns=['dev', 'avg_duration'])
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev = file.split('_')[0]
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                NC_dev_avg = dev_breaks[dev_breaks.label == 'NON_CODING']['len'].mean()
+                if NC_dev_avg > 0:
+                    util.add(NC_avgs, [dev, NC_dev_avg])
+
+                I_dev_avg = dev_breaks[dev_breaks.label == 'INACTIVE']['len'].mean()
+                if I_dev_avg > 0:
+                    util.add(I_avgs, [dev, I_dev_avg])
+
+        NC_devs = len(NC_avgs)
+        I_devs = len(I_avgs)
+
+        common = list(set(NC_avgs['dev'].tolist()).intersection(set(I_avgs['dev'].tolist())))
+        common_devs = len(common)
+
+        common_df = pandas.merge(NC_avgs, I_avgs, how='inner', on=['dev'])
+        NC_common_list = common_df['avg_duration_x'].tolist()
+        I_common_list = common_df['avg_duration_y'].tolist()
+
+        ### MAKE TEST
+        try:
+            w_val, w_p = scipy.stats.wilcoxon(NC_common_list, I_common_list, correction = True)
+        except:
+            print('{} W not available. NC: {}, I: {}, Common: {}'.format(project, NC_devs, I_devs, common_devs))
+            w_val = w_p = None
+
+        ### ADD RESULTING ROW TO data
+        util.add(data, [project, NC_devs, I_devs, common_devs, w_val, w_p])
+
+    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
+                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 def TFsTransitionsPercentages(transitions_summary):
     ''' Calculates the Chain for all the TF '''
@@ -489,7 +622,7 @@ def TFsBreaksOccurrencesPlot(repos_list, output_file_name):
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
     sns_plot = sns.boxplot(x='organization', y='occurrences', hue="status",
                            hue_order=['non-coding', 'inactive', 'gone'],
-                           data=data, palette=pal)
+                           data=data, palette=pal, linewidth=1, fliersize=1)
     # sns_plot.set_yscale('log')
     # sns_plot.set(ylim=(0, 10))
     sns_plot.set_xticklabels(sns_plot.get_xticklabels())
@@ -517,46 +650,60 @@ def TFsBreaksDurationsPlot(repos_list, output_file_name):
             util.add(data, ['TF Developers', 'inactive', dev_avg])
 
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal)
+    sns_plot = sns.boxplot(x='project', y='average_duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal, linewidth=1, fliersize=1)
     sns_plot.set_yscale('log')
     sns_plot.set_xticklabels(sns_plot.get_xticklabels())
     sns_plot.get_figure().savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
     sns_plot.get_figure().clf()
 
 def writeDevslist(mode, repos_list):
-    allDevs = pandas.DataFrame(columns = ['login'])
+    allDevs = pandas.DataFrame(columns = ['login', 'project'])
+    output_folder = '.'
+
     for repo in repos_list:
         organization, repoName = repo.split('/')
 
         if mode.lower() == 'tf':
             repo_devs = pandas.read_csv(os.path.join(cfg.TF_report_folder, repoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
-            allDevs = pandas.concat([allDevs, repo_devs['login']], ignore_index=True)
-        else:
+            output_folder = cfg.TF_report_folder
+        elif mode.lower() == 'a80':
             repo_devs = pandas.read_csv(os.path.join(cfg.A80_report_folder, repoName, cfg.A80_developers_file), sep=cfg.CSV_separator)
-            allDevs = pandas.concat([allDevs, repo_devs['login']], ignore_index=True)
+            output_folder = cfg.A80_report_folder
+        elif mode.lower() == 'a80mod':
+            repo_devs = pandas.read_csv(os.path.join(cfg.A80mod_report_folder, repoName, cfg.A80mod_developers_file), sep=cfg.CSV_separator)
+            output_folder = cfg.A80mod_report_folder
+        else:  # elif mode.lower() == 'a80api':
+            repo_devs = pandas.read_csv(os.path.join(cfg.A80api_report_folder, repoName, cfg.A80api_developers_file), sep=cfg.CSV_separator)
+            output_folder = cfg.A80api_report_folder
 
-    allDevs.to_csv(os.path.join('..', mode.upper()+'_Results', 'devs_full_list.csv'),
+        for i, d in repo_devs.iterrows():
+            util.add(allDevs, [d['login'], repo])
+
+    allDevs.to_csv(os.path.join(output_folder, 'devs_full_list.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 # MAIN FUNCTION
 def main(repos_list, mode):
     transitions_summary_file_name = 'transitionsSummary'
 
-    writeDevslist(mode, repos_list)
+    #writeDevslist(mode, repos_list)
 
     outputFolder = os.path.join(cfg.main_folder, mode.upper())
     os.makedirs(outputFolder, exist_ok=True)
 
-    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
-    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
-    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
+    #countOrganizationsAffected(repos_list, 'affectedSummary', mode)
+    #countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
+    #organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
 
-    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
-    breaksOccurrencesPlot(repos_list, 'BreaksOccurrences', mode)
-    breaksDurationsPlot(repos_list, 'DurationsDistributions', mode)
+    #breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
+    breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
+    breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
+    breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
 
-    TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
-    TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
+    #meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
+
+    #TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
+    #TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
 
 #util.makeMeanDiffTests(organizations, main_path)
 
@@ -570,8 +717,8 @@ if __name__ == "__main__":
     # python script.py gitCloneURL
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
     mode = sys.argv[1]
-    if(mode.lower() != 'tf') and (mode.lower() != 'a80'):
-        print('ERROR: Not valid mode! (use \'TF\' or \'A80\')')
+    if mode.lower() not in cfg.supported_modes:
+        print('ERROR: Not valid mode! ({})'.format(cfg.supported_modes))
         sys.exit(0)
     print('Selected Mode: ', mode.upper())
 

@@ -1,12 +1,14 @@
 ### GitHub Settings
 items_per_page = 100  # The number of results in each page of the GitHub results. Max: 100
-tokens_file = "../Resources/tokens.txt"  # The relative path of the file containing the list of the github tokens
+tokens_file = "Resources/tokens.txt"  # The relative path of the file containing the list of the github tokens
 
 ### Extraction Settings
 data_collection_date = "2020-01-15"  # The max date to consider for the commits and activities extraction
-repos_file = "../Resources/repositories.txt"  # The relative path of the file containing the list of the repos <organization/repo>
+repos_file = "Resources/repositories.txt"  # The relative path of the file containing the list of the repos <organization/repo>
 main_folder = "../Organizations"  # The main folder where results will be archived
 logs_folder = "../logs"  # The folder where the logs will be archived
+
+supported_modes = ['tf', 'a80', 'a80mod', 'a80api']
 
 TF_report_folder = "../TF_Results"  # The folder where the TF/core developers are archived
 TF_developers_file = "TF_devs.csv" # The file where the TF/core developers are listed as <name;login>ù
@@ -14,6 +16,13 @@ TF_developers_file = "TF_devs.csv" # The file where the TF/core developers are l
 
 A80_report_folder = "../A80_Results"  # The folder where the TF/core developers are archived
 A80_developers_file = "A80_devs.csv" # The file where the TF/core developers are listed as <name;login>
+
+modTh = 5
+A80mod_report_folder = "../A80MOD_Results" # The folder where the TF/core developers are archived
+A80mod_developers_file = "A80mod_devs.csv" # The file where the TF/core developers are listed as <name;login>
+
+A80api_report_folder = "../A80API_Results" # The folder where the TF/core developers are archived
+A80api_developers_file = "A80api_devs.csv" # The file where the TF/core developers are listed as <name;login>
 
 commit_list_file_name = "commit_list.csv"  # The file where the repo commits will be archived
 commit_history_table_file_name = "commit_history_table.csv"  # The file where the 'devs by dates' table for each repo will be archived

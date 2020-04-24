@@ -114,8 +114,12 @@ def main(repos_list, mode):
 
         if mode.lower() == 'tf':
             devs_df = pandas.read_csv(os.path.join(cfg.TF_report_folder, project, cfg.TF_developers_file), sep=cfg.CSV_separator)
-        else:
+        elif mode.lower() == 'a80':
             devs_df = pandas.read_csv(os.path.join(cfg.A80_report_folder, project, cfg.A80_developers_file), sep=cfg.CSV_separator)
+        elif mode.lower() == 'a80mod':
+            devs_df = pandas.read_csv(os.path.join(cfg.A80mod_report_folder, project, cfg.A80mod_developers_file), sep=cfg.CSV_separator)
+        else: # elif mode.lower() == 'api':
+            devs_df = pandas.read_csv(os.path.join(cfg.A80api_report_folder, project, cfg.A80api_developers_file), sep=cfg.CSV_separator)
 
         win = cfg.sliding_window_size
         shift = cfg.shift
@@ -141,8 +145,8 @@ if __name__ == "__main__":
     # python script.py gitCloneURL
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
     mode = sys.argv[1]
-    if(mode.lower() != 'tf') and (mode.lower() != 'a80'):
-        print('ERROR: Not valid mode! (use \'TF\' or \'A80\')')
+    if mode.lower() not in cfg.supported_modes:
+        print('ERROR: Not valid mode! ({})'.format(cfg.supported_modes))
         sys.exit(0)
     print('Selected Mode: ', mode.upper())
 

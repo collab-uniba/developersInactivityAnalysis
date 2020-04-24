@@ -267,8 +267,8 @@ if __name__ == "__main__":
     # python script.py gitCloneURL
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
     mode = sys.argv[1]
-    if(mode.lower() != 'tf') and (mode.lower() != 'a80'):
-        print('ERROR: Not valid mode! (use \'TF\' or \'A80\')')
+    if mode.lower() not in cfg.supported_modes:
+        print('ERROR: Not valid mode! ({})'.format(cfg.supported_modes))
         sys.exit(0)
     print('Selected Mode: ', mode.upper())
 

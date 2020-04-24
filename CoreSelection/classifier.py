@@ -95,8 +95,6 @@ class BasicFileTypeClassifier:
 #             return self.CFG_BUILD_OTHER
 
         return self.CFG_BUILD_OTHER
-        
- 
 
 if __name__ == "__main__":
     bc = BasicFileTypeClassifier()
