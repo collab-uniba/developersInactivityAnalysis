@@ -250,8 +250,8 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
         organization = proj['Project'].split('/')[0]
         matrix.to_csv(os.path.join(destinationFolder, organization + '_markov.csv'),
                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-    TFs_row = TFsTransitionsPercentages(transitions_summary)
-    util.add(chains_list, TFs_row)
+    #Total_row = TotalTransitionsPercentages(transitions_summary)
+    #util.add(chains_list, Total_row)
     last_row = ['AVG']
     last_row += chains_list[chains_list['Project'] != 'Total'].mean().tolist()
     print(chains_list, len(last_row), len(chains_list.columns), last_row)
@@ -517,7 +517,7 @@ def meanDifferenceTest(repos_list, output_file_name, mode):
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
-def TFsTransitionsPercentages(transitions_summary):
+def TotalTransitionsPercentages(transitions_summary):
     ''' Calculates the Chain for all the TF '''
     total = transitions_summary.sum()
 
@@ -566,7 +566,7 @@ def TFsTransitionsPercentages(transitions_summary):
     AtoNC = total['A_to_NC'] / in_A * 100
     AtoI = total['A_to_I'] / in_A * 100
 
-    row = ['TFs', AtoA, AtoNC, AtoI, NCtoA, NCtoNC, NCtoI, ItoA, ItoNC, ItoI, ItoG, GtoA, GtoNC, GtoG]
+    row = ['Total', AtoA, AtoNC, AtoI, NCtoA, NCtoNC, NCtoI, ItoA, ItoNC, ItoI, ItoG, GtoA, GtoNC, GtoG]
     return row
 
 def TFsBreaksOccurrencesPlot(repos_list, output_file_name):
