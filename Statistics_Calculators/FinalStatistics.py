@@ -4,6 +4,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 ### IMPORT CUSTOM MODULES
+from flake8.options.aggregator import aggregate_options
+
 import Settings as cfg
 import Utilities as util
 
@@ -66,6 +68,10 @@ def countOrganizationsTransitions(repos_list, output_file_name, mode):
         # Transition occurrences
         repo_transitions = countTransitions(gitRepoName, workingFolder, mode)
         util.add(transitions_summary, repo_transitions)
+
+    aggregated_row = ['Total']
+    aggregated_row += transitions_summary.sum().tolist()[1:]
+    util.add(transitions_summary, aggregated_row)
 
     transitions_summary.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
@@ -247,7 +253,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
     TFs_row = TFsTransitionsPercentages(transitions_summary)
     util.add(chains_list, TFs_row)
     last_row = ['AVG']
-    last_row += chains_list.mean().tolist()
+    last_row += chains_list[chains_list['Project'] != 'Total'].mean().tolist()
     print(chains_list, len(last_row), len(chains_list.columns), last_row)
     util.add(chains_list, last_row)
     chains_list.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
@@ -686,21 +692,21 @@ def writeDevslist(mode, repos_list):
 def main(repos_list, mode):
     transitions_summary_file_name = 'transitionsSummary'
 
-    #writeDevslist(mode, repos_list)
+    writeDevslist(mode, repos_list)
 
     outputFolder = os.path.join(cfg.main_folder, mode.upper())
     os.makedirs(outputFolder, exist_ok=True)
 
-    #countOrganizationsAffected(repos_list, 'affectedSummary', mode)
-    #countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
-    #organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
+    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
+    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
+    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
 
-    #breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
+    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
     breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
     breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
     breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
 
-    #meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
+    meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
 
     #TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
     #TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
