@@ -173,10 +173,38 @@ def unmask_TF_routine():
         if ('TF_devs.csv' not in os.listdir(working_folder)):
             map_name_login(working_folder,r,working_folder)
 
+def checkTFCoverage(projectName, devs):
+    ''' Checks for the given project, the % of TFs in the given devs list '''
+    TFfolder = os.path.join(cfg.TF_report_folder.split('/')[1], projectName)
+    TFs_file = os.path.join(TFfolder, cfg.TF_developers_file)
+
+    TFs = pandas.read_csv(TFs_file, sep=cfg.CSV_separator)['login'].tolist()
+    TFs = [d.lower() for d in TFs]
+    num_TFs = len(TFs)
+
+    devs = [d.lower() for d in devs]
+    num_devs = len(devs)
+
+    intersection = len(set(TFs).intersection(set(devs)))
+    perc = (intersection/num_TFs) * 100
+
+    return num_TFs, num_devs, perc
+
 ### MAIN FUNCTION
 def main():
     print("Utilities Activated")
+#    reposList = getReposList()
+#    for gitRepoName in reposList:
+#        organization, project = gitRepoName.split('/')
+#        devs_file = os.path.join(cfg.A80api_report_folder.split('/')[1], project, cfg.A80api_developers_file)
+#        devs = pandas.read_csv(devs_file, sep=cfg.CSV_separator)['login'].tolist()
+#
+#        TFs, DVS, INTR = checkTFCoverage(project, devs)
+#        print('Project: {}, TFs: {}, A80API: {}, TF in A80API: {}'.format(project, TFs, DVS, INTR))
 
 if __name__ == "__main__":
+    THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(THIS_FOLDER)
+
     main()
 

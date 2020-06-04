@@ -139,24 +139,43 @@ def splitBreak(break_limits, action_days, th):
         elif (status == 'INACTIVE') | (status == 'GONE'):
             previously = status
             size = util.daysBetween(action_days[i], action_days[i + 1])
-            if size > th:
-                status = 'NON_CODING'
-                dates = action_days[i] + '/' + action_days[i + 1]
-                util.add(period_detail, [size, dates, th, status, previously])
-            else:
+            if size < th:
                 status = 'NCUT'
                 period_start = action_days[i]
+            else:
+                residual = size - (th + 1)
+                if residual > th:
+                    # The sub-break is actually made of 2 breaks: Non-coding + Inactive/Gone
+                    status = 'NON_CODING'
+                    final_date = (datetime.strptime(action_days[i], "%Y-%m-%d") + dt.timedelta(days=(th + 1))).strftime("%Y-%m-%d")
+                    dates = action_days[i] + '/' + final_date
+                    actual_size = util.daysBetween(action_days[i], final_date)
+                    util.add(period_detail, [actual_size, dates, th, status, previously])
+
+                    previously = status
+                    if residual > cfg.gone_threshold:
+                        status = 'GONE'
+                    else:
+                        status = 'INACTIVE'
+                    dates = final_date + '/' + action_days[i + 1]
+                    second_size = util.daysBetween(final_date, action_days[i + 1])
+                    util.add(period_detail, [second_size, dates, th, status, previously])
+                else:
+                    # The sub-break becomes a Non-coding
+                    status = 'NON_CODING'
+                    dates = action_days[i] + '/' + action_days[i + 1]
+                    util.add(period_detail, [size, dates, th, status, previously])
         elif status == 'NON_CODING':
             previously = status
             size = util.daysBetween(action_days[i], action_days[i + 1])
-            if size > 2 * th:
-                NC_to_G_threshold = th + cfg.gone_threshold
-                if size > NC_to_G_threshold:
+            if size > th:
+                if size > cfg.gone_threshold:
                     status = 'GONE'
                 else:
                     status = 'INACTIVE'
-                start = (datetime.strptime(action_days[i], "%Y-%m-%d") + dt.timedelta(days=th)).strftime("%Y-%m-%d")
-                dates = start + '/' + action_days[i + 1]
+                #start = (datetime.strptime(action_days[i], "%Y-%m-%d") + dt.timedelta(days=th)).strftime("%Y-%m-%d")
+                #dates = start + '/' + action_days[i + 1]
+                dates = action_days[i] + '/' + action_days[i + 1]
                 util.add(period_detail, [size, dates, th, status, previously])
             else:
                 break_start = period_detail.at[0, 'dates'].split('/')[0]
@@ -167,11 +186,32 @@ def splitBreak(break_limits, action_days, th):
                 # Same status
                 # Same previously
         else:  # (status=='NCUT')
+            diff = util.daysBetween(action_days[i], action_days[i + 1])
             size = util.daysBetween(period_start, action_days[i + 1])
             if size > th:
-                status = 'NON_CODING'
-                dates = period_start + '/' + action_days[i + 1]
-                util.add(period_detail, [size, dates, th, status, previously])
+                residual = size - (th + 1)
+                if residual > th:
+                    # The sub-break is actually made of 2 breaks: Non-coding + Inactive/Gone
+                    status = 'NON_CODING'
+                    final_date = (datetime.strptime(period_start, "%Y-%m-%d") + dt.timedelta(days=(th + 1))).strftime("%Y-%m-%d")
+                    dates = period_start + '/' + final_date
+                    actual_size = util.daysBetween(period_start, final_date)
+                    util.add(period_detail, [actual_size, dates, th, status, previously])
+
+                    previously = status
+                    if residual > cfg.gone_threshold:
+                        status = 'GONE'
+                    else:
+                        status = 'INACTIVE'
+                    dates = final_date + '/' + action_days[i + 1]
+                    second_size = util.daysBetween(final_date, action_days[i + 1])
+                    util.add(period_detail, [second_size, dates, th, status, previously])
+                else:
+                    # The sub-break becomes a Non-coding
+                    status = 'NON_CODING'
+                    dates = period_start + '/' + action_days[i + 1]
+                    actual_size = util.daysBetween(period_start, action_days[i + 1])
+                    util.add(period_detail, [actual_size, dates, th, status, previously])
     # A Final status 'INACTIVE', 'GONE' or 'NCUT' means an UNFREEZING ('NCUT' is not written into the detail list)
 
     last_end = period_detail.at[0, 'dates'].split('/')[1]
