@@ -320,15 +320,16 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                                     util.waitRateLimit(gith)
                                     event_id = event.id
                                     if (event_id not in issues_events_data.id.tolist()):
-                                        if (event.actor):
-                                            #util.waitRateLimit(gith)
-                                            actor_login = event.actor.login
-                                            #if (actor_login in developers):
-                                            #    util.waitRateLimit(gith)
-                                            #    util.add(issues_events_data, [event_id, event.created_at, event.event, actor_login])
-                                            # Uncomment the lines above and remove the 2 lines below
-                                            #util.waitRateLimit(gith)
-                                            util.add(issues_events_data, [event_id, event.created_at, event.event, actor_login])
+                                        event_label = event.event
+                                        if event_label != 'mentioned':
+                                            if event_label in ['assigned', 'unassigned']:
+                                                if event.assigner:
+                                                    actor_login = event.assigner.login
+                                                    util.add(issues_events_data, [event_id, event.created_at, event_label, actor_login])
+                                            else:
+                                                if event.actor:
+                                                    actor_login = event.actor.login
+                                                    util.add(issues_events_data, [event_id, event.created_at, event_label, actor_login])
                             util.add(completed_issues, issue_id)
                 if (len(issues_events_data) > 0):
                     issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
