@@ -397,6 +397,90 @@ def breaksDurationsDescriptive(repos_list, output_file_name, mode):
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
+def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
+    data = pandas.DataFrame(columns=['organization',
+                                     'NC_min', 'NC_max', 'NC_avg', 'NC_StDev', 'NC_var', 'NC_Q1', 'NC_median', 'NC_Q3',
+                                     'I_min', 'I_max', 'I_avg', 'I_StDev', 'I_var', 'I_Q1', 'I_median', 'I_Q3',
+                                     'G_min', 'G_max', 'G_avg', 'G_StDev', 'G_var', 'G_Q1', 'G_median', 'G_Q3'])
+
+    NC_all = []
+    I_all = []
+    G_all = []
+    for repo in repos_list:
+        organization, project = repo.split('/')
+
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        NC = []
+        I = []
+        G = []
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                # Does not consider the (NOW)s because we don't know how long il will actually last
+                NC.append(len(dev_breaks[dev_breaks.label == 'NON_CODING']['len'].tolist()))
+                I.append(len(dev_breaks[dev_breaks.label == 'INACTIVE']['len'].tolist()))
+                G.append(len(dev_breaks[dev_breaks.label == 'GONE']['len'].tolist()))
+
+        util.add(data, [organization,
+                        min(NC) if len(NC) > 0 else 'NA',
+                        max(NC) if len(NC) > 0 else 'NA',
+                        numpy.mean(NC) if len(NC) > 0 else 'NA',
+                        numpy.std(NC) if len(NC) > 0 else 'NA',
+                        numpy.var(NC) if len(NC) > 0 else 'NA',
+                        numpy.percentile(NC, 25) if len(NC) > 0 else 'NA',
+                        numpy.median(NC) if len(NC) > 0 else 'NA',
+                        numpy.percentile(NC, 75) if len(NC) > 0 else 'NA',
+                        min(I) if len(I) > 0 else 'NA',
+                        max(I) if len(I) > 0 else 'NA',
+                        numpy.mean(I) if len(I) > 0 else 'NA',
+                        numpy.std(I) if len(I) > 0 else 'NA',
+                        numpy.var(I) if len(I) > 0 else 'NA',
+                        numpy.percentile(I, 25) if len(I) > 0 else 'NA',
+                        numpy.median(I) if len(I) > 0 else 'NA',
+                        numpy.percentile(I, 75) if len(I) > 0 else 'NA',
+                        min(G) if len(G) > 0 else 'NA',
+                        max(G) if len(G) > 0 else 'NA',
+                        numpy.mean(G) if len(G) > 0 else 'NA',
+                        numpy.std(G) if len(G) > 0 else 'NA',
+                        numpy.var(G) if len(G) > 0 else 'NA',
+                        numpy.percentile(G, 25) if len(G) > 0 else 'NA',
+                        numpy.median(G) if len(G) > 0 else 'NA',
+                        numpy.percentile(G, 75) if len(G) > 0 else 'NA'])
+
+        NC_all += NC
+        I_all += I
+        G_all += G
+
+    util.add(data, ['Total',
+                    min(NC_all) if len(NC_all) > 0 else 'NA',
+                    max(NC_all) if len(NC_all) > 0 else 'NA',
+                    numpy.mean(NC_all) if len(NC_all) > 0 else 'NA',
+                    numpy.std(NC_all) if len(NC_all) > 0 else 'NA',
+                    numpy.var(NC_all) if len(NC_all) > 0 else 'NA',
+                    numpy.percentile(NC_all, 25) if len(NC_all) > 0 else 'NA',
+                    numpy.median(NC_all) if len(NC_all) > 0 else 'NA',
+                    numpy.percentile(NC_all, 75) if len(NC_all) > 0 else 'NA',
+                    min(I_all) if len(I_all) > 0 else 'NA',
+                    max(I_all) if len(I_all) > 0 else 'NA',
+                    numpy.mean(I_all) if len(I_all) > 0 else 'NA',
+                    numpy.std(I_all) if len(I_all) > 0 else 'NA',
+                    numpy.var(I_all) if len(I_all) > 0 else 'NA',
+                    numpy.percentile(I_all, 25) if len(I_all) > 0 else 'NA',
+                    numpy.median(I_all) if len(I_all) > 0 else 'NA',
+                    numpy.percentile(I_all, 75) if len(I_all) > 0 else 'NA',
+                    min(G_all) if len(G_all) > 0 else 'NA',
+                    max(G_all) if len(G_all) > 0 else 'NA',
+                    numpy.mean(G_all) if len(G_all) > 0 else 'NA',
+                    numpy.std(G_all) if len(G_all) > 0 else 'NA',
+                    numpy.var(G_all) if len(G_all) > 0 else 'NA',
+                    numpy.percentile(G_all, 25) if len(G_all) > 0 else 'NA',
+                    numpy.median(G_all) if len(G_all) > 0 else 'NA',
+                    numpy.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
+
+    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+
 def breaksDurationsPlot(repos_list, output_file_name, mode):
     data = pandas.DataFrame(columns=['organization', 'status', 'average_duration'])
     for repo in repos_list:
@@ -797,6 +881,7 @@ def main(repos_list, mode):
     breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
     breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
     breaksDurationsDescriptive(reversed(repos_list), 'DurationsDescriptiveStats', mode)
+    breaksOccurrencesDescriptive(reversed(repos_list), 'OccurrencesDescriptiveStats', mode)
 
     #meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
 
