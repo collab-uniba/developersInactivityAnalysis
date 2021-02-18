@@ -126,7 +126,7 @@ def main(repos_list, mode):
 
         for dev in devs_df.login.tolist():
             print(dev, ' Checking')
-            with open(os.path.join(workingFolder,organization,cfg.pauses_dates_file_name), 'r') as f:
+            with open(os.path.join(workingFolder,organization,"coding_pauses_dates.csv"), 'r') as f:
                 pauses_dates_list = [list(map(str, rec)) for rec in csv.reader(f, delimiter=cfg.CSV_separator)]
 
             breaks_df = identifyBreaks(pauses_dates_list, dev, win, shift)

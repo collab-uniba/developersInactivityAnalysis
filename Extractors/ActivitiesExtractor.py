@@ -515,8 +515,8 @@ def main(gitRepoName, token):
         os.makedirs(outputFolder, exist_ok=True)
 
         get_repo_activities(g, outputFolder, repo)  # developers is a previously used param representing the list of core developers
-        logging.info('Commit Extraction COMPLETE for {} of {} Side Projects'.format(repo_num, num_repos))
-    logging.info('Commit Extraction SUCCESSFULLY COMPLETED')
+        logging.info('Activities Extraction COMPLETE for {} of {} Side Projects'.format(repo_num, num_repos))
+    logging.info('Activities Extraction SUCCESSFULLY COMPLETED')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
