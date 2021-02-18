@@ -1,6 +1,6 @@
 ### GitHub Settings
 items_per_page = 100  # The number of results in each page of the GitHub results. Max: 100
-tokens_file = "Resources/tokens.txt"  # The relative path of the file containing the list of the github tokens
+tokens_file = "../Resources/tokens.txt"  # The relative path of the file containing the list of the github tokens
 
 ### Extraction Settings
 data_collection_date = "2020-01-15"  # The max date to consider for the commits and activities extraction

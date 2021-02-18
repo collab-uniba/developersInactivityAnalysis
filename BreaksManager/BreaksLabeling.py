@@ -13,11 +13,14 @@ COMPLETE = "COMPLETE"
 def get_issues_prs(organizationFolder, developer_login):
     issues_prs_data = pandas.DataFrame(columns=['id', 'date', 'creator_login'])
 
+    prs_data = pandas.read_csv(organizationFolder + '/prs_list.csv', sep=cfg.CSV_separator)
+
     for dir in os.listdir(organizationFolder):
         path = os.path.join(organizationFolder,dir)
         if os.path.isdir(path):
             try:
                 issues_prs = pandas.read_csv(path + '/Other_Activities/' + cfg.issue_pr_list_file_name, sep=cfg.CSV_separator)
+                issues_prs = issues_prs[~issues_prs.id.isin(prs_data.id)]
                 issues_prs = issues_prs[issues_prs.creator_login == developer_login]
                 issues_prs_data = pandas.concat([issues_prs_data, issues_prs], ignore_index=True)
             except:
@@ -88,9 +91,9 @@ def get_activities(organizationFolder, developer_login):
     pulls_comments = get_pulls_comments_dev(organizationFolder, developer_login)
     issue_events = get_issue_events_dev(organizationFolder, developer_login)
 
-    commit_history = pandas.read_csv(os.path.join(organizationFolder,cfg.commit_history_table_file_name), sep=cfg.CSV_separator)
+    coding_history = pandas.read_csv(os.path.join(organizationFolder,'coding_history_table.csv'), sep=cfg.CSV_separator)
 
-    column_names = ['action'] + commit_history.columns[1:].tolist()
+    column_names = ['action'] + coding_history.columns[1:].tolist()
 
     ### Add Action Timeline to the Table
     actions_data = []
@@ -254,10 +257,11 @@ def main(repos_list, mode):
                 breaks_df = pandas.read_csv(os.path.join(breaksFolder,file), sep=cfg.CSV_separator)
 
                 devActionsFile = '{}_actions_table.csv'.format(dev)
-                if devActionsFile in actionsFolder:
-                    user_actions = pandas.read_csv(os.path.join(actionsFolder,devActionsFile), sep=cfg.CSV_separator)
-                else:
-                    user_actions = get_activities(workingFolder, dev)
+                #if devActionsFile in actionsFolder:
+                #    user_actions = pandas.read_csv(os.path.join(actionsFolder,devActionsFile), sep=cfg.CSV_separator)
+                #else:
+                #    user_actions = get_activities(workingFolder, dev)
+                user_actions = get_activities(workingFolder, dev)
 
                 labeled_breaks = pandas.DataFrame(columns=['len', 'dates', 'th', 'label', 'previously'])
                 for i, b in breaks_df.iterrows():
