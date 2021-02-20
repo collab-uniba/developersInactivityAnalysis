@@ -81,8 +81,8 @@ def countAffected(repo, workingFolder, mode):
     affected = [repo]
 
     main_repo_folder = os.path.join(cfg.main_folder, repo)
-    commit_history_table = pandas.read_csv(main_repo_folder + '/' + cfg.commit_history_table_file_name, sep=cfg.CSV_separator)
-    affected.append(len(commit_history_table))
+    coding_history_table = pandas.read_csv(main_repo_folder + '/' + cfg.coding_history_table_file_name, sep=cfg.CSV_separator)
+    affected.append(len(coding_history_table))
 
     if mode.lower() == 'tf':
         core_devs = pandas.read_csv(os.path.join(cfg.TF_report_folder, repoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
@@ -488,7 +488,7 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
 
     # repos_list = sort_by_num_of_NC_breaks(repos_list, 'median')
     # repos_list = sort_by_num_of_breaks(repos_list, 'mean')
-    repos_list = sort_by_num_of_NC_breaks_both(repos_list, 'median')
+    repos_list = sort_by_num_of_NC_breaks_both(repos_list, mode, 'median')
 
 ### END SORTING ###
 
@@ -543,7 +543,7 @@ def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
 
     #repos_list = sort_by_num_of_NC_breaks(repos_list, 'median')
     #repos_list = sort_by_num_of_breaks(repos_list, 'mean')
-    repos_list = sort_by_num_of_NC_breaks_both(repos_list, 'median')
+    repos_list = sort_by_num_of_NC_breaks_both(repos_list, mode, 'median')
 
 ### END SORTING ###
 
@@ -941,19 +941,19 @@ def main(repos_list, mode):
     os.makedirs(outputFolder, exist_ok=True)
 
     countOrganizationsAffected(repos_list, 'affectedSummary', mode)
-#    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
-#    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
+    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
+    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
 
-#    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
-#    test_breaks_duration_normality(repos_list, 'BreaksDurartionNormalityTest', mode)
-#    breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
-#    breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
+    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
+    test_breaks_duration_normality(repos_list, 'BreaksDurartionNormalityTest', mode)
+    breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
+    breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
     breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
     breaksDurationsPlotBoth(reversed(repos_list), 'DurationsDistributionsBoth', mode)
-#    breaksDurationsDescriptive(reversed(repos_list), 'DurationsDescriptiveStats', mode)
-#    breaksOccurrencesDescriptive(reversed(repos_list), 'OccurrencesDescriptiveStats', mode)
+    breaksDurationsDescriptive(reversed(repos_list), 'DurationsDescriptiveStats', mode)
+    breaksOccurrencesDescriptive(reversed(repos_list), 'OccurrencesDescriptiveStats', mode)
 
-    #meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
+    meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
 
     #TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
     #TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
@@ -984,7 +984,7 @@ def sort_by_num_of_breaks(repos_list, metric):
 
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
-def sort_by_num_of_NC_breaks(repos_list, metric):
+def sort_by_num_of_NC_breaks(repos_list, mode, metric):
 ### Sort the list by Mean Number of Breaks
     repos_dict = {}
     for repo in repos_list:
@@ -1003,7 +1003,7 @@ def sort_by_num_of_NC_breaks(repos_list, metric):
             repos_dict[repo] = numpy.nanmean(NC_list)
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
-def sort_by_num_of_NC_breaks_both(repos_list, mode):
+def sort_by_num_of_NC_breaks_both(repos_list, mode, metric):
 ### Sort the list by Median Number of Breaks
     repos_dict = {}
     for repo in repos_list:
@@ -1024,7 +1024,10 @@ def sort_by_num_of_NC_breaks_both(repos_list, mode):
 
                 #Does not consider the (NOW)s because we don't know how long il will actually last
                 NC_list.append(dev_breaks[dev_breaks.label == 'NON_CODING'].len.mean())
-        repos_dict[repo] = numpy.nanmedian(NC_list)
+        if metric == 'median':
+            repos_dict[repo] = numpy.nanmedian(NC_list)
+        else:
+            repos_dict[repo] = numpy.nanmean(NC_list)
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
 def sort_by_number_of_contributors(repos_list, mode):

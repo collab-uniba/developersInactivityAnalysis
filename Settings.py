@@ -26,8 +26,9 @@ A80api_developers_file = "A80api_devs.csv" # The file where the TF/core develope
 
 commit_list_file_name = "commit_list.csv"  # The file where the repo commits will be archived
 commit_history_table_file_name = "commit_history_table.csv"  # The file where the 'devs by dates' table for each repo will be archived
-pauses_list_file_name = "pauses_duration_list.csv"  # The file where the lists of devs' pauses durations will be archived
-pauses_dates_file_name = "pauses_dates_list.csv"  # The file where the lists of devs' pauses boundary dates will be archived
+coding_history_table_file_name = "coding_history_table.csv" # Analogous to Commit_history_table but includes PR creation and NON merged commits
+pauses_list_file_name = "coding_pauses.csv"  # The file where the lists of devs' pauses durations will be archived
+pauses_dates_file_name = "coding_pauses_dates.csv"  # The file where the lists of devs' pauses boundary dates will be archived
 issue_comments_list_file_name = "issues_comments_repo.csv"  # The file where the repo issue comments will be archived
 pulls_comments_list_file_name = "pulls_comments_repo.csv"  # The file where the repo pulls comments will be archived
 issue_events_list_file_name = "issues_events_repo.csv"  # The file where the repo issue events will be archived

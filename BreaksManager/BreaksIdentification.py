@@ -1,7 +1,7 @@
 ### IMPORT EXCEPTION MODULES
 
 ### IMPORT SYSTEM MODULES
-import os, pandas, csv, sys
+import os, pandas, csv, sys, logging
 from datetime import datetime
 import datetime as dt
 
@@ -112,6 +112,9 @@ def main(repos_list, mode):
     for gitRepoName in repos_list:
         organization, project = gitRepoName.split('/')
 
+        logfile = cfg.logs_folder + "/Breaks_Identification_" + organization + ".log"
+        logging.basicConfig(filename=logfile, level=logging.INFO)
+
         if mode.lower() == 'tf':
             devs_df = pandas.read_csv(os.path.join(cfg.TF_report_folder, project, cfg.TF_developers_file), sep=cfg.CSV_separator)
         elif mode.lower() == 'a80':
@@ -126,7 +129,7 @@ def main(repos_list, mode):
 
         for dev in devs_df.login.tolist():
             print(dev, ' Checking')
-            with open(os.path.join(workingFolder,organization,"coding_pauses_dates.csv"), 'r') as f:
+            with open(os.path.join(workingFolder,organization, cfg.pauses_dates_file_name), 'r') as f:
                 pauses_dates_list = [list(map(str, rec)) for rec in csv.reader(f, delimiter=cfg.CSV_separator)]
 
             breaks_df = identifyBreaks(pauses_dates_list, dev, win, shift)

@@ -244,6 +244,10 @@ def splitBreak(break_limits, action_days, th):
 def main(repos_list, mode):
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
+
+        logfile = cfg.logs_folder + "/Breaks_Labeling_" + organization + ".log"
+        logging.basicConfig(filename=logfile, level=logging.INFO)
+
         workingFolder = os.path.join(cfg.main_folder, organization)
         actionsFolder = os.path.join(workingFolder, cfg.actions_folder_name)
         breaksFolder = os.path.join(workingFolder, cfg.breaks_folder_name, mode.upper())
@@ -257,11 +261,10 @@ def main(repos_list, mode):
                 breaks_df = pandas.read_csv(os.path.join(breaksFolder,file), sep=cfg.CSV_separator)
 
                 devActionsFile = '{}_actions_table.csv'.format(dev)
-                #if devActionsFile in actionsFolder:
-                #    user_actions = pandas.read_csv(os.path.join(actionsFolder,devActionsFile), sep=cfg.CSV_separator)
-                #else:
-                #    user_actions = get_activities(workingFolder, dev)
-                user_actions = get_activities(workingFolder, dev)
+                if devActionsFile in actionsFolder:
+                    user_actions = pandas.read_csv(os.path.join(actionsFolder,devActionsFile), sep=cfg.CSV_separator)
+                else:
+                    user_actions = get_activities(workingFolder, dev)
 
                 labeled_breaks = pandas.DataFrame(columns=['len', 'dates', 'th', 'label', 'previously'])
                 for i, b in breaks_df.iterrows():
