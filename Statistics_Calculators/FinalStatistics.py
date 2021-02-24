@@ -19,7 +19,319 @@ def getLife(dev, organization):
             break
     return dev_life
 
+### 1st ROUND OF REVIEWS ###
+#Figure Sorting
+
+def sort_by_len_of_breaks(repos_list, metric):
+### Sort the list by Length of Breaks
+    repos_dict = {}
+    for repo in repos_list:
+        organization, project = repo.split('/')
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        breaks_list = []
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                #Does not consider the (NOW)s because we don't know how long il will actually last
+                breaks_list.append(dev_breaks[dev_breaks.label == 'ACTIVE'].len.mean())
+        if metric == 'median':
+            repos_dict[repo] = numpy.nanmedian(breaks_list)
+        else:
+            repos_dict[repo] = numpy.nanmean(breaks_list)
+
+    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
+
+def sort_by_len_of_NC_breaks(repos_list, mode, metric):
+### Sort the list by Length of Breaks
+    repos_dict = {}
+    for repo in repos_list:
+        organization, project = repo.split('/')
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        NC_list = []
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                #Does not consider the (NOW)s because we don't know how long il will actually last
+                NC_list.append(dev_breaks[dev_breaks.label == 'NON_CODING'].len.mean())
+        if metric == 'median':
+            repos_dict[repo] = numpy.nanmedian([x for x in NC_list if x != 0])
+        else:
+            repos_dict[repo] = numpy.nanmean([x for x in NC_list if x != 0])
+    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
+
+def sort_by_len_of_NC_breaks_both(repos_list, mode, metric):
+### Sort the list by Length of Breaks
+    repos_dict = {}
+    for repo in repos_list:
+        organization, project = repo.split('/')
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        NC_list = []
+        I_list = []
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                current_dev_NC = dev_breaks[dev_breaks.label == 'NON_CODING']
+                current_dev_I = dev_breaks[dev_breaks.label == 'INACTIVE']
+                # Does not consider the (NOW)s because we don't know how long il will actually last
+                if (not current_dev_NC.empty and not current_dev_I.empty):
+                    NC_list.append(current_dev_NC.len.mean())
+                    I_list.append(current_dev_I.len.mean())
+
+        if metric == 'median':
+            repos_dict[repo] = numpy.nanmedian([x for x in NC_list if x != 0])
+        else:
+            repos_dict[repo] = numpy.nanmean([x for x in NC_list if x != 0])
+    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
+
+def sort_by_number_of_contributors(repos_list, mode):
+    repos_dict = {}
+    for repo in repos_list:
+        organization, project = repo.split('/')
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        num_NC_list = []
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                #Does not consider the (NOW)s because we don't know how long il will actually last
+                num_NC_list.append(len(dev_breaks[dev_breaks.label == 'NON_CODING']))
+        repos_dict[repo] = numpy.median(num_NC_list)
+    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
+
+def sort_by_num_of_NC_breaks(repos_list, mode, metric):
+### Sort the list by Number of Breaks
+    repos_dict = {}
+    for repo in repos_list:
+        organization, project = repo.split('/')
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        NC_list = []
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                NC_list.append(len(dev_breaks[dev_breaks.label == 'NON_CODING']))
+        if metric == 'median':
+            repos_dict[repo] = numpy.nanmedian([x for x in NC_list if x != 0])
+        else:
+            repos_dict[repo] = numpy.nanmean([x for x in NC_list if x != 0])
+    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
+
+def test_breaks_duration_normality(repos_list, output_file_name, mode):
+## Test if the breaks duration is normally distributed
+    data_table = pandas.DataFrame(columns=['repo', '#breaks', '#NC', '#I',
+                                           'sw_tot', 'p_sw_tot', 'sw_NC', 'p_sw_NC', 'sw_I', 'p_sw_I',
+                                           'dag_tot', 'p_dag_tot', 'dag_NC', 'p_dag_NC', 'dag_I', 'p_dag_I',
+                                           'chi_tot', 'p_chi_tot', 'chi_NC', 'p_chi_NC', 'chi_I', 'p_chi_I',
+                                           'ks_tot', 'p_ks_tot', 'ks_NC', 'p_ks_NC', 'ks_I', 'p_ks_I',
+                                           'lil_tot', 'p_lil_tot', 'lil_NC', 'p_lil_NC', 'lil_I', 'p_lil_I'])
+    all_NC_list = []
+    all_I_list = []
+    all_durations_list = []
+
+    for repo in repos_list:
+        organization, project = repo.split('/')
+        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
+        NC_list = []
+        I_list = []
+        G_list = []
+        breaks_durations_list = []
+
+        for file in os.listdir(breaks_folder):
+            if (os.path.isfile(os.path.join(breaks_folder, file))):
+                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
+
+                #Does not consider the (NOW)s because we don't know how long il will actually last
+                NC_list += dev_breaks[dev_breaks.label == 'NON_CODING'].len.tolist()
+                I_list += dev_breaks[dev_breaks.label == 'INACTIVE'].len.tolist()
+                G_list += dev_breaks[dev_breaks.label == 'GONE'].len.tolist()
+        breaks_durations_list += NC_list + I_list + G_list
+
+        all_NC_list += NC_list
+        all_I_list += I_list
+        all_durations_list += breaks_durations_list
+
+        # Shapiro-Wilk Test
+        from scipy.stats import shapiro
+        try:
+            sw_tot, p_sw_tot = shapiro(breaks_durations_list)
+        except:
+            sw_tot, p_sw_tot = 'NA', 'NA'
+        try:
+            sw_NC, p_sw_NC = shapiro(NC_list)
+        except:
+            sw_NC, p_sw_NC = 'NA', 'NA'
+        try:
+            sw_I, p_sw_I = shapiro(I_list)
+        except:
+            sw_I, p_sw_I = 'NA', 'NA'
+
+        # D’Agostino’s K^2 Test
+        from scipy.stats import normaltest
+        try:
+            dag_tot, p_dag_tot = normaltest(breaks_durations_list)
+        except:
+            dag_tot, p_dag_tot = 'NA', 'NA'
+        try:
+            dag_NC, p_dag_NC = normaltest(NC_list)
+        except:
+            dag_NC, p_dag_NC = 'NA', 'NA'
+        try:
+            dag_I, p_dag_I = normaltest(I_list)
+        except:
+            dag_I, p_dag_I = 'NA', 'NA'
+
+        # Chi-Square Normality Test
+        from scipy.stats import chisquare
+        try:
+            chi_tot, p_chi_tot = chisquare(breaks_durations_list)
+        except:
+            chi_tot, p_chi_tot = 'NA', 'NA'
+        try:
+            chi_NC, p_chi_NC = chisquare(NC_list)
+        except:
+            chi_NC, p_chi_NC = 'NA', 'NA'
+        try:
+            chi_I, p_chi_I = chisquare(I_list)
+        except:
+            chi_I, p_chi_I = 'NA', 'NA'
+
+        # Kolmogorov-Smirnov Test
+        from scipy.stats import kstest
+        try:
+            ks_tot, p_ks_tot = kstest(breaks_durations_list, 'norm')
+        except:
+            ks_tot, p_ks_tot = 'NA', 'NA'
+        try:
+            ks_NC, p_ks_NC = kstest(NC_list, 'norm')
+        except:
+            ks_NC, p_ks_NC = 'NA', 'NA'
+        try:
+            ks_I, p_ks_I = kstest(I_list, 'norm')
+        except:
+            ks_I, p_ks_I = 'NA', 'NA'
+
+        # Lilliefors Test
+        from statsmodels.stats.diagnostic import lilliefors
+        try:
+            lil_tot, p_lil_tot = lilliefors(breaks_durations_list)
+        except:
+            lil_tot, p_lil_tot = 'NA', 'NA'
+        try:
+            lil_NC, p_lil_NC = lilliefors(NC_list)
+        except:
+            lil_NC, p_lil_NC = 'NA', 'NA'
+        try:
+            lil_I, p_lil_I = lilliefors(I_list)
+        except:
+            lil_I, p_lil_I = 'NA', 'NA'
+
+        # Anderson-Darling Test (Returns a list of critical-values instead of a single p-value)
+        # from scipy.stats import anderson
+        # ad_tot, p_ad_tot = anderson(num_breaks_list)
+        # ad_NC, p_ad_NC = anderson(num_NC_list)
+        # ad_I, p_ad_I = anderson(num_I_list)
+
+        util.add(data_table, [repo, len(breaks_durations_list), len(NC_list), len(I_list),
+                              sw_tot, p_sw_tot, sw_NC, p_sw_NC, sw_I, p_sw_I,
+                              dag_tot, p_dag_tot, dag_NC, p_dag_NC, dag_I, p_dag_I,
+                              chi_tot, p_chi_tot, chi_NC, p_chi_NC, chi_I, p_chi_I,
+                              ks_tot, p_ks_tot, ks_NC, p_ks_NC, ks_I, p_ks_I,
+                              lil_tot, p_lil_tot, lil_NC, p_lil_NC, lil_I, p_lil_I])
+
+    ### Run Test on ALL the BREAKS
+    # Shapiro-Wilk Test
+    from scipy.stats import shapiro
+    try:
+        sw_all, p_sw_all = shapiro(all_durations_list)
+    except:
+        sw_all, p_sw_all = 'NA', 'NA'
+    try:
+        sw_all_NC, p_sw_all_NC = shapiro(all_NC_list)
+    except:
+        sw_all_NC, p_sw_all_NC = 'NA', 'NA'
+    try:
+        sw_all_I, p_sw_all_I = shapiro(all_I_list)
+    except:
+        sw_all_I, p_sw_all_I = 'NA', 'NA'
+
+    # D’Agostino’s K^2 Test
+    from scipy.stats import normaltest
+    try:
+        dag_all, p_dag_all = normaltest(all_durations_list)
+    except:
+        dag_all, p_dag_all = 'NA', 'NA'
+    try:
+        dag_all_NC, p_dag_all_NC = normaltest(all_NC_list)
+    except:
+        dag_all_NC, p_dag_all_NC = 'NA', 'NA'
+    try:
+        dag_all_I, p_dag_all_I = normaltest(all_I_list)
+    except:
+        dag_all_I, p_dag_all_I = 'NA', 'NA'
+
+    # Chi-Square Normality Test
+    from scipy.stats import chisquare
+    try:
+        chi_all, p_chi_all = chisquare(all_durations_list)
+    except:
+        chi_all, p_chi_all = 'NA', 'NA'
+    try:
+        chi_all_NC, p_chi_all_NC = chisquare(all_NC_list)
+    except:
+        chi_all_NC, p_chi_all_NC = 'NA', 'NA'
+    try:
+        chi_all_I, p_chi_all_I = chisquare(all_I_list)
+    except:
+        chi_all_I, p_chi_all_I = 'NA', 'NA'
+
+    # Kolmogorov-Smirnov Test
+    from scipy.stats import kstest
+    try:
+        ks_all, p_ks_all = kstest(all_durations_list, 'norm')
+    except:
+        ks_all, p_ks_all = 'NA', 'NA'
+    try:
+        ks_all_NC, p_ks_all_NC = kstest(all_NC_list, 'norm')
+    except:
+        ks_all_NC, p_ks_all_NC = 'NA', 'NA'
+    try:
+        ks_all_I, p_ks_all_I = kstest(all_I_list, 'norm')
+    except:
+        ks_all_I, p_ks_all_I = 'NA', 'NA'
+
+    # Lilliefors Test
+    from statsmodels.stats.diagnostic import lilliefors
+    try:
+        lil_all, p_lil_all = lilliefors(all_durations_list)
+    except:
+        lil_all, p_lil_all = 'NA', 'NA'
+    try:
+        lil_all_NC, p_lil_all_NC = lilliefors(all_NC_list)
+    except:
+        lil_all_NC, p_lil_all_NC = 'NA', 'NA'
+    try:
+        lil_all_I, p_lil_all_I = lilliefors(all_I_list)
+    except:
+        lil_all_I, p_lil_all_I = 'NA', 'NA'
+
+    util.add(data_table, ['Total', len(all_durations_list), len(all_NC_list), len(all_I_list),
+                          sw_all, p_sw_all, sw_all_NC, p_sw_all_NC, sw_all_I, p_sw_all_I,
+                          dag_all, p_dag_all, dag_all_NC, p_dag_all_NC, dag_all_I, p_dag_all_I,
+                          chi_all, p_chi_all, chi_all_NC, p_chi_all_NC, chi_all_I, p_chi_all_I,
+                          ks_all, p_ks_all, ks_all_NC, p_ks_all_NC, ks_all_I, p_ks_all_I,
+                          lil_all, p_lil_all, lil_all_NC, p_lil_all_NC, lil_all_I, p_lil_all_I])
+
+    data_table.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
+               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+### END of 1st ROUND OF REVIEWS ###
+
 def countOrganizationsAffected(repos_list, output_file_name, mode):
+    whoHasBeenInactive_folder = os.path.join(cfg.main_folder, mode.upper(), 'whoHasBeenInactive')
+    os.makedirs(whoHasBeenInactive_folder, exist_ok=True)
+
     affected_summary = pandas.DataFrame(columns=['Project', 'Contributors', 'Sampled_Contributors', 'Non-Coding', 'Inactive', 'Gone', 'Still_Gone'])
 
     non_coding_affected = pandas.DataFrame(columns = ['repo','login'])
@@ -27,13 +339,20 @@ def countOrganizationsAffected(repos_list, output_file_name, mode):
     gone_affected = pandas.DataFrame(columns = ['repo','login'])
     still_gone_affected = pandas.DataFrame(columns = ['repo','login'])
 
+    inactivity_affected_list = pandas.DataFrame(columns=['repo', 'login', 'commits', 'percentage', 'non_coding', 'inactive', 'gone'])
+
     for gitRepoName in repos_list:
         organization, main_project = gitRepoName.split('/')
         workingFolder = os.path.join(cfg.main_folder, organization)
 
         # Breaks occurrences
-        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected, repo_still_gone = countAffected(gitRepoName, workingFolder, mode)
+        repo_affected, repo_non_coding_affected, repo_inactive_affected, repo_gone_affected, repo_still_gone, repo_inactivity_affected_list = countAffected(gitRepoName, workingFolder, mode)
         util.add(affected_summary, repo_affected)
+
+        repo_inactivity_affected_list.to_csv(os.path.join(whoHasBeenInactive_folder, organization + '_inactivity_affected.csv'),
+                                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                                        line_terminator='\n')
+        inactivity_affected_list = pandas.concat([inactivity_affected_list, repo_inactivity_affected_list], ignore_index=True)
 
         non_coding_affected = pandas.concat([non_coding_affected, repo_non_coding_affected], ignore_index=True)
         inactive_affected = pandas.concat([inactive_affected, repo_inactive_affected], ignore_index=True)
@@ -52,6 +371,9 @@ def countOrganizationsAffected(repos_list, output_file_name, mode):
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
                             line_terminator='\n')
     still_gone_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'still_gone_affected.csv'),
+                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                         line_terminator='\n')
+    inactivity_affected_list.to_csv(os.path.join(whoHasBeenInactive_folder, 'SUMMARY_affected.csv'),
                          sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
                          line_terminator='\n')
 
@@ -120,7 +442,15 @@ def countAffected(repo, workingFolder, mode):
 
     affected += [non_coding, inactive, gone, still_gone]
 
-    return affected, non_coding_affected, inactive_affected, gone_affected, still_gone_affected
+    inactivity_affected_list = pandas.DataFrame(columns=['repo', 'login', 'commits', 'percentage', 'non_coding', 'inactive', 'gone'])
+
+    for index, dev in core_devs.iterrows():
+        util.add(inactivity_affected_list, [repo, dev['login'], dev['commits'], dev['percentage'],
+                                            dev['login'] in non_coding_affected.login.tolist(),
+                                            dev['login'] in inactive_affected.login.tolist(),
+                                            dev['login'] in gone_affected.login.tolist()])
+
+    return affected, non_coding_affected, inactive_affected, gone_affected, still_gone_affected, inactivity_affected_list
 
 def countTransitions(repo, workingFolder, mode):
     ''' Needed to calculate the percentages for the markov chains '''
@@ -482,15 +812,7 @@ def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 def breaksDurationsPlot(repos_list, output_file_name, mode):
-    data = pandas.DataFrame(columns=['organization', 'status', 'median_duration'])
-
-### 1st ROUND OF REVIEWS: Sort the X axis by mean/median number of breaks/NC breaks ###
-
-    # repos_list = sort_by_num_of_NC_breaks(repos_list, 'median')
-    # repos_list = sort_by_num_of_breaks(repos_list, 'mean')
-    repos_list = sort_by_num_of_NC_breaks_both(repos_list, mode, 'median')
-
-### END SORTING ###
+    data = pandas.DataFrame(columns=['organization', 'status', 'duration'])
 
     for repo in repos_list:
         organization, project = repo.split('/')
@@ -514,12 +836,12 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
-    # print('S: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
-    # print('H: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
+    #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
+    #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
 
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='organization', y='median_duration', hue="status", hue_order=['non-coding', 'inactive'],
+    sns_plot = sns.boxplot(x='organization', y='duration', hue="status", hue_order=['non-coding', 'inactive'],
                            data=data, palette=pal, linewidth=1, fliersize=1) # showmeans=True, meanprops={"marker":"o","markerfacecolor":"white", "markeredgecolor":"black","markersize":"5"}
     sns_plot.set_yscale('log')
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
@@ -528,7 +850,7 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
 
     plt.figure(figsize=(12, 9))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='median_duration', y='organization', hue="status", hue_order=['non-coding', 'inactive'],
+    sns_plot = sns.boxplot(x='duration', y='organization', hue="status", hue_order=['non-coding', 'inactive'],
                            data=data, palette=pal, linewidth=1, fliersize=1)
     sns_plot.set_xscale('log')
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'_H'), dpi=600)
@@ -537,15 +859,7 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
 def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
     # same as breaksDurationsPlot but only takes devs who have been both non-coding and inactive
 
-    data = pandas.DataFrame(columns=['organization', 'status', 'median_duration'])
-
-### 1st ROUND OF REVIEWS: Sort the X axis by mean/median number of breaks/NC breaks ###
-
-    #repos_list = sort_by_num_of_NC_breaks(repos_list, 'median')
-    #repos_list = sort_by_num_of_breaks(repos_list, 'mean')
-    repos_list = sort_by_num_of_NC_breaks_both(repos_list, mode, 'median')
-
-### END SORTING ###
+    data = pandas.DataFrame(columns=['organization', 'status', 'duration'])
 
     for repo in repos_list:
         organization, project = repo.split('/')
@@ -570,15 +884,15 @@ def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
         for dev_avg in I_list:
             util.add(data, [organization, 'inactive', dev_avg])
 
-    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data.csv'),
+    data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data_both.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
-    print('S: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
-    print('H: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
+    #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
+    #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
 
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='organization', y='median_duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal, linewidth=1, fliersize=1)
+    sns_plot = sns.boxplot(x='organization', y='duration', hue="status", hue_order=['non-coding', 'inactive'], data=data, palette=pal, linewidth=1, fliersize=1)
     sns_plot.set_yscale('log')
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
@@ -586,7 +900,7 @@ def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
 
     plt.figure(figsize=(12, 9))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
-    sns_plot = sns.boxplot(x='median_duration', y='organization', hue="status", hue_order=['non-coding', 'inactive'],
+    sns_plot = sns.boxplot(x='duration', y='organization', hue="status", hue_order=['non-coding', 'inactive'],
                            data=data, palette=pal, linewidth=1, fliersize=1)
     sns_plot.set_xscale('log')
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'_H'), dpi=600)
@@ -594,6 +908,7 @@ def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
 
 def breaksOccurrencesPlotNotNormalized(repos_list, output_file_name, mode):
     dataframes = []
+    sorted_index = reversed([x.split('/')[0] for x in repos_list])
     for repo in repos_list:
         organization, project = repo.split('/')
 
@@ -632,7 +947,8 @@ def breaksOccurrencesPlotNotNormalized(repos_list, output_file_name, mode):
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
     sns_plot = sns.boxplot(x='organization', y='occurrences', hue="status", hue_order=['non-coding', 'inactive', 'gone'],
-                           data=data, palette=pal, linewidth=1, fliersize=1)
+                           data=data, palette=pal, linewidth=1, fliersize=1, order=sorted_index)
+
     # sns_plot.set_yscale('log')
     # sns_plot.set(ylim=(0, 20))
     sns_plot.set_xticklabels(sns_plot.get_xticklabels(), rotation=20, horizontalalignment='right')
@@ -940,319 +1256,33 @@ def main(repos_list, mode):
     outputFolder = os.path.join(cfg.main_folder, mode.upper())
     os.makedirs(outputFolder, exist_ok=True)
 
-    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
-    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
-    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
+#    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
+#    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
+#    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
 
-    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
-    test_breaks_duration_normality(repos_list, 'BreaksDurartionNormalityTest', mode)
-    breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
-    breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
-    breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
-    breaksDurationsPlotBoth(reversed(repos_list), 'DurationsDistributionsBoth', mode)
-    breaksDurationsDescriptive(reversed(repos_list), 'DurationsDescriptiveStats', mode)
-    breaksOccurrencesDescriptive(reversed(repos_list), 'OccurrencesDescriptiveStats', mode)
+#    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
+#    test_breaks_duration_normality(repos_list, 'BreaksDurationNormalityTest', mode)
+    #breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
 
-    meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
+    ### 1st ROUND OF REVIEWS: Sort the X axis by mean/median number of breaks/NC breaks ###
+
+    # repos_list = sort_by_num_of_NC_breaks(repos_list, 'median')
+    # repos_list = sort_by_num_of_breaks(repos_list, 'mean')
+    # repos_list = sort_by_num_of_NC_breaks_both(repos_list, mode, 'median')
+
+    ### END SORTING ###
+#    breaksOccurrencesPlotNotNormalized(sort_by_num_of_NC_breaks(repos_list, mode, 'median'), 'BreaksOccurrencesNotNormalized', mode)
+#    breaksDurationsPlot(sort_by_len_of_NC_breaks(repos_list, mode, 'median'), 'DurationsDistributions', mode)
+#    breaksDurationsPlotBoth(sort_by_len_of_NC_breaks_both(repos_list, mode, 'median'), 'DurationsDistributionsBoth', mode)
+#    breaksDurationsDescriptive(reversed(repos_list), 'DurationsDescriptiveStats', mode)
+#    breaksOccurrencesDescriptive(reversed(repos_list), 'OccurrencesDescriptiveStats', mode)
+
+#    meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
 
     #TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
     #TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
 
-#util.makeMeanDiffTests(organizations, main_path)
-
     print("That's it, man!")
-### 1st ROUND OF REVIEWS ###
-#Figure Sorting
-
-def sort_by_num_of_breaks(repos_list, metric):
-### Sort the list by Mean Number of Breaks
-    repos_dict = {}
-    for repo in repos_list:
-        organization, project = repo.split('/')
-        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
-        breaks_list = []
-        for file in os.listdir(breaks_folder):
-            if (os.path.isfile(os.path.join(breaks_folder, file))):
-                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
-
-                #Does not consider the (NOW)s because we don't know how long il will actually last
-                breaks_list.append(dev_breaks[dev_breaks.label == 'ACTIVE'].len.mean())
-        if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian(breaks_list)
-        else:
-            repos_dict[repo] = numpy.nanmean(breaks_list)
-
-    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
-
-def sort_by_num_of_NC_breaks(repos_list, mode, metric):
-### Sort the list by Mean Number of Breaks
-    repos_dict = {}
-    for repo in repos_list:
-        organization, project = repo.split('/')
-        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
-        NC_list = []
-        for file in os.listdir(breaks_folder):
-            if (os.path.isfile(os.path.join(breaks_folder, file))):
-                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
-
-                #Does not consider the (NOW)s because we don't know how long il will actually last
-                NC_list.append(dev_breaks[dev_breaks.label == 'NON_CODING'].len.mean())
-        if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian(NC_list)
-        else:
-            repos_dict[repo] = numpy.nanmean(NC_list)
-    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
-
-def sort_by_num_of_NC_breaks_both(repos_list, mode, metric):
-### Sort the list by Median Number of Breaks
-    repos_dict = {}
-    for repo in repos_list:
-        organization, project = repo.split('/')
-        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
-        NC_list = []
-        I_list = []
-        for file in os.listdir(breaks_folder):
-            if (os.path.isfile(os.path.join(breaks_folder, file))):
-                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
-
-                current_dev_NC = dev_breaks[dev_breaks.label == 'NON_CODING']
-                current_dev_I = dev_breaks[dev_breaks.label == 'INACTIVE']
-                # Does not consider the (NOW)s because we don't know how long il will actually last
-                if (not current_dev_NC.empty and not current_dev_I.empty):
-                    NC_list.append(current_dev_NC.len.mean())
-                    I_list.append(current_dev_I.len.mean())
-
-                #Does not consider the (NOW)s because we don't know how long il will actually last
-                NC_list.append(dev_breaks[dev_breaks.label == 'NON_CODING'].len.mean())
-        if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian(NC_list)
-        else:
-            repos_dict[repo] = numpy.nanmean(NC_list)
-    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
-
-def sort_by_number_of_contributors(repos_list, mode):
-### Sort the list by Median Number of Breaks
-    repos_dict = {}
-    for repo in repos_list:
-        organization, project = repo.split('/')
-        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
-        num_NC_list = []
-        for file in os.listdir(breaks_folder):
-            if (os.path.isfile(os.path.join(breaks_folder, file))):
-                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
-
-                #Does not consider the (NOW)s because we don't know how long il will actually last
-                num_NC_list.append(len(dev_breaks[dev_breaks.label == 'NON_CODING']))
-        repos_dict[repo] = numpy.median(num_NC_list)
-    return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
-
-def test_breaks_duration_normality(repos_list, output_file_name, mode):
-## Test if the breaks duration is normally distributed
-    data_table = pandas.DataFrame(columns=['repo', '#breaks', '#NC', '#I',
-                                           'sw_tot', 'p_sw_tot', 'sw_NC', 'p_sw_NC', 'sw_I', 'p_sw_I',
-                                           'dag_tot', 'p_dag_tot', 'dag_NC', 'p_dag_NC', 'dag_I', 'p_dag_I',
-                                           'chi_tot', 'p_chi_tot', 'chi_NC', 'p_chi_NC', 'chi_I', 'p_chi_I',
-                                           'ks_tot', 'p_ks_tot', 'ks_NC', 'p_ks_NC', 'ks_I', 'p_ks_I',
-                                           'lil_tot', 'p_lil_tot', 'lil_NC', 'p_lil_NC', 'lil_I', 'p_lil_I'])
-    all_NC_list = []
-    all_I_list = []
-    all_durations_list = []
-
-    for repo in repos_list:
-        organization, project = repo.split('/')
-        breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
-        NC_list = []
-        I_list = []
-        G_list = []
-        breaks_durations_list = []
-
-        for file in os.listdir(breaks_folder):
-            if (os.path.isfile(os.path.join(breaks_folder, file))):
-                dev_breaks = pandas.read_csv(os.path.join(breaks_folder, file), sep=cfg.CSV_separator)
-
-                #Does not consider the (NOW)s because we don't know how long il will actually last
-                NC_list += dev_breaks[dev_breaks.label == 'NON_CODING'].len.tolist()
-                I_list += dev_breaks[dev_breaks.label == 'INACTIVE'].len.tolist()
-                G_list += dev_breaks[dev_breaks.label == 'GONE'].len.tolist()
-        breaks_durations_list += NC_list + I_list + G_list
-
-        all_NC_list += NC_list
-        all_I_list += I_list
-        all_durations_list += breaks_durations_list
-
-        # Shapiro-Wilk Test
-        from scipy.stats import shapiro
-        try:
-            sw_tot, p_sw_tot = shapiro(breaks_durations_list)
-        except:
-            sw_tot, p_sw_tot = 'NA', 'NA'
-        try:
-            sw_NC, p_sw_NC = shapiro(NC_list)
-        except:
-            sw_NC, p_sw_NC = 'NA', 'NA'
-        try:
-            sw_I, p_sw_I = shapiro(I_list)
-        except:
-            sw_I, p_sw_I = 'NA', 'NA'
-
-        # D’Agostino’s K^2 Test
-        from scipy.stats import normaltest
-        try:
-            dag_tot, p_dag_tot = normaltest(breaks_durations_list)
-        except:
-            dag_tot, p_dag_tot = 'NA', 'NA'
-        try:
-            dag_NC, p_dag_NC = normaltest(NC_list)
-        except:
-            dag_NC, p_dag_NC = 'NA', 'NA'
-        try:
-            dag_I, p_dag_I = normaltest(I_list)
-        except:
-            dag_I, p_dag_I = 'NA', 'NA'
-
-        # Chi-Square Normality Test
-        from scipy.stats import chisquare
-        try:
-            chi_tot, p_chi_tot = chisquare(breaks_durations_list)
-        except:
-            chi_tot, p_chi_tot = 'NA', 'NA'
-        try:
-            chi_NC, p_chi_NC = chisquare(NC_list)
-        except:
-            chi_NC, p_chi_NC = 'NA', 'NA'
-        try:
-            chi_I, p_chi_I = chisquare(I_list)
-        except:
-            chi_I, p_chi_I = 'NA', 'NA'
-
-        # Kolmogorov-Smirnov Test
-        from scipy.stats import kstest
-        try:
-            ks_tot, p_ks_tot = kstest(breaks_durations_list, 'norm')
-        except:
-            ks_tot, p_ks_tot = 'NA', 'NA'
-        try:
-            ks_NC, p_ks_NC = kstest(NC_list, 'norm')
-        except:
-            ks_NC, p_ks_NC = 'NA', 'NA'
-        try:
-            ks_I, p_ks_I = kstest(I_list, 'norm')
-        except:
-            ks_I, p_ks_I = 'NA', 'NA'
-
-        # Lilliefors Test
-        from statsmodels.stats.diagnostic import lilliefors
-        try:
-            lil_tot, p_lil_tot = lilliefors(breaks_durations_list)
-        except:
-            lil_tot, p_lil_tot = 'NA', 'NA'
-        try:
-            lil_NC, p_lil_NC = lilliefors(NC_list)
-        except:
-            lil_NC, p_lil_NC = 'NA', 'NA'
-        try:
-            lil_I, p_lil_I = lilliefors(I_list)
-        except:
-            lil_I, p_lil_I = 'NA', 'NA'
-
-        # Anderson-Darling Test (Returns a list of critical-values instead of a single p-value)
-        # from scipy.stats import anderson
-        # ad_tot, p_ad_tot = anderson(num_breaks_list)
-        # ad_NC, p_ad_NC = anderson(num_NC_list)
-        # ad_I, p_ad_I = anderson(num_I_list)
-
-        util.add(data_table, [repo, len(breaks_durations_list), len(NC_list), len(I_list),
-                              sw_tot, p_sw_tot, sw_NC, p_sw_NC, sw_I, p_sw_I,
-                              dag_tot, p_dag_tot, dag_NC, p_dag_NC, dag_I, p_dag_I,
-                              chi_tot, p_chi_tot, chi_NC, p_chi_NC, chi_I, p_chi_I,
-                              ks_tot, p_ks_tot, ks_NC, p_ks_NC, ks_I, p_ks_I,
-                              lil_tot, p_lil_tot, lil_NC, p_lil_NC, lil_I, p_lil_I])
-
-    ### Run Test on ALL the BREAKS
-    # Shapiro-Wilk Test
-    from scipy.stats import shapiro
-    try:
-        sw_all, p_sw_all = shapiro(all_durations_list)
-    except:
-        sw_all, p_sw_all = 'NA', 'NA'
-    try:
-        sw_all_NC, p_sw_all_NC = shapiro(all_NC_list)
-    except:
-        sw_all_NC, p_sw_all_NC = 'NA', 'NA'
-    try:
-        sw_all_I, p_sw_all_I = shapiro(all_I_list)
-    except:
-        sw_all_I, p_sw_all_I = 'NA', 'NA'
-
-    # D’Agostino’s K^2 Test
-    from scipy.stats import normaltest
-    try:
-        dag_all, p_dag_all = normaltest(all_durations_list)
-    except:
-        dag_all, p_dag_all = 'NA', 'NA'
-    try:
-        dag_all_NC, p_dag_all_NC = normaltest(all_NC_list)
-    except:
-        dag_all_NC, p_dag_all_NC = 'NA', 'NA'
-    try:
-        dag_all_I, p_dag_all_I = normaltest(all_I_list)
-    except:
-        dag_all_I, p_dag_all_I = 'NA', 'NA'
-
-    # Chi-Square Normality Test
-    from scipy.stats import chisquare
-    try:
-        chi_all, p_chi_all = chisquare(all_durations_list)
-    except:
-        chi_all, p_chi_all = 'NA', 'NA'
-    try:
-        chi_all_NC, p_chi_all_NC = chisquare(all_NC_list)
-    except:
-        chi_all_NC, p_chi_all_NC = 'NA', 'NA'
-    try:
-        chi_all_I, p_chi_all_I = chisquare(all_I_list)
-    except:
-        chi_all_I, p_chi_all_I = 'NA', 'NA'
-
-    # Kolmogorov-Smirnov Test
-    from scipy.stats import kstest
-    try:
-        ks_all, p_ks_all = kstest(all_durations_list, 'norm')
-    except:
-        ks_all, p_ks_all = 'NA', 'NA'
-    try:
-        ks_all_NC, p_ks_all_NC = kstest(all_NC_list, 'norm')
-    except:
-        ks_all_NC, p_ks_all_NC = 'NA', 'NA'
-    try:
-        ks_all_I, p_ks_all_I = kstest(all_I_list, 'norm')
-    except:
-        ks_all_I, p_ks_all_I = 'NA', 'NA'
-
-    # Lilliefors Test
-    from statsmodels.stats.diagnostic import lilliefors
-    try:
-        lil_all, p_lil_all = lilliefors(all_durations_list)
-    except:
-        lil_all, p_lil_all = 'NA', 'NA'
-    try:
-        lil_all_NC, p_lil_all_NC = lilliefors(all_NC_list)
-    except:
-        lil_all_NC, p_lil_all_NC = 'NA', 'NA'
-    try:
-        lil_all_I, p_lil_all_I = lilliefors(all_I_list)
-    except:
-        lil_all_I, p_lil_all_I = 'NA', 'NA'
-
-    util.add(data_table, ['Total', len(all_durations_list), len(all_NC_list), len(all_I_list),
-                          sw_all, p_sw_all, sw_all_NC, p_sw_all_NC, sw_all_I, p_sw_all_I,
-                          dag_all, p_dag_all, dag_all_NC, p_dag_all_NC, dag_all_I, p_dag_all_I,
-                          chi_all, p_chi_all, chi_all_NC, p_chi_all_NC, chi_all_I, p_chi_all_I,
-                          ks_all, p_ks_all, ks_all_NC, p_ks_all_NC, ks_all_I, p_ks_all_I,
-                          lil_all, p_lil_all, lil_all_NC, p_lil_all_NC, lil_all_I, p_lil_all_I])
-
-    data_table.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
-               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
