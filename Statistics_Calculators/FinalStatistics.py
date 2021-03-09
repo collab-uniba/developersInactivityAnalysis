@@ -1,11 +1,22 @@
 ### IMPORT SYSTEM MODULES
-import os, pandas, numpy, csv, sys, scipy
-import seaborn as sns
+import csv
+import numpy
+import os
+import pandas
+import scipy
+import sys
+
 import matplotlib.pyplot as plt
 from sipconfig import format
+import rpy2.robjects as robjects
+import seaborn as sns
+import statsmodels.api as sm
+from rpy2.robjects.packages import importr
 
 import Settings as cfg
 import Utilities as util
+import effectsize
+
 
 def getLife(dev, organization):
     dev_life = 0
@@ -1033,8 +1044,12 @@ def breaksOccurrencesPlot(repos_list, output_file_name, mode):
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
     sns_plot.get_figure().clf()
 
+
 def meanDifferenceTest(repos_list, output_file_name, mode):
-    data = pandas.DataFrame(columns=['project', 'non_coding', 'inactive', 'both', 'w', 'p'])
+    data = pandas.DataFrame(columns=['project', 'non_coding', 'inactive', 'both', 'w', 'p', 'Cliff d', 'effect size',
+                                     'GRB'])
+    pvals = list()
+    rcompanion = importr('rcompanion')
     for repo in repos_list:
         organization, project = repo.split('/')
 
@@ -1067,12 +1082,26 @@ def meanDifferenceTest(repos_list, output_file_name, mode):
         ### MAKE TEST
         try:
             w_val, w_p = scipy.stats.wilcoxon(NC_common_list, I_common_list, correction = True)
+            d, size = effectsize.cliffsDelta(NC_common_list, I_common_list)
+            Y = robjects.FloatVector(NC_common_list + I_common_list)
+            nc_factor = ['Non coding'] * len(NC_common_list)
+            i_factor = ['Inactive'] * len(I_common_list)
+            Group = robjects.FactorVector(nc_factor + i_factor)
+            # https://rdrr.io/cran/rcompanion/man/wilcoxonRG.html
+            grb = rcompanion.wilcoxonRG(x=Y, g=Group)
+            grb = str(grb).strip().split('\n')[1]
         except:
             print('{} W not available. NC: {}, I: {}, Common: {}'.format(project, NC_devs, I_devs, common_devs))
-            w_val = w_p = None
+            w_val = d = size = None
+            w_p = 1
+        pvals.append(w_p)
 
         ### ADD RESULTING ROW TO data
-        util.add(data, [project, NC_devs, I_devs, common_devs, w_val, w_p])
+        util.add(data, [project, NC_devs, I_devs, common_devs, w_val, w_p, d, size, grb])
+
+    reject, adjp, _, _ = sm.stats.multipletests(pvals, alpha=0.05, method='holm', is_sorted=False, returnsorted=False)
+    data = data.assign(adjusted_p = adjp)
+    data = data.assign(sig=reject)
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
@@ -1374,6 +1403,7 @@ if __name__ == "__main__":
 
     ### ARGUMENTS MANAGEMENT
     # python script.py gitCloneURL
+    # A80api
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
     mode = sys.argv[1]
     if mode.lower() not in cfg.supported_modes:
