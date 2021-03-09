@@ -1,10 +1,21 @@
 ### IMPORT SYSTEM MODULES
-import os, pandas, numpy, csv, sys, scipy
-import seaborn as sns
+import csv
+import numpy
+import os
+import pandas
+import scipy
+import sys
+
 import matplotlib.pyplot as plt
+import rpy2.robjects as robjects
+import seaborn as sns
+import statsmodels.api as sm
+from rpy2.robjects.packages import importr
 
 import Settings as cfg
 import Utilities as util
+import effectsize
+
 
 def getLife(dev, organization):
     dev_life = 0
@@ -716,8 +727,12 @@ def breaksOccurrencesPlot(repos_list, output_file_name, mode):
     sns_plot.get_figure().savefig(os.path.join(cfg.main_folder, mode.upper(), output_file_name), dpi=600)
     sns_plot.get_figure().clf()
 
+
 def meanDifferenceTest(repos_list, output_file_name, mode):
-    data = pandas.DataFrame(columns=['project', 'non_coding', 'inactive', 'both', 'w', 'p'])
+    data = pandas.DataFrame(columns=['project', 'non_coding', 'inactive', 'both', 'w', 'p', 'Cliff d', 'effect size',
+                                     'GRB'])
+    pvals = list()
+    rcompanion = importr('rcompanion')
     for repo in repos_list:
         organization, project = repo.split('/')
 
@@ -750,12 +765,26 @@ def meanDifferenceTest(repos_list, output_file_name, mode):
         ### MAKE TEST
         try:
             w_val, w_p = scipy.stats.wilcoxon(NC_common_list, I_common_list, correction = True)
+            d, size = effectsize.cliffsDelta(NC_common_list, I_common_list)
+            Y = robjects.FloatVector(NC_common_list + I_common_list)
+            nc_factor = ['Non coding'] * len(NC_common_list)
+            i_factor = ['Inactive'] * len(I_common_list)
+            Group = robjects.FactorVector(nc_factor + i_factor)
+            # https://rdrr.io/cran/rcompanion/man/wilcoxonRG.html
+            grb = rcompanion.wilcoxonRG(x=Y, g=Group)
+            grb = str(grb).strip().split('\n')[1]
         except:
             print('{} W not available. NC: {}, I: {}, Common: {}'.format(project, NC_devs, I_devs, common_devs))
-            w_val = w_p = None
+            w_val = d = size = None
+            w_p = 1
+        pvals.append(w_p)
 
         ### ADD RESULTING ROW TO data
-        util.add(data, [project, NC_devs, I_devs, common_devs, w_val, w_p])
+        util.add(data, [project, NC_devs, I_devs, common_devs, w_val, w_p, d, size, grb])
+
+    reject, adjp, _, _ = sm.stats.multipletests(pvals, alpha=0.05, method='holm', is_sorted=False, returnsorted=False)
+    data = data.assign(adjusted_p = adjp)
+    data = data.assign(sig=reject)
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
                 sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
@@ -940,27 +969,28 @@ def main(repos_list, mode):
     outputFolder = os.path.join(cfg.main_folder, mode.upper())
     os.makedirs(outputFolder, exist_ok=True)
 
-    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
+#    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
 #    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
 #    organizationsTransitionsPercentages(transitions_summary_file_name, 'organizations_chains_list', mode)
 
 #    breaksDistributionStats(repos_list, 'BreaksDistributions', mode)
-#    test_breaks_duration_normality(repos_list, 'BreaksDurartionNormalityTest', mode)
+    test_breaks_duration_normality(repos_list, 'BreaksDurationNormalityTest', mode)
 #    breaksOccurrencesPlot(reversed(repos_list), 'BreaksOccurrences', mode)
 #    breaksOccurrencesPlotNotNormalized(reversed(repos_list), 'BreaksOccurrencesNotNormalized', mode)
-    breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
-    breaksDurationsPlotBoth(reversed(repos_list), 'DurationsDistributionsBoth', mode)
+#    breaksDurationsPlot(reversed(repos_list), 'DurationsDistributions', mode)
+#    breaksDurationsPlotBoth(reversed(repos_list), 'DurationsDistributionsBoth', mode)
 #    breaksDurationsDescriptive(reversed(repos_list), 'DurationsDescriptiveStats', mode)
 #    breaksOccurrencesDescriptive(reversed(repos_list), 'OccurrencesDescriptiveStats', mode)
 
-    #meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
+#    meanDifferenceTest(repos_list, 'WilcoxonPairedMeanTest', mode)
 
     #TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
     #TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
 
-#util.makeMeanDiffTests(organizations, main_path)
+    #util.makeMeanDiffTests(organizations, main_path)
 
     print("That's it, man!")
+
 ### 1st ROUND OF REVIEWS ###
 #Figure Sorting
 
@@ -1257,6 +1287,7 @@ if __name__ == "__main__":
 
     ### ARGUMENTS MANAGEMENT
     # python script.py gitCloneURL
+    # A80api
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
     mode = sys.argv[1]
     if mode.lower() not in cfg.supported_modes:
