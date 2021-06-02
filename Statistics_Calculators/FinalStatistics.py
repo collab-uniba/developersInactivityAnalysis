@@ -2,6 +2,7 @@
 import os, pandas, numpy, csv, sys, scipy
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sipconfig import format
 
 import Settings as cfg
 import Utilities as util
@@ -1247,6 +1248,84 @@ def writeDevslist(mode, repos_list):
     allDevs.to_csv(os.path.join(output_folder, 'devs_full_list.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
 
+
+def generateInvolvementTable(repos_list, output_file_name, mode):
+    output_folder = os.path.join(cfg.main_folder, mode.upper(), 'involvementTables')
+    os.makedirs(output_folder, exist_ok=True)
+
+    for repo in repos_list:
+        organization, repoName = repo.split('/')
+
+        if mode.lower() == 'tf':
+            repo_devs = pandas.read_csv(os.path.join(cfg.TF_report_folder, repoName, cfg.TF_developers_file),
+                                        sep=cfg.CSV_separator)
+        elif mode.lower() == 'a80':
+            repo_devs = pandas.read_csv(os.path.join(cfg.A80_report_folder, repoName, cfg.A80_developers_file),
+                                        sep=cfg.CSV_separator)
+        elif mode.lower() == 'a80mod':
+            repo_devs = pandas.read_csv(os.path.join(cfg.A80mod_report_folder, repoName, cfg.A80mod_developers_file),
+                                        sep=cfg.CSV_separator)
+        else:  # elif mode.lower() == 'a80api':
+            repo_devs = pandas.read_csv(os.path.join(cfg.A80api_report_folder, repoName, cfg.A80api_developers_file),
+                                        sep=cfg.CSV_separator)
+
+        involvementTable = pandas.DataFrame(columns=['repo']+repo_devs['login'].tolist())
+        orgFolder = cfg.main_folder + '/' + organization
+        for folder in os.listdir(orgFolder):
+            if (os.path.isdir(orgFolder + '/' + folder)):
+                repo = folder
+                repoFolder = os.path.join(orgFolder, folder)
+
+                if (cfg.commit_history_table_file_name in os.listdir(repoFolder)):
+                    commitHistoryTable = pandas.read_csv(os.path.join(repoFolder, cfg.commit_history_table_file_name),
+                                                         sep=cfg.CSV_separator)
+                    row = [repo]
+                    for columnName in involvementTable.columns[1:]:
+                        devCommitSum = 0;
+                        if columnName in commitHistoryTable['user_id'].tolist():
+                            devCommitSum = sum(commitHistoryTable.loc[commitHistoryTable['user_id'] == columnName].values[0][1:])
+                        row.append(devCommitSum)
+                    util.add(involvementTable, row)
+        involvementTable.to_csv(os.path.join(output_folder, organization+'_'+output_file_name+'.csv'),
+                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                       line_terminator='\n')
+
+def aggregateInvolvementTable(repos_list, output_file_name, mode):
+    involvement_tables_folder = os.path.join(cfg.main_folder, mode.upper(), 'involvementTables')
+    output_folder = os.path.join(cfg.main_folder, mode.upper())
+
+    main_repo_map = {}
+    for repoName in repos_list:
+        org,repo = repoName.split("/")
+        main_repo_map[org] = repo
+
+    aggregatedInvolvementData = pandas.DataFrame(columns=['dev', 'main_project', 'other_contibuted_projects', 'commits_main', 'commits_other', 'diff', 'tot', 'percent_main', 'percent_others', 'percent_others_dist'])
+    for table_file in os.listdir(involvement_tables_folder):
+        organization = table_file.split("_")[0]
+        main_repo = main_repo_map[organization]
+        orgInvolvementTable = pandas.read_csv(os.path.join(involvement_tables_folder, table_file),
+                                        sep=cfg.CSV_separator)
+        for dev in orgInvolvementTable.columns[1:]:
+            num_other_projects = orgInvolvementTable[dev].loc[orgInvolvementTable[dev] != 0].size
+            commits_in_main_project = orgInvolvementTable[dev].loc[orgInvolvementTable['repo'] == main_repo].sum()
+            commits_in_other_projects = orgInvolvementTable[dev].loc[orgInvolvementTable['repo'] != main_repo].sum()
+            diff = commits_in_main_project - commits_in_other_projects
+            total_commits = orgInvolvementTable[dev].sum()
+            percent_main = commits_in_main_project/total_commits*100
+            percent_others = commits_in_other_projects/total_commits*100
+
+            percent_others_mod = 0 if num_other_projects == 0 else (commits_in_other_projects/total_commits*100)/num_other_projects
+
+            row = [dev, organization+'/'+main_repo,
+                   num_other_projects, commits_in_main_project, commits_in_other_projects,
+                   diff, total_commits,
+                   round(percent_main, 2), round(percent_others,2), round(percent_others_mod,2)]
+            util.add(aggregatedInvolvementData, row)
+
+    aggregatedInvolvementData.to_csv(os.path.join(output_folder, output_file_name+'.csv'),
+                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
+                            line_terminator='\n')
+
 def main(repos_list, mode):
     ''' MAIN FUNCTION '''
     transitions_summary_file_name = 'transitionsSummary'
@@ -1255,6 +1334,11 @@ def main(repos_list, mode):
 
     outputFolder = os.path.join(cfg.main_folder, mode.upper())
     os.makedirs(outputFolder, exist_ok=True)
+
+    # Final Revision
+    generateInvolvementTable(repos_list, 'involvementTable', mode)
+    aggregateInvolvementTable(repos_list, 'aggregatedInvolvementData', mode)
+    ### END Final Revision
 
 #    countOrganizationsAffected(repos_list, 'affectedSummary', mode)
 #    countOrganizationsTransitions(repos_list, transitions_summary_file_name, mode)
