@@ -6,7 +6,7 @@ import Utilities as util
 ### MAIN FUNCTION
 def main(repoName, token):
     organization, repository = repoName.split('/')
-
+    # TODO '../A80_Results/' should be a parameter
     sourceFolder = '../A80_Results/' + repository
     devsFilePath = os.path.join(sourceFolder, 'Cstats.csv')
 

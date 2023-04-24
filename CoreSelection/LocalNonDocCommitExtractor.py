@@ -12,6 +12,7 @@ def add(dataframe, row):
 
 ### MAIN FUNCTION
 def main(gitRepoURL):
+    # TODO: move this to the Settings.py file
     reposDirectory = '../Local_Repositories'
     os.makedirs(reposDirectory, exist_ok=True)
 
@@ -29,6 +30,7 @@ def main(gitRepoURL):
     repoDir = os.path.join(reposDirectory, repoName)
 
     # Init
+    # TODO: ./A80_Results/ should be a parameter
     outputDirectory = '../A80_Results/' + repoName
     os.makedirs(outputDirectory, exist_ok=True)
 
