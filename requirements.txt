@@ -1,6 +1,6 @@
 requests==2.25.1
 matplotlib==3.3.3
-numpy==1.19.4
+numpy==1.22.0
 pandas==1.2.0
 PyGithub==1.54.1
 PyYAML==5.4
