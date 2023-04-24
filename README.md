@@ -1,6 +1,11 @@
 # Will you come back to contribute? Investigating the inactivitiy of OSS developers in GitHub
 [![DOI](https://zenodo.org/badge/183011533.svg)](https://zenodo.org/badge/latestdoi/183011533)
 
+Use the `main` branch, not `master`.
+
+### CoreSelection
+
+Refer to this [README.md](CoreSelection/README.md) file 
 
 ### CommitExtractor.py
 
