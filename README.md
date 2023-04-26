@@ -3,9 +3,13 @@
 
 Use the `main` branch, not `master`.
 
-### CoreSelection
+### Core Developers Selection
 
-Refer to this [README.md](CoreSelection/README.md) file 
+Refer to this [README.md](CoreSelection/README.md) file.
+
+### Truck-Factor Developer Selection
+
+Refer to this [README.md](TruckFactor/README.md) file.
 
 ### CommitExtractor.py
 
