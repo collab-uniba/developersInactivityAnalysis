@@ -6,6 +6,11 @@ This is a tool for estimating the Truck Factor of GitHub projects, using informa
 
 The scripts for extracting commit information from git repositories are implemented using Shell and AWK. So, the execution environment must support those script languages.  Optionally, the Ruby interpreter is required if you decide to use the Linguist library to automatically discard files like documentation and third-party libraries. See the specific Linguist requirements in [linguist page](https://github.com/github/linguist).
 
+```shell
+gem install rugged github-linguist
+```
+Note that in Unix-like systems you might want to execute the command above as root using `sudo`.
+
 ## Usage
 
 1. Execute the scripts to extract information from the git repository to be analyzed:
