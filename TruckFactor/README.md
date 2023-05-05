@@ -9,7 +9,11 @@ The scripts for extracting commit information from git repositories are implemen
 ```shell
 gem install rugged github-linguist
 ```
-Note that in Unix-like systems you might want to execute the command above as root using `sudo`.
+
+Note:
+- in Unix-like systems you might want to execute the command above as root using `sudo`.
+- On MacOs you need to install ruby via [Homebrew](https://mac.install.guide/ruby/13.html) rather than using the version of ruby shipped with MacOS
+
 
 ## Usage
 
