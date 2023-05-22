@@ -1,15 +1,25 @@
 # Will you come back to contribute? Investigating the inactivitiy of OSS developers in GitHub
 [![DOI](https://zenodo.org/badge/183011533.svg)](https://zenodo.org/badge/latestdoi/183011533)
 
+### Setup
+
 Use the `main` branch, not `master`.
 
-### Core Developers Selection
+Add to the root a folder named `Resources/` with the following files: 
+- `repositories.txt` containing the list of projects (one per line) to be analyzed, in the following format `org/repo_name` (e.g., `atom/atom); 
+- `tokens.txt` (optional) containinig the list of GH tokens to be used;
+
+### Sampling of developers
+
+#### Core Developers Selection
 
 Refer to this [README.md](CoreSelection/README.md) file.
 
-### Truck-Factor Developer Selection
+#### Truck-Factor Developer Selection
 
 Refer to this [README.md](TruckFactor/README.md) file.
+
+---
 
 ### CommitExtractor.py
 
@@ -24,11 +34,12 @@ Refer to this [README.md](TruckFactor/README.md) file.
 
 #### Execution
 
-`python CommitExtractor.py collab-uniba/developersBreaksAnalysis [1...n]`
+`python3 CommitExtractor.py collab-uniba/developersBreaksAnalysis [1...n]`
 
 or
 
-`python CommitExtractor.py collab-uniba/developersBreaksAnalysis myTokenString`
+`python3 CommitExtractor.py collab-uniba/developersBreaksAnalysis myTokenString`
+
 
 #### Output
 
@@ -40,6 +51,8 @@ or
   - `pauses_duration_list.csv`: List of pauses durations in days for each developer in the format: <dev; listOfDurations>
   - `pauses_dates_list.csv`: List of pauses dates for each developer in the format: <dev; listOfPauseDates>
 - The same files are given after merging the commits of every organization's repo in the `Organizations/<organization>/` folder.
+
+if you came here from point 2 of core selection you can now perform step 3 following [(CoreSelection | Step 3)](CoreSelection/README.md#L18)
 
 ---
 
@@ -78,7 +91,7 @@ or
 
 #### Params
 
-None
+- `mode`: insert one of following modes ['tf', 'a80', 'a80mod', 'a80api']
 
 #### Requirements
 
@@ -88,7 +101,19 @@ None
 
 #### Execution
 
-`python BreaksIdentification.py`
+`python3 BreaksIdentification.py tf`
+
+or
+
+`python3 BreaksIdentification.py a80`
+
+or
+
+`python3 BreaksIdentification.py a80mod`
+
+or
+
+`python3 BreaksIdentification.py a80api`
 
 #### Output
 
@@ -134,7 +159,7 @@ The goal is to select all the *breaks* (*pauses* that are larger than usual) ass
 
 #### Params
 
-None
+- `mode`: insert one of following modes ['tf', 'a80', 'a80mod', 'a80api']
 
 #### Requirements
 
@@ -142,7 +167,19 @@ None
 
 #### Execution
 
-`python BreaksLabeling.py`
+`python3 BreaksLabeling.py tf`
+
+or
+
+`python3 BreaksLabeling.py a80`
+
+or
+
+`python3 BreaksLabeling.py a80mod`
+
+or
+
+`python3 BreaksLabeling.py a80api`
 
 #### Output
 
