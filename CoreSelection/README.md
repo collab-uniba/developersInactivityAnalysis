@@ -13,7 +13,7 @@ Run `LocalNonDocCommitExtractor.py <repo-url>`
 
 ## Step 2
 Refer to this [(README | CommitExtractor)](../README.md#L24) file and execute CommitExtractor.py.
-At the end of the execution proceed with step 3 in below
+At the end of the execution proceed with step 3 below
 
 ## Step 3
 
