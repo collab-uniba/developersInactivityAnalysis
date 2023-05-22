@@ -19,13 +19,20 @@ Note:
 
 1. Execute the scripts to extract information from the git repository to be analyzed:
     1. Extract commit and file information. 
-        - command: ```./commit_log_script.sh  <path/to/.../git/repo>```	
+        - command: ```./commit_log_script.sh  <path/to/.../git/repo>```
+        - Example: `./commit_log_script.sh ../Local_Repositories/developersInactivityAnalysis`
 	
     2. Extract files to be discarded using the Linguist library (Optional)
-        - command: ```./scripts/linguist_script.sh <path/to/.../git/repo>```
-	
+        - command: ```./linguist_script.sh <path/to/.../git/repo>```
+        - Example: `./linguist_script.sh ../Local_Repositories/developersInactivityAnalysis`
+
 2. Execute the gittruckfactor tool.
-    - command: ```java –jar gittruckfactor-1.0.jar <path/to/.../git/repo> <orgname/reponame>```
+    - command: ```java –jar gittruckfactor.jar <path/to/.../git/repo> <orgname/reponame>```
+    - Example: `java –jar gittruckfactor.jar ../Local_Repositories/developersInactivityAnalysis collab-uniba/developersInactivityAnalysis`
+3. Manually create a folder into followings path:  "../TF_Results/reponame" and "../Organizations/TF_Results/org/repo", with the following files from gittruckfactor tool output: 
+    - TF_report.txt: copy all the output of gittruckfactor.jar
+    - TF_devs.csv: for each developer enter <name;login>
+    - TF_devs_names.csv: for each developer enter <Developer;Files;Percentage>
 
 ## Optional Settings
 
