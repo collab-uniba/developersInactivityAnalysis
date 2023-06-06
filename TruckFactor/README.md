@@ -4,7 +4,7 @@ This is a tool for estimating the Truck Factor of GitHub projects, using informa
 
 ## Environment 
 
-The scripts for extracting commit information from git repositories are implemented using Shell and AWK. So, the execution environment must support those script languages.  Optionally, the Ruby interpreter is required if you decide to use the Linguist library to automatically discard files like documentation and third-party libraries. See the specific Linguist requirements in [linguist page](https://github.com/github/linguist).
+The scripts for extracting commit information from git repositories are implemented using Shell and AWK. So, the execution environment must support those script languages.  Optionally, the Ruby interpreter (To use the library you need to have a version equal to or greater than 2.7.5) is required if you decide to use the Linguist library to automatically discard files like documentation and third-party libraries. See the specific Linguist requirements in [linguist page](https://github.com/github/linguist).
 
 ```shell
 gem install rugged github-linguist
@@ -29,7 +29,7 @@ Note:
 2. Execute the gittruckfactor tool.
     - command: ```java –jar gittruckfactor.jar <path/to/.../git/repo> <orgname/reponame>```
     - Example: `java –jar gittruckfactor.jar ../Local_Repositories/developersInactivityAnalysis collab-uniba/developersInactivityAnalysis`
-3. Manually create a folder into followings path:  "../TF_Results/reponame" and "../Organizations/TF_Results/org/repo", with the following files from gittruckfactor tool output: 
+3. Manually create a folder into followings path:  "../TF_Results/reponame", "../Organizations/TF_Results/org/repo" and "../Organization/orgname/reponame" with the following files from gittruckfactor tool output: 
     - TF_report.txt: copy all the output of gittruckfactor.jar
     - TF_devs.csv: for each developer enter <name;login>
     - TF_devs_names.csv: for each developer enter <Developer;Files;Percentage>
