@@ -12,10 +12,6 @@ Run `LocalNonDocCommitExtractor.py <repo-url>`
 - Example: `python3 LocalNonDocCommitExtractor.py https://github.com/collab-uniba/developersInactivityAnalysis.git`
 
 ## Step 2
-Refer to this [(README | CommitExtractor)](../README.md#L24) file and execute CommitExtractor.py.
-At the end of the execution proceed with step 3 below
-
-## Step 3
 
 Extract commit author information (id;name;email;login;commits).
 
@@ -25,7 +21,7 @@ Run `LoginIdentifier.py <org/repo> <token / token index>`
 - Output: A80*_results/repo/login_map.csv
 - Example: `python3 LoginIdentifier.py collab-uniba/developersInactivityAnalysis myPersonalToken`
 
-## Step 4
+## Step 3
 
 Find aliases among committers.
 
@@ -34,6 +30,10 @@ Run `UnmaskAliases.py <org/repo>`
 - Input organization/repository
 - Output: A80*_results/repo/unmasking_results.csv
 - Example: `python3 UnmaskAliases.py collab-uniba/developersInactivityAnalysis`
+
+## Step 4
+Refer to this [(README | CommitExtractor)](../README.md#L24) file and execute CommitExtractor.py.
+At the end of the execution proceed with step 3 below
 
 ## Step 5
 
