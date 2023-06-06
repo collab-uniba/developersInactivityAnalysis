@@ -2,6 +2,8 @@ import os, pandas
 import matplotlib.pyplot as plt
 
 ### IMPORT CUSTOM MODULES
+import sys
+sys.path.insert(1, '../')
 import Settings as cfg
 import Utilities as util
 

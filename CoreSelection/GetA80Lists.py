@@ -1,5 +1,8 @@
 import os
 import pandas
+
+import sys
+sys.path.insert(1, '../')
 import Utilities as util
 import Settings as cfg
 

@@ -11,6 +11,7 @@ import os, sys, logging, pandas
 from datetime import datetime
 
 ### IMPORT CUSTOM MODULES
+sys.path.insert(1, '../')
 import Settings as cfg
 import Utilities as util
 

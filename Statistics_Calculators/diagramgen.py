@@ -6,6 +6,8 @@ from xml.etree import ElementTree
 import yaml
 import os, sys
 import glob
+
+sys.path.insert(1, '../')
 import Settings as cfg
 
 

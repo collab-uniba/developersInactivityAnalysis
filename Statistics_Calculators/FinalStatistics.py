@@ -13,8 +13,10 @@ import seaborn as sns
 import statsmodels.api as sm
 from rpy2.robjects.packages import importr
 
+sys.path.insert(1, '../')
 import Settings as cfg
 import Utilities as util
+
 import effectsize
 
 

@@ -1,6 +1,8 @@
 import sys, os
 import pandas
 from github import Github
+
+sys.path.insert(1, '../')
 import Utilities as util
 
 ### MAIN FUNCTION

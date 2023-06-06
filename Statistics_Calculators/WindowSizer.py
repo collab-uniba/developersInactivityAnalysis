@@ -9,6 +9,7 @@ from datetime import datetime
 import datetime as dt
 
 ### IMPORT CUSTOM MODULES
+sys.path.insert(1, '../')
 import Settings as cfg
 import Utilities as util
 
