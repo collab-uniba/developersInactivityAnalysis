@@ -3,12 +3,14 @@ import pandas
 import git
 import classifier
 
-def add(dataframe, row):
+def add(dataframe, row, contributions_destination):
     """Adds a row to the tail of a dataframe"""
     dataframe.loc[-1] = row  # adding a row
     dataframe.index = dataframe.index + 1  # shifting index
     dataframe.sort_index(inplace=True)
     dataframe.iloc[::-1]
+    dataframe.to_csv(contributions_destination,
+                            sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
 
 ### MAIN FUNCTION
 def main(gitRepoURL):
@@ -41,45 +43,53 @@ def main(gitRepoURL):
 
     basic_classifier = classifier.BasicFileTypeClassifier()
 
-    try:
+    '''try:
         contributions = pandas.read_csv(contributions_destination, sep=';')
         print('Contributions file ALREADY EXISTS, SKIP calculation!')
-    except:
-        print('Contributions file not found, STARTING calculation!')
-        # Get Commit List
-        commits_list = list(repo.iter_commits())
-        commits_count = len(commits_list)
-        print('Commits: ', commits_count)
+    except:'''
+    exist = os.path.isfile(contributions_destination)
+    if exist:
+        contributions = pandas.read_csv(contributions_destination, sep=';')
+    print('Contributions file not found, STARTING calculation!')
+    # Get Commit List
+    commits_list = list(repo.iter_commits())
+    commits_count = len(commits_list)
+    print('Commits: ', commits_count)
 
-        # Select NON-DOC Commits
-        Tstatus=5
-        for i in range(0, commits_count - 1):
-            author_name = commits_list[i].author.name
-            author_email = commits_list[i].author.email
-            commit_date = commits_list[i].committed_datetime
-            commit_sha = commits_list[i].hexsha
+    # Select NON-DOC Commits
+    Tstatus=5
+    for i in range(0, commits_count - 1):
+        author_name = commits_list[i].author.name
+        author_email = commits_list[i].author.email
+        commit_date = commits_list[i].committed_datetime
+        commit_sha = commits_list[i].hexsha
 
+        
+        if not commit_sha in contributions['sha'].values:
             for file in commits_list[i].diff(commits_list[i + 1]):
                 file_path = file.a_path
                 # Check Type
                 label = basic_classifier.labelFile(file_path)
                 if label!=basic_classifier.DOC: # There is at least 1 non-DOC file changed
-                    add(contributions, [author_name, author_email, commit_date, commit_sha])
+                    add(contributions, [author_name.lower(), author_email.lower(), commit_date, commit_sha], contributions_destination)
                     break
+        else:
+            print('Commit already in the list: ', commit_sha)
 
-            ### LOGGING
-            perc = int(i/commits_count*100)
-            if perc == Tstatus:
-                print('Commit filtered {}%'.format(perc))
-                Tstatus += 5
 
-        contributions['email'] = contributions['email'].str.lower()
-        contributions['name'] = contributions['name'].str.lower()
-        contributions.to_csv(contributions_destination,
-                             sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
-        print('Contributions Written: ', contributions_destination)
-        pass
+        ### LOGGING
+        perc = int(i/commits_count*100)
+        if perc == Tstatus:
+            print('Commit filtered {}%'.format(perc))
+            Tstatus += 5
 
+    '''contributions['email'] = contributions['email'].str.lower()
+    contributions['name'] = contributions['name'].str.lower()
+    contributions.to_csv(contributions_destination,
+                            sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+    print('Contributions Written: ', contributions_destination)'''
+    pass
+    #qua finisce exept
     grouped_contributions = contributions.groupby(['name', 'email']).count()
     grouped_contributions = grouped_contributions.drop(columns=['date'])
     grouped_contributions = grouped_contributions.rename(columns={'sha': 'commits'})
