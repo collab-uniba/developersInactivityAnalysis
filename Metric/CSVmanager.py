@@ -22,22 +22,17 @@ class CSVmanager:
     def read_commit_list(self):
         path_file = SystemPath.get_path_to_commit_list(self.__owner, self.__repository)
         commit_list = []
-        data = pd.read_csv(path_file)
-        collums = data.columns
-        for index, row in data.iterrows():
-            date = Utility.convert_string_to_date(row[collums[2]])
-            author = row[collums[1]]
-            sha = row[collums[0]]
-            lines_added, lines_removed, repository_size = self.__apiManeger.get_commit_infomations_sha(sha)
-            commit_stats = {
-                'sha': sha,
-                'author': author,
-                'date': date,
-                'lines_added': lines_added,
-                'lines_removed': lines_removed,
-                'repository_size': repository_size
-            }
-            commit_list.append(commit_stats)
+        with open(path_file, 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter=';')
+            for row in reader:
+                sha = row['sha']
+                date = Utility.convert_string_to_date(row['date'][:10])
+                commit_list.append({
+                    'sha': sha,
+                    'author': row['author_id'],
+                    'date': date
+                })
+        
         
         return commit_list
     
