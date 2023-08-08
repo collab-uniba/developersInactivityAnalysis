@@ -21,6 +21,7 @@ class APImanager:
         self.__token = token
         self.__creation_date = self.__get_start_date_repository()
         self.__main_language = self.__get_main_programming_language()
+        self.__contributors = self.__get_repository_contributors()
 
     def get_creation_date(self):
         """
@@ -28,6 +29,12 @@ class APImanager:
         """
         return self.__creation_date
     
+    def get_contributors(self):
+        """
+        returns the number of contributors to the repository
+        """
+        return self.__contributors
+
     def get_main_language(self):
         """
         returns the main language of the repository
@@ -40,6 +47,7 @@ class APImanager:
         """
         base_url = f"https://api.github.com/repos/{self.__owner}/{self.__repository}"
         headers = {"Authorization": f"Bearer {self.__token}"}
+        print("I ask the Git hub api for the creation date of the repository")
         response = requests.get(base_url, headers)
 
         if response.status_code == 200:
@@ -63,6 +71,7 @@ class APImanager:
             "Accept": "application/vnd.github.v3+json",
             "Authorization": f"Bearer {self.__token}"
         }
+        print("I request the main programming language of the repository from the Git hub api")
 
         try:
             response = requests.get(url, headers=headers)
@@ -107,3 +116,109 @@ class APImanager:
             repository_size += tree.get("size", 0)
 
         return lines_added, lines_removed, repository_size
+    
+    def __get_repository_contributors(self):
+        """
+        Query the git hub API to get the number of contributors to the repository
+        """
+        base_url = "https://api.github.com"
+        headers = {
+            "Authorization": f"token {self.__token}"
+        }
+
+        # Ottieni l'URL API del repository specificato
+        repo_url = f"{base_url}/repos/{self.__owner}/{self.__repository}"
+
+        try:
+            # Effettua una richiesta GET all'API di GitHub per ottenere il repository
+            response = requests.get(repo_url, headers=headers)
+            response.raise_for_status()  # Verifica eventuali errori nella risposta
+
+            # Estrai l'URL per ottenere i contributori dalla risposta JSON
+            repo_data = response.json()
+            contributors_url = repo_data["contributors_url"]
+
+            # Inizializza una lista per contenere tutti i dati dei contributori
+            all_contributors_data = []
+
+            # Continua a ottenere i dati dei contributori finché ci sono pagine disponibili
+            while contributors_url:
+                # Effettua una nuova richiesta per ottenere i dati dei contributori per la pagina corrente
+                contributors_response = requests.get(contributors_url, headers=headers)
+                contributors_response.raise_for_status()
+
+                # Estrai i dati dei contributori dalla risposta JSON per la pagina corrente
+                contributors_data = contributors_response.json()
+                all_contributors_data.extend(contributors_data)
+
+                # Verifica se ci sono altre pagine
+                if "next" in contributors_response.links:
+                    contributors_url = contributors_response.links["next"]["url"]
+                else:
+                    # Se non ci sono altre pagine, interrompi il ciclo
+                    contributors_url = None
+
+            # Calcola il numero totale di contributori
+            contributors_count = len(all_contributors_data)
+
+            return contributors_count
+
+        except requests.exceptions.RequestException as e:
+            print(f"Errore nella richiesta: {e}")
+            return None
+    
+    def get_all_stargazers(self):
+        url = "https://api.github.com/graphql"
+        headers = {
+            "Authorization": f"Bearer {self.__token}"
+        }
+        end_cursor = None
+        stargazers_with_dates = []
+
+        while True:
+            after_param = f'after: "{end_cursor}"' if end_cursor else ''
+            query = f"""
+            query {{
+            repository(owner: "{self.__owner}", name: "{self.__repository}") {{
+                stargazers(first: 100, {after_param}) {{
+                edges {{
+                    starredAt
+                    node {{
+                    login
+                    }}
+                }}
+                pageInfo {{
+                    endCursor
+                    hasNextPage
+                }}
+                }}
+            }}
+            }}
+            """
+
+            response = requests.post(url, headers=headers, json={"query": query})
+
+            if response.status_code == 200:
+                data = response.json()
+                stargazers_data = data.get("data", {}).get("repository", {}).get("stargazers", {}).get("edges", [])
+                page_info = data.get("data", {}).get("repository", {}).get("stargazers", {}).get("pageInfo", {})
+                stargazers_with_dates += [(stargazer["node"]["login"], Utility.convert_string_to_date(stargazer["starredAt"][:10])) for stargazer in stargazers_data]
+
+                if not page_info.get("hasNextPage"):
+                    break
+
+                end_cursor = page_info["endCursor"]
+
+                # Gestisci il rate limit: attesa di 1 secondo tra le richieste
+                time.sleep(1)
+            elif response.status_code == 401:
+                print("Errore di autenticazione. Controlla il token di accesso personale.")
+                return []
+            elif response.status_code == 403:
+                print("Limite di utilizzo raggiunto. Aspetta qualche minuto prima di riprovare.")
+                return []
+            else:
+                print(f"Failed to fetch stargazers for {self.__owner}/{self.__repository}. Error code: {response.status_code}")
+                return []
+
+        return stargazers_with_dates

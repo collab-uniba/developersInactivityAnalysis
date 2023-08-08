@@ -1,5 +1,6 @@
 import datetime
 from datetime import datetime, timedelta
+import copy
 
 #CONSTANT
 MONTH_DAY_START = 1
@@ -145,5 +146,8 @@ def get_list_couple_start_date_end_date(st_date1, end_date1, st_date2, end_date2
             couple_list.append(Time_lapse(str(next_day(end_date1)), str(end_date2)))
 
     return couple_list
+
+def copy_list(list):
+    return copy.deepcopy(list)
 
          
