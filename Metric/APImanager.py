@@ -168,6 +168,11 @@ class APImanager:
             return None
     
     def get_all_stargazers(self):
+        """
+        The function calculates the number of stars for each day from the creation date of the repository
+        Output:
+            stargazers_with_dates(list): the list of days with the number of stars that the repository had on that day
+        """
         url = "https://api.github.com/graphql"
         headers = {
             "Authorization": f"Bearer {self.__token}"
