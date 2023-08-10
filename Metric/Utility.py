@@ -14,10 +14,22 @@ TOKEN_FILE_NAME = "tokens"
 
 #DATE FUNCTION
 def creation_start_date_month(month, year):
+    """
+    The function generates the date of the first day of the month having month and year
+    Args:
+        month(int): The month of the date of which we want the first day of the month
+        year(int): The year of the date of which we want the first day of the month
+    """
     date_start = datetime.datetime(year, month, MONTH_DAY_START)
     return date_start.strftime("%Y-%m-%d")
 
 def creation_end_date_month(month, year):
+    """
+    The function generates the date of the last day of the month having month and year
+    Args:
+        month(int): The month of the date of which we want the last day of the month
+        year(int): The year of the date of which we want the last day of the month
+    """
     if month in MONTH_END_WITH_30:
         date_end = datetime.datetime(year, month, MONTH_DAY_END_30)
     elif month == FEBRUARY:
@@ -148,6 +160,9 @@ def get_list_couple_start_date_end_date(st_date1, end_date1, st_date2, end_date2
     return couple_list
 
 def copy_list(list):
+    """
+    Takes a list as input and returns a copy of it
+    """
     return copy.deepcopy(list)
 
          

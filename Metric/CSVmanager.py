@@ -17,9 +17,9 @@ class CSVmanager:
         """
         The constructor of the CSVmanager class, which manages the reading and writing of the files for the calculation of the metrics
         Args:
-        owner(str): the owner of the repository we are analyzing
-        repository(str): the name of the repository we are analyzing
-        token(str): the authentication token from github
+            owner(str): the owner of the repository we are analyzing
+            repository(str): the name of the repository we are analyzing
+            token(str): the authentication token from github
         """
         self.__repository = repository
         self.__owner = owner
@@ -32,7 +32,7 @@ class CSVmanager:
         The function takes care of reading the file in which all the commits made during the analysis period are present, 
         returns a list where each element of the list is a commit with the relative information
         Output:
-        commit_list(list): The list contains all the information about the commits of the analysis period
+            commit_list(list): The list contains all the information about the commits of the analysis period
         """
         path_file = SystemPath.get_path_to_commit_list(self.__owner, self.__repository)
         commit_list = []

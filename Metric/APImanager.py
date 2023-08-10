@@ -10,10 +10,10 @@ class APImanager:
         """
         the constructor of the APImanager class, which takes care of retrieving information about the repository by querying the git hub API
         Args:
-        owner(str): the owner of the repository we are analyzing
-        repository(str): the name of the repository we are analyzing
-        token(str): the authentication token from github
-        csv_menager(CSVmanager.CSVmanager): it is an object of the CSVmanager.CSVmanager class and is used to save the information obtained
+            owner(str): the owner of the repository we are analyzing
+            repository(str): the name of the repository we are analyzing
+            token(str): the authentication token from github
+            csv_menager(CSVmanager.CSVmanager): it is an object of the CSVmanager.CSVmanager class and is used to save the information obtained
         """
         self.__repository = repository
         self.__owner = owner
@@ -94,10 +94,11 @@ class APImanager:
         """
         Returns information about a specific commit
         Args
-        sha(str): sha identifier of the commit we want information about
+            sha(str): sha identifier of the commit we want information about
         Output:
-        lines_added(int): number of lines added with commit
-        lines_removed(int): number of lines removed with commit
+            lines_added(int): number of lines added with commit
+            lines_removed(int): number of lines removed with commit
+            repository_size(int): the size of the repository during the specified date
         """
         commit_url = f"https://api.github.com/repos/{self.__owner}/{self.__repository}/commits/{sha}"
         headers = {"Authorization": f"Bearer {self.__token}"}
