@@ -1,0 +1,31 @@
+Funzionamento File.py Metric 
+1.File richiesti:
+    -commit_list.csv (generato da LocalNonDocCommitExtractor.py)
+    -pauses_dates_list.csv (generato da ...)
+    -TF_devs.csv (generato da gittruckfactor.jar)
+    -prs_list.csv
+    I file si trovano in developersInactivityAnalysis/Organizations/nome_owner/nome_repository/file
+    - G_full_list.csv (generato da ...)
+    Il file si torva in developersInactivityAnalysis/Organizations/A80API/file
+    -A80_devs.csv (generato da Get80Lists.py)
+    Il file si trova in developersInactivityAnalysis/A80_Results/nome_repository/file
+Senza questi file l'algoritmo non funziona, quindi bisogna prima eseguire i file di Iaffaldano che generano i file richiesti, per poi utilizzare i file.py in Metric
+
+Repository analizzati
+1. atom/atom
+2. JabRef/jabref
+3. nodejs/node
+4. rails/rails non completato
+5. aseprite/aseprite
+6. MinecraftForge/MinecraftForge
+7. SpaceVim/SpaceVim
+8. fastlane/fastlane
+9. crystal-lang/crystal
+10. BabylonJS/Babylon.js
+11. elixir-lang/elixir
+12. github/linguist
+13. ionic-team/ionic
+14. facebook/react
+15. jquery/jquery
+16. flutter/flutter
+15. laravel/framework

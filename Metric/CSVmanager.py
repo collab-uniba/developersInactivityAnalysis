@@ -21,10 +21,11 @@ class CSVmanager:
             repository(str): the name of the repository we are analyzing
             token(str): the authentication token from github
         """
+        print("start calculation for " + str(owner)+ "/" + str(repository))
         self.__repository = repository
         self.__owner = owner
         self.__token = token
-        self.__apimanager = APImanager.APImanager(owner, repository, token, self)
+        self.__apimanager = APImanager.APImanager(owner, repository, token)
         self.__create_metric_folder()
     #===================================================================================================================FUNCTIONS TO READ FILES==================================================================================================================
     def read_commit_list(self):
@@ -36,7 +37,7 @@ class CSVmanager:
         """
         path_file = SystemPath.get_path_to_commit_list(self.__owner, self.__repository)
         commit_list = []
-        with open(path_file, 'r', newline='') as csvfile:
+        with open(path_file, 'r', newline = '') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=';')
             for row in reader:
                 sha = row['sha']
@@ -47,8 +48,240 @@ class CSVmanager:
                     'date': date
                 })
         
-        
+        commit_list = sorted(commit_list, key=lambda x: x['date'])
         return commit_list
+    
+    def read_prs_list(self):
+        """
+        The function takes care of reading the file in which all the pull requests made during the analysis period are present, 
+        returns a list where each element of the list is a pull request with the relative information
+        Output:
+            prs_list(list): The list contains all the information about the pull requests of the analysis period
+        """
+        path_file = SystemPath.get_path_prs_list(self.__owner, self.__repository)
+        prs_list = []
+        with open(path_file, 'r', newline = '') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter = ';')
+            for row in reader:
+                id_pr = row['id']
+                date = Utility.convert_string_to_date(row['date'][:10])
+                author = row['author']
+                prs_list.append({
+                    'id': id_pr,
+                    'date': date,
+                    'author': author
+                })
+        
+        return prs_list
+    
+    def read_issues_list(self):
+        """
+        The function takes care of reading the file in which all the issues made during the analysis period are present, 
+        returns a list where each element of the list is a issue with the relative information
+        Output:
+            issues_list(list): The list contains all the information about the issues of the analysis period
+        """
+        path = SystemPath.get_path_issue_list(self.__owner, self.__repository)
+        exist = os.path.exists(path)
+        if not exist:
+            self.save_all_issues()
+
+        issues_list = []
+        with open(path, 'r', newline = '') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter = ';')
+            for row in reader:
+                id = row['id']
+                date = Utility.convert_string_to_date(row['date'][:10])
+                author = row['author']
+                issues_list.append({
+                    'id': id,
+                    'date': date,
+                    'author': author
+                })
+        
+        return issues_list
+    
+    
+    def read_LOC_file(self, path: str):
+        """
+        the function reads the file containing the LOC metric. 
+        The file path is requested to specify which of the 4 files with the LOC metric we want to read 
+        (TF, TF_gone, core, core_gone)
+        Args:
+            path(str): the path of the file containing the LOC metric we want to read
+        Output:
+            LOC_values(list): the list containing the data saved in the read file
+        """
+        LOC_values = []
+        with open (path, 'r', newline = '') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter = ',')
+            for row in reader:
+                LOC_values.append({
+                    'date': Utility.convert_string_to_date(row['date']),
+                    'LOC': row['LOC'],
+                    'dev_breaks_count': row['dev_breaks_count'],
+                    'project_age': row['project_age'],
+                    'project_contributors': row['project_contributors'],
+                    'project_name': row['project_name'],
+                    'project_language': row['project_language'],
+                    'project_size': row['project_size'],
+                    'project_stars': row['project_stars']
+                })
+        
+        return LOC_values
+    
+    def create_PRS_file(self):
+        """
+        The function reads the 4 LOC files, and then replaces the LOC parameter with the PRS parameter, creating the PRS files with the various meanings deo dev_breaks_count
+        """
+        LOC_values_TF = self.read_LOC_file(SystemPath.get_path_file_LOC_TF(self.__owner, self.__repository))
+        LOC_values_TF_gone = self.read_LOC_file(SystemPath.get_path_file_LOC_TF_gone(self.__owner, self.__repository))
+        LOC_values_core = self.read_LOC_file(SystemPath.get_path_file_LOC_core(self.__owner, self.__repository))
+        LOC_values_core_gone = self.read_LOC_file(SystemPath.get_path_file_LOC_core_gone(self.__owner, self.__repository))
+        start_date = LOC_values_TF[0]['date']
+        end_date = LOC_values_TF[-1]['date']
+        prs_list = self.__calculate_prs_for_days(start_date, end_date)
+        i = 0
+        while i < len(LOC_values_TF):
+            del LOC_values_TF[i]['LOC']
+            del LOC_values_TF_gone[i]['LOC']
+            del LOC_values_core[i]['LOC']
+            del LOC_values_core_gone[i]['LOC']
+            LOC_values_TF[i]['PRS'] = prs_list[i]['prs_value']
+            LOC_values_TF_gone[i]['PRS'] = prs_list[i]['prs_value']
+            LOC_values_core[i]['PRS'] = prs_list[i]['prs_value']
+            LOC_values_core_gone[i]['PRS'] = prs_list[i]['prs_value']
+            i += 1
+
+        self.__save_data_for_prs(LOC_values_TF, SystemPath.get_path_file_PRS_TF(self.__owner, self.__repository))
+        self.__save_data_for_prs(LOC_values_TF_gone, SystemPath.get_path_file_PRS_TF_gone(self.__owner, self.__repository))
+        self.__save_data_for_prs(LOC_values_core, SystemPath.get_path_file_PRS_core(self.__owner, self.__repository))
+        self.__save_data_for_prs(LOC_values_core_gone, SystemPath.get_path_file_PRS_core_gone(self.__owner, self.__repository))
+
+    def create_issues_file(self):
+        """
+        The function reads the 4 LOC files, and then replaces the LOC parameter with the ISSUE parameter, creating the PRS files with the various meanings deo dev_breaks_count
+        """
+        LOC_values_TF = self.read_LOC_file(SystemPath.get_path_file_LOC_TF(self.__owner, self.__repository))
+        LOC_values_TF_gone = self.read_LOC_file(SystemPath.get_path_file_LOC_TF_gone(self.__owner, self.__repository))
+        LOC_values_core = self.read_LOC_file(SystemPath.get_path_file_LOC_core(self.__owner, self.__repository))
+        LOC_values_core_gone = self.read_LOC_file(SystemPath.get_path_file_LOC_core_gone(self.__owner, self.__repository))
+        start_date = LOC_values_TF[0]['date']
+        end_date = LOC_values_TF[-1]['date']
+        issues_list = self.__calculate_issue_for_days(start_date, end_date)
+        i = 0
+        while i < len(LOC_values_TF):
+            del LOC_values_TF[i]['LOC']
+            del LOC_values_TF_gone[i]['LOC']
+            del LOC_values_core[i]['LOC']
+            del LOC_values_core_gone[i]['LOC']
+            LOC_values_TF[i]['ISSUE'] = issues_list[i]['prs_value']
+            LOC_values_TF_gone[i]['ISSUE'] = issues_list[i]['prs_value']
+            LOC_values_core[i]['ISSUE'] = issues_list[i]['prs_value']
+            LOC_values_core_gone[i]['ISSUE'] = issues_list[i]['prs_value']
+            i += 1
+
+        self.__save_data_for_isu(LOC_values_TF, SystemPath.get_path_file_ISU_TF(self.__owner, self.__repository))
+        self.__save_data_for_isu(LOC_values_TF_gone, SystemPath.get_path_file_ISU_TF_gone(self.__owner, self.__repository))
+        self.__save_data_for_isu(LOC_values_core, SystemPath.get_path_file_LOC_core(self.__owner, self.__repository))
+        self.__save_data_for_isu(LOC_values_core_gone, SystemPath.get_path_file_ISU_core_gone(self.__repository, self.__owner))
+        
+        
+
+        
+
+
+
+    def __create_prs_list_for_all_days(self, start_date: datetime.date, end_date: datetime.date):
+        """
+        The function creates a list which will serve as a basis for counting pull request to day.
+        Each element of the list will contain the data parameter and the prs_value parameter (initialized to 0)
+        Args:
+            start_date(datetime.date): the start date of the analysis period
+            end_date(datetime.date): the end date of the analysis period
+        Output:
+            prs_for_days(list): list for counting pull requests per day
+        """
+        st_date = datetime(year= start_date.year, month= start_date.month, day= start_date.day).date()
+        ed_date = datetime(year= end_date.year, month= end_date.month, day= end_date.day).date()
+        prs_for_days = []
+        while st_date <= ed_date:
+            prs_day = {
+                'date': st_date,
+                'prs_value' :0
+            }
+            prs_for_days.append(prs_day)
+            st_date = Utility.next_day(st_date)
+        
+        return prs_for_days
+    
+    def __create_issue_list_for_all_days(self, start_date: datetime.date, end_date: datetime.date):
+        """
+        The function creates a list which will serve as a basis for counting issues per day.
+        Each element of the list will contain the data parameter and the issue_value parameter (initialized to 0)
+        Args:
+            start_date(datetime.date): the start date of the analysis period
+            end_date(datetime.date): the end date of the analysis period
+        Output:
+            prs_for_days(list): list for counting issues per day
+        """
+        st_date = datetime(year= start_date.year, month= start_date.month, day= start_date.day).date()
+        ed_date = datetime(year= end_date.year, month= end_date.month, day= end_date.day).date()
+        issue_for_days = []
+        while st_date <= ed_date:
+            issue_day = {
+                'date': st_date,
+                'issue_value': 0
+            }
+            issue_for_days.append(issue_day)
+            st_date = Utility.next_day(st_date)
+        
+        return issue_for_days
+    
+    def __calculate_prs_for_days(self, start_date, end_date):
+        """
+        the function generates a list with each element containing the date and the number of pull requests on that date
+        Args:
+            start_date(datetime.date): the start date of the analysis period
+            end_date(datetime.date): the end date of the analysis period
+        Output:
+            prs_for_days(list): the list containing the pull requests count for each day
+        """
+        prs_list = self.read_prs_list()
+        prs_for_days = self.__create_prs_list_for_all_days(start_date, end_date)
+        i = 0
+        for i in range(0, len(prs_for_days)):
+            counter = 0
+            for pr in prs_list:
+                if prs_for_days[i]['date'] == pr['date']:
+                    counter += 1
+            
+            prs_for_days[i]['prs_value'] = counter
+        
+        return prs_for_days
+    
+    def __calculate_issue_for_days(self, start_date, end_date):
+        """
+        the function generates a list with each element containing the date and the number of issues on that date
+        Args:
+            start_date(datetime.date): the start date of the analysis period
+            end_date(datetime.date): the end date of the analysis period
+        Output:
+            issues_for_days(list): the list containing the issue count for each day
+        """
+        issues_list = self.read_issues_list()
+        issues_for_days = self.__create_issue_list_for_all_days(start_date, end_date)
+        i = 0
+        for i in range(0, len(issues_for_days)):
+            counter = 0
+            for issue in issues_list:
+                if issues_for_days[i]['date'] == issue['date']:
+                    counter += 1
+            
+            issues_for_days[i]['issue_value'] = counter
+        
+        return issues_for_days
+
     
     def __create_metric_folder(self):
         """
@@ -58,9 +291,12 @@ class CSVmanager:
         exist = os.path.exists(metric_folder)
         if not exist:
             try:
+                print("I create the folder in which to insert the metric files in " + str(metric_folder))
                 os.makedirs(metric_folder)
             except OSError as error:
                 print(f"{error}")
+        else:
+            print("Repository metrics folder" + str(self.__owner)+"/"+ str(self.__repository) + "already exists in " + str(metric_folder))
     
     def create_LOC_values(self):
         """
@@ -131,8 +367,8 @@ class CSVmanager:
                 if elem['date'] == LOC_list[i]['date']:
                     lines_added, lines_removed, repository_size = self.__apimanager.get_commit_infomations_sha(elem['sha'])
                     commit_list.remove(elem)
-                    LOC_list['LOC'] += lines_added + lines_removed
-                    LOC_list['project_size'] = repository_size
+                    LOC_list[i]['LOC'] += lines_added + lines_removed
+                    LOC_list[i]['project_size'] = repository_size
             i +=1
             perc = int(i/number_elem * 100)
             if perc == T_status:
@@ -334,6 +570,52 @@ class CSVmanager:
             writer.writeheader()
             writer.writerows(LOC_list)
 
+    def __save_data_for_prs(self, PRS_list, file_path: str):
+        """
+        the function takes care of saving the files with the PRS metric
+        Args:
+            PRS_list(list): the list of values to save
+            file_path(str): the path to save the file
+        """
+        exist = os.path.isfile(file_path)
+        fieldnames = ['date', 'PRS', 'dev_breaks_count', 'project_age', 
+                     'project_contributors' ,'project_name', 'project_language', 
+                      'project_size', 'project_stars']
+        with open(file_path, mode="w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(PRS_list)
+
+    def __save_data_for_isu(self, ISU_list, file_path: str):
+        """
+        the function takes care of saving the files with the ISU metric
+        Args:
+            ISU_list(list): the list of values to save
+            file_path(str): the path to save the file
+        """
+        exist = os.path.isfile(file_path)
+        fieldnames = ['date', 'ISU', 'dev_breaks_count', 'project_age', 
+                     'project_contributors' ,'project_name', 'project_language', 
+                      'project_size', 'project_stars']
+        with open(file_path, mode="w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(ISU_list)
+
+    def save_all_issues(self):
+        """
+        the function takes care of saving the data relating to the issues
+        """
+        issues_list = self.__apimanager.get_all_issues()
+        path = SystemPath.get_path_issue_list(self.__owner, self.__repository)
+        exist = exist = os.path.isfile(path)
+        fieldnames = ["date", "author", "id"]
+        with open(path, mode="w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(issues_list)
+
+
     def create_dev_breaks_count_TF_gone(self, start_date: datetime, end_date: datetime):
         """
         The function calculates the dev_breaks_count values for each day of the analysis period considering them as the number of developer TFs that are gone.
@@ -387,7 +669,7 @@ class CSVmanager:
         login_tf_list = []
         repo_name = self.__owner + '/' + self.__repository
         for elem in tf_devs:
-            name, login = elem
+            login = elem
             login_tf_list.append(login)
 
         try:
@@ -524,7 +806,7 @@ class CSVmanager:
         list_dev_breaks_count = self.create_dev_breaks_count_core_gone(start_date, end_date)
         i = 0
         while i in range(0, len(list_dev_breaks_count)-1):
-            LOC_list[i]['dev_breaks_count'] = list_dev_breaks_count[i]['number_devs']
+            LOC_list[i]['dev_breaks_count'] = list_dev_breaks_count[i]['devs_count']
             i += 1
         print("End of calculation for gone core developers, data saving...")
         self.__save_data_for_loc(LOC_list, SystemPath.get_path_file_LOC_core_gone(self.__owner, self.__repository))
@@ -582,9 +864,7 @@ class CSVmanager:
                 csvreader = csv.reader(file, delimiter=';')
                 for dev, repo, dates, len, Tfov, previously, label, after in csvreader:
                     if repo == repo_name:
-                        print("alemeno una volta trovo il repo")
                         if dev in core_devs:
-                            print("esiete un dev")
                             date_interval = dates.split('/')
                             start_date = Utility.convert_string_to_date(date_interval[0])
                             end_date = Utility.convert_string_to_date(date_interval[-1])
@@ -604,4 +884,5 @@ class CSVmanager:
         except Exception as e:
             print(f"Errore durante la lettura del file: {e}")
             return None
+
     

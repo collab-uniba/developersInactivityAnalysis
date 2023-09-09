@@ -1,12 +1,12 @@
 import requests
 import Utility
-import CSVmanager
 import os
 import SystemPath
 import time
+import json
 
 class APImanager:
-    def __init__(self, owner: str, repository: str, token: str, csv_menager: CSVmanager.CSVmanager):
+    def __init__(self, owner: str, repository: str, token: str):
         """
         the constructor of the APImanager class, which takes care of retrieving information about the repository by querying the git hub API
         Args:
@@ -17,7 +17,6 @@ class APImanager:
         """
         self.__repository = repository
         self.__owner = owner
-        self.__csv_maneger = csv_menager
         self.__token = token
         self.__creation_date = self.__get_start_date_repository()
         self.__main_language = self.__get_main_programming_language()
@@ -51,11 +50,11 @@ class APImanager:
         response = requests.get(base_url, headers)
 
         if response.status_code == 200:
+            self.handle_rate_limit(response.headers)
             data = response.json()
             creation_date = Utility.convert_string_to_date(data["created_at"][:10])
             return creation_date
         elif response.status_code == 404:
-            print("errore 1")
             return f"Project '{self.__owner}' not found for user '{self.__repository}'."
         else:
             print("errore 2")
@@ -72,11 +71,11 @@ class APImanager:
             "Authorization": f"Bearer {self.__token}"
         }
         print("I request the main programming language of the repository from the Git hub api")
-
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout= (10, 30))
 
             if response.status_code == 200:
+                self.handle_rate_limit(response.headers)
                 language_data = response.json()
                 if language_data:
                     main_language = max(language_data, key=language_data.get)
@@ -103,6 +102,7 @@ class APImanager:
         commit_url = f"https://api.github.com/repos/{self.__owner}/{self.__repository}/commits/{sha}"
         headers = {"Authorization": f"Bearer {self.__token}"}
         commit_response = requests.get(commit_url, headers=headers)
+        if commit_response.status_code == 200: self.handle_rate_limit(commit_response.headers)
         commit_data = commit_response.json()
         stats = commit_data["stats"] if "stats" in commit_data else {"additions": 0, "deletions": 0}
         lines_added = stats["additions"]
@@ -110,11 +110,13 @@ class APImanager:
 
         tree_url = f"https://api.github.com/repos/{self.__owner}/{self.__repository}/git/trees/{sha}"
         tree_response = requests.get(tree_url, headers= headers)
-        tree_data = tree_response.json()
         repository_size = 0
+        if tree_response.status_code == 200: 
+            self.handle_rate_limit(tree_response.headers)
+            tree_data = tree_response.json()
 
-        for tree in tree_data.get("tree", []):
-            repository_size += tree.get("size", 0)
+            for tree in tree_data.get("tree", []):
+                repository_size += tree.get("size", 0)
 
         return lines_added, lines_removed, repository_size
     
@@ -126,46 +128,47 @@ class APImanager:
         headers = {
             "Authorization": f"token {self.__token}"
         }
-
-        # Ottieni l'URL API del repository specificato
+        print("I request the number of contributors via a request to the git hub API")
+        #Get the API URL of the specified repository
         repo_url = f"{base_url}/repos/{self.__owner}/{self.__repository}"
 
         try:
-            # Effettua una richiesta GET all'API di GitHub per ottenere il repository
-            response = requests.get(repo_url, headers=headers)
+            # Make a GET request to the GitHub API to get the repository
+            response = requests.get(repo_url, headers=headers, timeout=(10, 30))
             response.raise_for_status()  # Verifica eventuali errori nella risposta
 
-            # Estrai l'URL per ottenere i contributori dalla risposta JSON
+            # Extract URL to get contributors from JSON response
             repo_data = response.json()
             contributors_url = repo_data["contributors_url"]
 
-            # Inizializza una lista per contenere tutti i dati dei contributori
+            #Initialize a list to hold all contributor data
             all_contributors_data = []
 
-            # Continua a ottenere i dati dei contributori finché ci sono pagine disponibili
+            # Keep getting contributor data as long as there are pages available
             while contributors_url:
-                # Effettua una nuova richiesta per ottenere i dati dei contributori per la pagina corrente
+                # Make a new request to get contributor data for the current page
                 contributors_response = requests.get(contributors_url, headers=headers)
                 contributors_response.raise_for_status()
 
-                # Estrai i dati dei contributori dalla risposta JSON per la pagina corrente
+                # Extract contributor data from the JSON response for the current page
                 contributors_data = contributors_response.json()
                 all_contributors_data.extend(contributors_data)
 
-                # Verifica se ci sono altre pagine
+                # Check if there are other pages
                 if "next" in contributors_response.links:
                     contributors_url = contributors_response.links["next"]["url"]
                 else:
-                    # Se non ci sono altre pagine, interrompi il ciclo
+                    # If there are no other pages, break the loop
                     contributors_url = None
+                self.handle_rate_limit(contributors_response.headers)
 
-            # Calcola il numero totale di contributori
+            # Calculate the total number of contributors
             contributors_count = len(all_contributors_data)
 
             return contributors_count
 
         except requests.exceptions.RequestException as e:
-            print(f"Errore nella richiesta: {e}")
+            print(f"Error in request: {e}")
             return None
     
     def get_all_stargazers(self):
@@ -228,3 +231,62 @@ class APImanager:
                 return []
 
         return stargazers_with_dates
+    
+
+    def handle_rate_limit(self, response_headers):
+        """
+        The function checks the remaining rate limit of the token and in case the number of remaining requests is equal to 0, 
+        the function suspends the program, until the rate limit is restored
+        Args:
+            response_headers: the header of the response of the gi hub api, which contains the information regarding the rate limit
+        """
+        if "X-RateLimit-Remaining" in response_headers:
+            remaining_requests = int(response_headers["X-RateLimit-Remaining"])
+            reset_timestamp = int(response_headers["X-RateLimit-Reset"])
+
+            if remaining_requests == 0:
+                # Attenzione: è necessario attendere fino al reset_timestamp prima di effettuare ulteriori richieste
+                current_timestamp = int(time.time())
+                sleep_duration = max(0, reset_timestamp - current_timestamp) + 5  # Aggiungi 5 secondi di margine
+                print(f"Rate limit exceeded. Sleeping for {sleep_duration} seconds...")
+                time.sleep(sleep_duration)
+    
+    def get_all_issues(self):
+        """
+        the function by querying the git hub api obtains all the issues made from the day the repository was created to today. 
+        For each issue we get date, author and id.
+        """
+        base_url = f"https://api.github.com/repos/{self.__owner}/{self.__repository}/issues"
+        headers = {
+            "Authorization": f"token {self.__token}"
+        }
+
+        all_issues = []
+        page = 1
+        while True:
+            params = {"page": page, "per_page": 100}  # Imposta il numero di issue per pagina
+            response = requests.get(base_url, headers=headers, params=params)
+
+            if response.status_code == 200:
+                self.handle_rate_limit(response.headers)
+                issues = json.loads(response.text)
+                if not issues:  # Nessuna issue rimanente, esci dal ciclo
+                    break
+                all_issues.extend(issues)
+                page += 1
+            else:
+                print(f"Error  {response.status_code}: Unable to get issues.")
+                break
+        issues_data = []
+        for issue in all_issues:
+            date = issue["created_at"]
+            author = issue["user"]["login"]
+            issue_number = issue["number"]
+            issue_data = {
+                "date": date,
+                "author": author,
+                "id": issue_number
+            }
+            issues_data.append(issues_data)
+
+        return issues_data
