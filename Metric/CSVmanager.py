@@ -88,7 +88,7 @@ class CSVmanager:
 
         issues_list = []
         with open(path, 'r', newline = '') as csvfile:
-            reader = csv.DictReader(csvfile, delimiter = ';')
+            reader = csv.DictReader(csvfile, delimiter = ',')
             for row in reader:
                 id = row['id']
                 date = Utility.convert_string_to_date(row['date'][:10])
@@ -175,15 +175,15 @@ class CSVmanager:
             del LOC_values_TF_gone[i]['LOC']
             del LOC_values_core[i]['LOC']
             del LOC_values_core_gone[i]['LOC']
-            LOC_values_TF[i]['ISSUE'] = issues_list[i]['prs_value']
-            LOC_values_TF_gone[i]['ISSUE'] = issues_list[i]['prs_value']
-            LOC_values_core[i]['ISSUE'] = issues_list[i]['prs_value']
-            LOC_values_core_gone[i]['ISSUE'] = issues_list[i]['prs_value']
+            LOC_values_TF[i]['ISSUE'] = issues_list[i]['issue_value']
+            LOC_values_TF_gone[i]['ISSUE'] = issues_list[i]['issue_value']
+            LOC_values_core[i]['ISSUE'] = issues_list[i]['issue_value']
+            LOC_values_core_gone[i]['ISSUE'] = issues_list[i]['issue_value']
             i += 1
 
         self.__save_data_for_isu(LOC_values_TF, SystemPath.get_path_file_ISU_TF(self.__owner, self.__repository))
         self.__save_data_for_isu(LOC_values_TF_gone, SystemPath.get_path_file_ISU_TF_gone(self.__owner, self.__repository))
-        self.__save_data_for_isu(LOC_values_core, SystemPath.get_path_file_LOC_core(self.__owner, self.__repository))
+        self.__save_data_for_isu(LOC_values_core, SystemPath.get_path_file_ISU_core(self.__owner, self.__repository))
         self.__save_data_for_isu(LOC_values_core_gone, SystemPath.get_path_file_ISU_core_gone(self.__repository, self.__owner))
         
         
@@ -296,7 +296,7 @@ class CSVmanager:
             except OSError as error:
                 print(f"{error}")
         else:
-            print("Repository metrics folder" + str(self.__owner)+"/"+ str(self.__repository) + "already exists in " + str(metric_folder))
+            print("Repository metrics folder " + str(self.__owner)+"/"+ str(self.__repository) + " already exists in " + str(metric_folder))
     
     def create_LOC_values(self):
         """
@@ -594,7 +594,7 @@ class CSVmanager:
             file_path(str): the path to save the file
         """
         exist = os.path.isfile(file_path)
-        fieldnames = ['date', 'ISU', 'dev_breaks_count', 'project_age', 
+        fieldnames = ['date', 'ISSUE', 'dev_breaks_count', 'project_age', 
                      'project_contributors' ,'project_name', 'project_language', 
                       'project_size', 'project_stars']
         with open(file_path, mode="w", newline="") as file:

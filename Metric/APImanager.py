@@ -287,6 +287,6 @@ class APImanager:
                 "author": author,
                 "id": issue_number
             }
-            issues_data.append(issues_data)
+            issues_data.append(issue_data)
 
         return issues_data

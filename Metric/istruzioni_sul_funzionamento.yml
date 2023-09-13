@@ -12,20 +12,21 @@ Funzionamento File.py Metric
 Senza questi file l'algoritmo non funziona, quindi bisogna prima eseguire i file di Iaffaldano che generano i file richiesti, per poi utilizzare i file.py in Metric
 
 Repository analizzati
-1. atom/atom
-2. JabRef/jabref
-3. nodejs/node
-4. rails/rails non completato
-5. aseprite/aseprite
-6. MinecraftForge/MinecraftForge
-7. SpaceVim/SpaceVim
-8. fastlane/fastlane
-9. crystal-lang/crystal
-10. BabylonJS/Babylon.js
-11. elixir-lang/elixir
-12. github/linguist
-13. ionic-team/ionic
-14. facebook/react
-15. jquery/jquery
-16. flutter/flutter
-15. laravel/framework
+1. atom/atom (ha prs lits) (creati file prs)(creati file issue)
+2. JabRef/jabref (ha la prs list)(creati file prs)
+3. nodejs/node (ha la prs list)(creati file prs)
+4. rails/rails non completato (ha la prs list)
+5. aseprite/aseprite (ha prs list)(ha la prs list)(creati file issue)
+6. MinecraftForge/MinecraftForge (ha la prs list)(creati file prs)
+7. SpaceVim/SpaceVim (ha la prs list)(creati file prs)
+8. fastlane/fastlane (ha prs list)(creati file prs)
+9. crystal-lang/crystal (ha prs list)(creati file prs)
+10. BabylonJS/Babylon.js (ha prs list)(creati file prs)
+11. elixir-lang/elixir (ha prs list)(creati file prs)
+12. github/linguist (ha prs list)(creati file prs)
+13. ionic-team/ionic (NON HA LA PRS LIST)
+14. facebook/react (ha prs list)(creati file prs)
+15. jquery/jquery (ha la prs list)(creati file prs)
+16. flutter/flutter (ha prs list)(creati file prs)
+17. laravel/framework (ha la prs list)(creati file prs)
+18. jekyll/jekyll (ha la prs list)(creati file prs)
