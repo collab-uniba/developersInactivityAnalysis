@@ -51,6 +51,29 @@ class CSVmanager:
         commit_list = sorted(commit_list, key=lambda x: x['date'])
         return commit_list
     
+    def read_c_commit_list(self):
+        """
+        The function takes care of reading the file in which all the commits made during the analysis period are present, 
+        returns a copy of list where each element of the list is a commit with the relative information
+        Output:
+            c_commit_list(list): The list contains all the information about the commits of the analysis period
+        """
+        path_file = SystemPath.get_path_to_c_commit_list(self.__owner, self.__repository)
+        c_commit_list = []
+        with open(path_file, 'r', newline = '') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter=';')
+            for row in reader:
+                sha = row['sha']
+                date = Utility.convert_string_to_date(row['date'][:10])
+                c_commit_list.append({
+                    'sha': sha,
+                    'author': row['author_id'],
+                    'date': date
+                })
+        
+        c_commit_list = sorted(c_commit_list, key=lambda x: x['date'])
+        return c_commit_list
+    
     def read_prs_list(self):
         """
         The function takes care of reading the file in which all the pull requests made during the analysis period are present, 
@@ -129,6 +152,27 @@ class CSVmanager:
                 })
         
         return LOC_values
+    
+    def read_basis_file_loc(self):
+        path_file = SystemPath.get_path_basis_file_loc(self.__owner, self.__repository)
+        LOC_list = []
+        with open(path_file, mode='r', newline='') as file:
+            reader = csv.DictReader(file, delimiter = ',')
+            for row in reader:
+                LOC_list.append({
+                    'date': Utility.convert_string_to_date(row['date']),
+                    'LOC': row['LOC'],
+                    'dev_breaks_count': row['dev_breaks_count'],
+                    'project_age': row['project_age'],
+                    'project_contributors': row['project_contributors'],
+                    'project_name': row['project_name'],
+                    'project_language': row['project_language'],
+                    'project_size': row['project_size'],
+                    'project_stars': row['project_stars'],
+                    'done': row['done']
+                })
+        
+        return LOC_list
     
     def create_PRS_file(self):
         """
@@ -298,15 +342,33 @@ class CSVmanager:
         else:
             print("Repository metrics folder " + str(self.__owner)+"/"+ str(self.__repository) + " already exists in " + str(metric_folder))
     
+    def get_c_commit_list(self):
+        path_file = SystemPath.get_path_to_c_commit_list(self.__owner, self.__repository)
+        exist = os.path.isfile(path_file)
+        if not exist:
+            c_commit_list = self.read_commit_list()
+            self.update_c_commit_list(c_commit_list)
+        else:
+            c_commit_list = self.read_c_commit_list()
+        
+        return c_commit_list
+
+
+
     def create_LOC_values(self):
         """
         The function takes care of calculating all the information for the LOC metric and creates a file for each meaning of dev_breaks_count
         """
         commit_list = self.read_commit_list()
+
         start_date = commit_list[0]['date']
         end_date = commit_list[-1]['date']
         LOC_list = self.create_LOC_list(start_date, end_date)
         self.__calculate_LOC_and_size(commit_list, LOC_list)
+        i = 0
+        while i < len(LOC_list):
+            del LOC_list[i]['done']
+            i += 1
         self.__calculate_project_stars(LOC_list)
 
         self.__create_and_save_LOC_TF(start_date, end_date, Utility.copy_list(LOC_list))
@@ -325,31 +387,40 @@ class CSVmanager:
         Output:
             LOC_list(list): The base list for LOC metrics
         """
-        st_date = datetime(year= start_date.year, month= start_date.month, day= start_date.day).date()
-        ed_date = datetime(year= end_date.year, month= end_date.month, day= end_date.day).date()
-        LOC_list = []
-        print("Creation of the list containing the analysis data")
-        creation_date = self.__apimanager.get_creation_date()
-        main_language = self.__apimanager.get_main_language()
-        number_contributors = self.__apimanager.get_contributors()
-        while st_date <= ed_date:
-            project_age = st_date - creation_date
-            loc_stats = {
-                'date': st_date,
-                'LOC' : 0,
-                'dev_breaks_count': 0,
-                'project_age' : project_age.days,
-                'project_contributors': number_contributors,
-                'project_name': self.__repository,
-                'project_language': main_language,
-                'project_size': 0,
-                'project_stars':0
-            }
-            LOC_list.append(loc_stats)
-
-            st_date = Utility.next_day(st_date)
-        
-        return LOC_list
+        path_file_basis = SystemPath.get_path_basis_file_loc(self.__owner, self.__repository)
+        exist = os.path.isfile(path_file_basis)
+        if not exist:
+            st_date = datetime(year= start_date.year, month= start_date.month, day= start_date.day).date()
+            ed_date = datetime(year= end_date.year, month= end_date.month, day= end_date.day).date()
+            LOC_list = []
+            print("Creation of the list containing the analysis data")
+            creation_date = self.__apimanager.get_creation_date()
+            if creation_date >= start_date:
+                creation_date = start_date
+            main_language = self.__apimanager.get_main_language()
+            number_contributors = self.__apimanager.get_contributors()
+            while st_date <= ed_date:
+                project_age = st_date - creation_date
+                print(str(creation_date))
+                loc_stats = {
+                    'date': st_date,
+                    'LOC' : 0,
+                    'dev_breaks_count': 0,
+                    'project_age' : project_age.days,
+                    'project_contributors': number_contributors,
+                    'project_name': self.__repository,
+                    'project_language': main_language,
+                    'project_size': 0,
+                    'project_stars':0,
+                    'done' : False
+                }
+                LOC_list.append(loc_stats)
+                st_date = Utility.next_day(st_date)
+            return LOC_list
+        else:
+            LOC_list = self.read_basis_file_loc()
+            return LOC_list
+    
     
     def __calculate_LOC_and_size(self, commit_list, LOC_list):
         """
@@ -363,13 +434,16 @@ class CSVmanager:
         T_status = 5
         print("Calculate the size of the repository and the LOC value for each day")
         while i < len(LOC_list):
-            for elem in commit_list:
-                if elem['date'] == LOC_list[i]['date']:
-                    lines_added, lines_removed, repository_size = self.__apimanager.get_commit_infomations_sha(elem['sha'])
-                    commit_list.remove(elem)
-                    LOC_list[i]['LOC'] += lines_added + lines_removed
-                    LOC_list[i]['project_size'] = repository_size
+            if not LOC_list[i]['done']:
+                for elem in commit_list:
+                    if elem['date'] == LOC_list[i]['date']:
+                        lines_added, lines_removed, repository_size = self.__apimanager.get_commit_infomations_sha(elem['sha'])
+                        commit_list.remove(elem)
+                        LOC_list[i]['LOC'] += lines_added + lines_removed
+                        LOC_list[i]['project_size'] = repository_size
+            LOC_list[i]['done'] = True
             i +=1
+            self.__update_basis_file_loc(LOC_list)
             perc = int(i/number_elem * 100)
             if perc == T_status:
                 T_status += 5
@@ -553,6 +627,8 @@ class CSVmanager:
             i += 1
         print("End of calculation for inactive or gone TF developers, data saving...")
         self.__save_data_for_loc(LOC_list, SystemPath.get_path_file_LOC_TF(self.__owner, self.__repository))
+
+
         
     def __save_data_for_loc(self, LOC_list, file_path: str):
         """
@@ -569,6 +645,24 @@ class CSVmanager:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(LOC_list)
+
+    def __update_basis_file_loc(self, LOC_list):
+        file_path = SystemPath.get_path_basis_file_loc(self.__owner, self.__repository)
+        fieldnames = ['date', 'LOC', 'dev_breaks_count', 'project_age', 
+                     'project_contributors' ,'project_name', 'project_language', 
+                      'project_size', 'project_stars', 'done']
+        with open(file_path, mode='w', newline="") as file:
+            writer = csv.DictWriter(file, fieldnames= fieldnames)
+            writer.writeheader()
+            writer.writerows(LOC_list)
+
+    def update_c_commit_list(self, c_commit_list):
+        path_file = SystemPath.get_path_to_c_commit_list(self.__owner, self.__repository)
+        fieldnames = ['sha', 'author', 'date']
+        with open(path_file, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames)
+            writer.writeheader()
+            writer.writerows(c_commit_list)
 
     def __save_data_for_prs(self, PRS_list, file_path: str):
         """

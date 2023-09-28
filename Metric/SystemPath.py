@@ -1,6 +1,7 @@
 import os
 
 FILE_COMMIT_LIST = 'Organizations/{}/{}/commit_list.csv'
+FILE_C_COMMIT_LIST = 'Organizations/{}/{}/c_commit_list.csv'
 FILE_PRS_LIST = 'Organizations/{}/{}/prs_list.csv'
 FILE_ISSUE_LIST = 'Organizations/{}/{}/issue_list.csv'
 FOLDER_NAME = 'developersInactivityAnalysis'
@@ -21,6 +22,7 @@ ISU_CORE_GONE = "ISSUE_core_gone.csv"
 FILE_PAUSES = 'Organizations/{}/{}/pauses_dates_list.csv'
 FILE_G_FULL_LIST = 'Organizations/A80API/G_full_list.csv'
 FILE_CORE_DEVS = 'A80_Results/{}/A80_devs.csv'
+FILE_BASIS_LOC = "basis_file_loc.csv"
 
 def get_path_to_folder():
     """
@@ -54,6 +56,20 @@ def get_path_to_commit_list(owner: str, repository: str):
     path_folder = get_path_to_folder()
     path = path_folder + '/' + FILE_COMMIT_LIST.format(owner, repository)
     return path
+
+def get_path_to_c_commit_list(owner: str, repository: str):
+    """
+    Returns the path to the owner/repository copy commit_list file
+    Args:
+        owner(str): the name of the owner of the repository whose commit_list file we want to have
+        repository(str): the name of the repository whose commit_list file we want to have
+    Output:
+        path(str): the path to the owner/repository commit_list file
+    """
+    path_folder = get_path_to_folder()
+    path = path_folder + '/' + FILE_C_COMMIT_LIST.format(owner, repository)
+    return path
+
 
 def get_path_prs_list(owner: str, repository: str):
     """
@@ -118,6 +134,11 @@ def get_path_file_LOC_TF(owner: str, repository:str):
     """
     path_folder_metric = get_metric_folder(owner, repository)
     path = path_folder_metric + '/' + LOC_TF
+    return path
+
+def get_path_basis_file_loc(owner: str, repository: str):
+    path_folder = get_metric_folder(owner, repository)
+    path = path_folder + '/' + FILE_BASIS_LOC
     return path
 
 def get_path_file_LOC_TF_gone(owner: str, repository:str):
