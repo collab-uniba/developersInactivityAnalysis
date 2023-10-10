@@ -15,7 +15,7 @@ if you don’t have these files. cvs then you will have to run the following fil
 - run `CommitExtractor.py` to create `commit_list.csv`, 
         script path: developersInactivityAnalysis/Extractors/CommitExtractor.py
 
-- run `c` to create `pauses_dates_list.csv`, script path:
+- run `CommitExtractor.py` to create `pauses_dates_list.csv`, script path:
 
 - run `gittruckfacor.jar` to create `TF_devs.csv`, 
         scrip path: developersInactivityAnalysis/TruckFactor/gittruckfactor.jar
