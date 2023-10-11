@@ -135,7 +135,7 @@ class APImanager:
         try:
             # Make a GET request to the GitHub API to get the repository
             response = requests.get(repo_url, headers=headers, timeout=(10, 30))
-            response.raise_for_status()  # Verifica eventuali errori nella risposta
+            response.raise_for_status()  # Check for errors in the response
 
             # Extract URL to get contributors from JSON response
             repo_data = response.json()
