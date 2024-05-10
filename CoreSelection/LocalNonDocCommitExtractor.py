@@ -1,4 +1,5 @@
-import sys, os, shutil
+import sys
+import os
 import pandas
 import git
 import classifier
@@ -21,8 +22,13 @@ def main(gitRepoURL):
         git.Git(reposDirectory).clone(gitRepoURL)
         print('Clone Complete: ', gitRepoURL)
     except:
-        print('Clone Failed! Probably repo already exists.')
-        pass
+        print('Warning: clone Failed! Probably repo already exists: trying to pull.')
+        try:
+            git.Git(reposDirectory).pull()
+            print('Pull Complete: ', gitRepoURL)
+        except:
+            print('Error: pull Failed! Exiting.')
+            sys.exit(1)
 
     repoName = gitRepoURL.split('/')[-1].split('.')[0]
     if(repoName=='Babylon'):
@@ -76,7 +82,7 @@ def main(gitRepoURL):
         contributions['email'] = contributions['email'].str.lower()
         contributions['name'] = contributions['name'].str.lower()
         contributions.to_csv(contributions_destination,
-                             sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                             sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
         print('Contributions Written: ', contributions_destination)
         pass
 
@@ -84,7 +90,7 @@ def main(gitRepoURL):
     grouped_contributions = grouped_contributions.drop(columns=['date'])
     grouped_contributions = grouped_contributions.rename(columns={'sha': 'commits'})
     grouped_contributions.to_csv(aggregated_contributions_destination,
-                                 sep=';', na_rep='N/A', index=True, quoting=None, line_terminator='\n')
+                                 sep=';', na_rep='N/A', index=True, quoting=None, lineterminator='\n')
     print('Grouped Contributions Written: ', aggregated_contributions_destination)
 
     #shutil.rmtree(repoDir)
@@ -95,8 +101,15 @@ if __name__ == "__main__":
     os.chdir(THIS_FOLDER)
 
     ### ARGUMENTS MANAGEMENT
-    # python script.py gitCloneURL
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    gitRepoURL = sys.argv[1]
 
-    main(gitRepoURL)
+    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
+    try:
+        # sys.argv[1] is the file containing the list of Git repositories
+        # read the file and process each line
+        with open(sys.argv[1], 'r') as file:
+            for line in file:
+                gitRepoURL = line.strip()
+                main(gitRepoURL)
+    except IndexError:
+        print("Error: No parameters provided. Please provide a file with one Git repository URL per line.")
+        sys.exit(1)
