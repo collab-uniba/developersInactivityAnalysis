@@ -7,9 +7,9 @@ Core developers are defined as those authoring 80% of a project's code base
 Clones a git repo locally and extract commits statistics.
 
 Run `LocalNonDocCommitExtractor.py <repo-url>`
-- Input: repo url
+- Input: list of GitHub repository urls
 - Output: A80*_results/repo/commits.csv, A80*_results/repo/Cstats.csv
-- Example: `python3 LocalNonDocCommitExtractor.py https://github.com/collab-uniba/developersInactivityAnalysis.git`
+- Example: `python3 LocalNonDocCommitExtractor.py ../Resources/repositories.txt`
 
 ## Step 2
 Refer to this [(README | CommitExtractor)](../README.md#L24) file and execute CommitExtractor.py.
