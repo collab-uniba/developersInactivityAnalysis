@@ -7,9 +7,9 @@ from itertools import combinations, product
 
 import pandas
 
-import regex
+import re
 
-REX_EMAIL = regex.compile(
+REX_EMAIL = re.compile(
     r"[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?")
 
 class Alias:
@@ -137,7 +137,7 @@ def unmask(devsMap, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(os.path.join(out_dir, 'dict'), exist_ok=True)
 
-    fakeusr_rex = regex.compile(r'\A[A-Z]{8}$')
+    fakeusr_rex = re.compile(r'\A[A-Z]{8}$')
 
     USR_FAKE = 'FAKE'
     USR_REAL = 'REAL'
@@ -464,8 +464,9 @@ def find_missing_aliases(aliases, _all, outputFolder):
             f.write(','.join(i) + '\n')
     return missing
 
-def main(repoName):
-    organization, repo = repoName.split('/')
+def main(url):
+    repoName = url.replace('https://github.com/', '')
+    _, repo = repoName.split('/')
 
     sourceFolder = '../A80_Results/' + repo
     devsMapFile = os.path.join(sourceFolder, 'login_map.csv')
@@ -523,11 +524,11 @@ def main(repoName):
     not_resolved = devsMapData[devsMapData['login'].isnull()]
 
     devsMapData.to_csv(os.path.join(sourceFolder, 'unmasking_results.csv'),
-                                 sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                                 sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
     not_resolved.to_csv(os.path.join(sourceFolder, 'unmasking_FAILED.csv'),
-                       sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                       sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
     resolved.to_csv(os.path.join(sourceFolder, 'unmasked_SUCCESSFUL.csv'),
-                       sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                       sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
 
 if __name__ == '__main__':
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -536,6 +537,15 @@ if __name__ == '__main__':
     ### ARGUMENTS MANAGEMENT
     # python script.py repoName (format: organization/repo)
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    repoName = sys.argv[1]
-
-    main(repoName)
+    if len(sys.argv) < 2:
+        print("Error: Not enough arguments. Please provide the list of projects file.")
+        sys.exit(1)
+    else:
+        repoFile = sys.argv[1]
+        # Reading the list of projects file and
+        # iterating over the list of projects
+        with open(repoFile, 'r') as f:
+            for line in f:
+                repoUrl = line.strip()
+                main(repoUrl)
+        print('Done!')
