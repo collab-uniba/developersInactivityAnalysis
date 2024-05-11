@@ -9,21 +9,21 @@ Clones a git repo locally and extract commits statistics.
 Run `LocalNonDocCommitExtractor.py <repo-url>`
 - Input: list of GitHub repository urls
 - Output: A80*_results/repo/commits.csv, A80*_results/repo/Cstats.csv
-- Example: `python3 LocalNonDocCommitExtractor.py ../Resources/repositories.txt`
+- Example: `python LocalNonDocCommitExtractor.py ../Resources/repositories.txt`
 
 ## Step 2
-Refer to this [(README | CommitExtractor)](../README.md#L24) file and execute CommitExtractor.py.
+Refer to this [(README | CommitExtractor)](../README.md#L24) file and execute `CommitExtractor.py`.
 At the end of the execution proceed with step 3 below
 
 ## Step 3
 
 Extract commit author information (id;name;email;login;commits).
 
-Run `LoginIdentifier.py <org/repo> <token / token index>`
-- Requires: A80*_results/repo/Cstats.csv 
-- Input: organization/repository, valid GitHub API token or index in the token file
-- Output: A80*_results/repo/login_map.csv
-- Example: `python3 LoginIdentifier.py collab-uniba/developersInactivityAnalysis myPersonalToken`
+Run `LoginIdentifier.py path/to/repositories.txt`
+- Requires: A80_results/<repo>/Cstats.csv 
+- Input: file with the list of GitHub repositories
+- Output: A80_results/<repo>/login_map.csv
+- Example: `python LoginIdentifier.py ../Resources/repositories.txt`
 
 ## Step 4
 

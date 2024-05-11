@@ -2,6 +2,7 @@
 import Settings as cfg
 import pandas, numpy, os
 from github import Github
+import random
 
 ### MODULE FUNCTIONS
 def waitRateLimit(ghub):
@@ -70,6 +71,12 @@ def getToken(index):
     """Return the token the chosen index. Index ranges (1-N)"""
     tokensList = getTokensList()
     token = tokensList[index - 1]
+    return token
+
+def getRandomToken():
+    """Return a random token from the tokens list"""
+    tokensList = getTokensList()
+    token = random.choice(tokensList)
     return token
 
 def add(dataframe, row):

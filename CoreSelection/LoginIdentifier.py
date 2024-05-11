@@ -1,11 +1,14 @@
-import sys, os
+import sys
+import os
 import pandas
 from github import Github
+sys.path.append('../')
 import Utilities as util
 
 ### MAIN FUNCTION
-def main(repoName, token):
-    organization, repository = repoName.split('/')
+def main(url, token):
+    repoName = url.replace('https://github.com/', '')
+    _, repository = repoName.split('/')
     # TODO '../A80_Results/' should be a parameter
     sourceFolder = '../A80_Results/' + repository
     devsFilePath = os.path.join(sourceFolder, 'Cstats.csv')
@@ -65,7 +68,7 @@ def main(repoName, token):
             print('Dev Login Not Found: ', rec)
 
     devs_map.to_csv(os.path.join(sourceFolder, 'login_map.csv'),
-                             sep=';', na_rep='N/A', index=True, index_label='id', quoting=None, line_terminator='\n')
+                             sep=';', na_rep='N/A', index=True, index_label='id', quoting=None, lineterminator='\n')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -74,10 +77,17 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     # python script.py repoName(format: organization/project) tokenNumber
     print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    repoName = sys.argv[1]
-    try:
-        token = util.getToken(int(sys.argv[2]))
-    except:
-        token = sys.argv[2]
-        pass
-    main(repoName, token)
+    if len(sys.argv) < 2:
+        print("Error: Not enough arguments. Please provide the list of projects file.")
+        sys.exit(1)
+    else:
+        repoFile = sys.argv[1]
+        # Reading the list of projects file and
+        # iterating over the list of projects
+        with open(repoFile, 'r') as f:
+            for line in f:
+                repoName = line.strip()
+                token = util.getRandomToken()
+                print('Processing: {} with token: {}'.format(repoName, token))
+                main(repoName, token)
+    print('Done')
