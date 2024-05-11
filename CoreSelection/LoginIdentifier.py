@@ -86,8 +86,8 @@ if __name__ == "__main__":
         # iterating over the list of projects
         with open(repoFile, 'r') as f:
             for line in f:
-                repoName = line.strip()
+                repoUrl = line.strip()
                 token = util.getRandomToken()
-                print('Processing: {} with token: {}'.format(repoName, token))
-                main(repoName, token)
-    print('Done')
+                print('Processing: {} with token: {}'.format(repoUrl, token))
+                main(repoUrl, token)
+        print('Done')
