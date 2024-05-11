@@ -29,10 +29,10 @@ Note:
 2. Execute the gittruckfactor tool.
     - command: ```java –jar gittruckfactor.jar <path/to/.../git/repo> <orgname/reponame>```
     - Example: `java –jar gittruckfactor.jar ../Local_Repositories/developersInactivityAnalysis collab-uniba/developersInactivityAnalysis`
-3. Manually create a folder into followings path:  "../TF_Results/reponame" and "../Organizations/TF_Results/org/repo", with the following files from gittruckfactor tool output: 
-    - TF_report.txt: copy all the output of gittruckfactor.jar
-    - TF_devs.csv: for each developer enter <name;login>
-    - TF_devs_names.csv: for each developer enter <Developer;Files;Percentage>
+3. Manually create a folder into following paths:  "../TF_Results/reponame" and "../Organizations/TF_Results/org/repo", with the following files from gittruckfactor tool output: 
+    - `TF_report.txt`: copy all the output of gittruckfactor.jar
+    - `TF_devs.csv`: add header line `name;login`, then add info for each developer on a separate line
+    - `TF_devs_names.csv`: add header line `Developer;Files;Percentage`, then add info for each developer on a separate line
 
 ## Optional Settings
 
