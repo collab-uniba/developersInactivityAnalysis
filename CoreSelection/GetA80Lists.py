@@ -1,11 +1,15 @@
 import os
 import pandas
+import sys
+sys.path.append('../')
 import Utilities as util
 import Settings as cfg
 
-def getA80(repos_list):
-    for gitRepoName in repos_list:
-        organization, repo = gitRepoName.split('/')
+
+def getA80(repos_list_urls):
+    for gitRepoUrl in repos_list_urls:
+        gitRepoName = gitRepoUrl.replace('https://github.com/', '')
+        _, repo = gitRepoName.split('/')
         sourceFile = os.path.join(cfg.A80_report_folder, repo, 'unmasking_results.csv')
         destFolder = os.path.join(cfg.A80_report_folder, repo)
 
@@ -28,11 +32,12 @@ def getA80(repos_list):
                 break
 
         A80devs.to_csv(os.path.join(destFolder, cfg.A80_developers_file),
-                       sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                       sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
 
-def getA80mod(repos_list):
-    for gitRepoName in repos_list:
-        organization, repo = gitRepoName.split('/')
+def getA80mod(repos_list_urls):
+    for gitRepoUrl in repos_list_urls:
+        gitRepoName = gitRepoUrl.replace('https://github.com/', '')
+        _, repo = gitRepoName.split('/')
         sourceFile = os.path.join(cfg.A80_report_folder, repo, 'unmasking_results.csv')
         destFolder = os.path.join(cfg.A80mod_report_folder, repo)
         os.makedirs(destFolder, exist_ok=True)
@@ -60,10 +65,11 @@ def getA80mod(repos_list):
                 break
 
         A80modDevs.to_csv(os.path.join(destFolder, cfg.A80mod_developers_file),
-                       sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                       sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
 
-def getA80api(repos_list):
-    for gitRepoName in repos_list:
+def getA80api(repos_list_urls):
+    for gitRepoUrl in repos_list_urls:
+        gitRepoName = gitRepoUrl.replace('https://github.com/', '')
         organization, repo = gitRepoName.split('/')
         sourceFile = os.path.join(cfg.main_folder, organization, repo, cfg.commit_list_file_name)
         destFolder = os.path.join(cfg.A80api_report_folder, repo)
@@ -88,7 +94,7 @@ def getA80api(repos_list):
                 break
 
         A80apiDevs.to_csv(os.path.join(destFolder, cfg.A80api_developers_file),
-                       sep=';', na_rep='N/A', index=False, quoting=None, line_terminator='\n')
+                       sep=';', na_rep='N/A', index=False, quoting=None, lineterminator='\n')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -98,4 +104,5 @@ if __name__ == "__main__":
     repos_list=util.getReposList()
     getA80(repos_list)
     getA80mod(repos_list)
-    getA80api(repos_list)
+    #getA80api(repos_list)
+    print('Done.')
