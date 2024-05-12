@@ -40,6 +40,6 @@ Run `UnmaskAliases.py path/to/repositories.txt`
 Obtain the list of core developers.
 
 Run `GetA80Lists.py`
-- Requires: A80*_results/repo/unmasking_results.csv
-- Output: A80*_devs.csv
-- Example: `python3 GetA80Lists.py`
+- Requires: A80_results/<repo>/unmasking_results.csv
+- Output: A80_devs.csv
+- Example: `python GetA80Lists.py`
