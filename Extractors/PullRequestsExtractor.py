@@ -2,14 +2,16 @@
 # Opening a PR is considered a coding activity
 # so this script will be integrated with the CommitExtractor changing the name to "CodingExtractor"
 
+import logging
+import os
+import sys
+from datetime import datetime
+
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
 ### IMPORT EXCEPTION MODULES
 from requests.exceptions import Timeout
-from github import GithubException
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas
-from datetime import datetime
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -62,7 +64,7 @@ def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used 
                         statusSaver.write('last_page_read:{}'.format(page))
                 if (len(prs_data) > 0):
                     prs_data.to_csv(os.path.join(outputFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Pulls Extraction Complete')
@@ -71,7 +73,7 @@ def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used 
                 with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page_read:{}'.format(page))
                 prs_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
@@ -80,7 +82,7 @@ def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used 
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(prs_data) > 0):
                     prs_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except:
@@ -89,7 +91,7 @@ def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used 
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(prs_data) > 0):
                     prs_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
 
 def get_repo_activities(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers

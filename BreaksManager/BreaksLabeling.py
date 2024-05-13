@@ -1,7 +1,11 @@
 ### IMPORT SYSTEM MODULES
-import os, logging, pandas, sys
-from datetime import datetime
 import datetime as dt
+import logging
+import os
+import sys
+from datetime import datetime
+
+import pandas
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -112,7 +116,7 @@ def get_activities(organizationFolder, developer_login):
     dest = os.path.join(organizationFolder, cfg.actions_folder_name)
     os.makedirs(dest, exist_ok=True)
     actions_table.to_csv(os.path.join(organizationFolder, cfg.actions_folder_name, developer_login + '_actions_table.csv'),
-                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     return actions_table
 
 def splitBreak(break_limits, action_days, th):
@@ -303,7 +307,7 @@ def main(repos_list, mode):
                             util.add(labeled_breaks, [0, break_end, 0, 'ACTIVE', status])
 
                 labeled_breaks.to_csv(os.path.join(labeledBreaksFolder, dev + '_labeled_breaks.csv'),
-                                      sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                      sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
         print('{} Breaks Labeling Complete!'.format(gitRepoName))
 
 if __name__ == "__main__":

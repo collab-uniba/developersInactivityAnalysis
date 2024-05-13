@@ -1,13 +1,19 @@
 ### IMPORT EXCEPTION MODULES
 
 ### IMPORT SYSTEM MODULES
-import os, pandas, csv, sys, logging
-from datetime import datetime
+import csv
 import datetime as dt
+import logging
+import os
+import sys
+from datetime import datetime
+
+import pandas
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
 import Utilities as util
+
 
 def getFarOutThreshold(values, dev): ### If it is satisfying, move the function into UTILITIES
     import numpy
@@ -138,7 +144,7 @@ def main(repos_list, mode):
             os.makedirs(output_folder, exist_ok=True)
 
             breaks_df.to_csv(os.path.join(output_folder, dev + '_breaks.csv'),
-                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))

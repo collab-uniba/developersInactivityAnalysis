@@ -1,11 +1,13 @@
 ### IMPORT EXCEPTION MODULES
-from requests.exceptions import Timeout
-from github import GithubException
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas
+import logging
+import os
+import sys
 from datetime import datetime
+
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
+from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -98,9 +100,9 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                             util.add(completed_issues, issue_id)
                 if (len(issues_comments_data) > 0):
                     issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Issues Comments Extraction Complete')
@@ -113,9 +115,9 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                     util.add(completed_issues, issue_id)
                 if (len(issues_comments_data) > 0):
                     issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
@@ -124,9 +126,9 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_comments_data) > 0):
                     issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except:
@@ -135,9 +137,9 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_comments_data) > 0):
                     issues_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
 
 def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers
@@ -214,9 +216,9 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                             util.add(completed_pulls, pull_id)
                 if (len(pulls_comments_data) > 0):
                     pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Pulls Comments Extraction Complete')
@@ -229,9 +231,9 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                     util.add(completed_pulls, pull_id)
                 if (len(pulls_comments_data) > 0):
                     pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
@@ -240,9 +242,9 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                     statusSaver.write('last_pulls_page:{},last_pull:{},last_comment_page:{}'.format(pulls_page, pull_id, page))
                 if (len(pulls_comments_data) > 0):
                     pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except:
@@ -251,9 +253,9 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                     statusSaver.write('last_pulls_page:{},last_pull:{},last_comment_page:{}'.format(pulls_page, pull_id, page))
                 if (len(pulls_comments_data) > 0):
                     pulls_comments_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
 
 
@@ -333,9 +335,9 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                             util.add(completed_issues, issue_id)
                 if (len(issues_events_data) > 0):
                     issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Issues Events Extraction Complete')
@@ -345,8 +347,8 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
             #            with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
             #                statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
             #            if (len(issues_events_data) > 0):
-            #                issues_events_data.to_csv(os.path.join(outputFolder,outputFileName, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
-            #                completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues), sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+            #                issues_events_data.to_csv(os.path.join(outputFolder,outputFileName, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
+            #                completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues), sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
             #            exception_thrown=True
             #            pass
             except GithubException as ghe:
@@ -358,9 +360,9 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                     util.add(completed_issues, issue_id)
                 if (len(issues_events_data) > 0):
                     issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
@@ -369,9 +371,9 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_events_data) > 0):
                     issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except:
@@ -380,9 +382,9 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                     statusSaver.write('last_issues_page:{},last_issue:{},last_comment_page:{}'.format(issues_page, issue_id, page))
                 if (len(issues_events_data) > 0):
                     issues_events_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
 
 
@@ -423,7 +425,7 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                         statusSaver.write('last_page_read:{}'.format(page))
                 if (len(issues_prs_data) > 0):
                     issues_prs_data.to_csv(os.path.join(outputFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                     statusSaver.write('COMPLETE;{}'.format(datetime.today().strftime("%Y-%m-%d")))
                 logging.info('Issues/Pulls Extraction Complete')
@@ -432,7 +434,7 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                 with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page_read:{}'.format(page))
                 issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
@@ -441,7 +443,7 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(issues_prs_data) > 0):
                     issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except:
@@ -450,7 +452,7 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(issues_prs_data) > 0):
                     issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
 
 def get_repo_activities(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers

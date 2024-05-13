@@ -1,13 +1,18 @@
 ### IMPORT EXCEPTION MODULES
 
 ### IMPORT SYSTEM MODULES
-import os, pandas, csv, sys
-from datetime import datetime
+import csv
 import datetime as dt
+import os
+import sys
+from datetime import datetime
+
+import pandas
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
 import Utilities as util
+
 
 ### MAIN FUNCTION
 def main(repos_list):
@@ -36,7 +41,7 @@ def main(repos_list):
                                                          'author': missing_prs_data['creator_login']})
                     # Save the local set
                     columns_to_merge.to_csv(os.path.join(organization_folder, folder, out_prs_filename),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     organization_prs_as_issues = pandas.concat([organization_prs_as_issues, columns_to_merge], ignore_index=True)
 
             # Check for Missing Commits
@@ -49,14 +54,14 @@ def main(repos_list):
                         local_missing_commits = pandas.concat([local_missing_commits, missing_commits_data[~missing_commits_data.sha.isin(local_missing_commits.sha)]], ignore_index=True)
                 # Save the local set
                 local_missing_commits.to_csv(os.path.join(organization_folder, folder, out_commits_filename),
-                                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 organization_missing_commits = pandas.concat([organization_missing_commits, missing_commits_data[
                     ~missing_commits_data.sha.isin(organization_missing_commits.sha)]], ignore_index=True)
 
         organization_prs_as_issues.to_csv(os.path.join(organization_folder, out_prs_filename),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
         organization_missing_commits.to_csv(os.path.join(organization_folder, out_commits_filename),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))

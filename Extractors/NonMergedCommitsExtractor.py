@@ -3,15 +3,17 @@
 # so this script will be integrated with the CommitExtractor changing the name to "CodingExtractor"
 
 
+import logging
+import os
+import sys
+from datetime import datetime
+
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
+from github.GithubException import IncompletableObject
 ### IMPORT EXCEPTION MODULES
 from requests.exceptions import Timeout
-from github import GithubException
-from github.GithubException import IncompletableObject
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas
-from datetime import datetime
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -107,17 +109,17 @@ def extract_commits(gith, organization, repo_name, pr_number):
                                 util.add(commits_data, [sha, author_id, date])
                 if (len(commits_data) > 0):
                     commits_data.to_csv(os.path.join(outputFolder, outputFileName),
-                                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
             except IncompletableObject:
                 logging.warning('Github Exception 400: Returned object contains no URL. SHA: {}'.format(sha))
                 util.add(excluded_commits, [sha, pr_number])
                 if (len(commits_data) > 0):
                     commits_data.to_csv(os.path.join(outputFolder, outputFileName),
                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                                        line_terminator='\n')
+                                        lineterminator='\n')
                 excluded_commits.to_csv(os.path.join(outputFolder, tmpExcludedCommits),
                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                                        line_terminator='\n')
+                                        lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page:{}'.format(page))
                 exception_thrown = True
@@ -127,7 +129,7 @@ def extract_commits(gith, organization, repo_name, pr_number):
                 with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page_read:{}'.format(page))
                 commits_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except Timeout:
@@ -136,7 +138,7 @@ def extract_commits(gith, organization, repo_name, pr_number):
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(commits_data) > 0):
                     commits_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 exception_thrown = True
                 pass
             except AttributeError:
@@ -145,10 +147,10 @@ def extract_commits(gith, organization, repo_name, pr_number):
                 if (len(commits_data) > 0):
                     commits_data.to_csv(os.path.join(outputFolder, outputFileName),
                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                                        line_terminator='\n')
+                                        lineterminator='\n')
                 excluded_commits.to_csv(os.path.join(outputFolder, tmpExcludedCommits),
                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                                        line_terminator='\n')
+                                        lineterminator='\n')
                 with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                     statusSaver.write('last_page:{}'.format(page))
                 exception_thrown = True
@@ -160,7 +162,7 @@ def extract_commits(gith, organization, repo_name, pr_number):
                     statusSaver.write('last_page_read:{}'.format(page))
                 if (len(commits_data) > 0):
                     commits_data.to_csv(os.path.join(outputFolder,outputFileName),
-                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                           sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
     logging.info("Commit Extraction Complete")
     with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:

@@ -1,12 +1,16 @@
 ### IMPORT EXCEPTION MODULES
-from requests.exceptions import Timeout
-from github import GithubException
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas, csv, numpy
-from datetime import datetime
+import csv
 import datetime as dt
+import logging
+import os
+import sys
+from datetime import datetime
+
+import numpy
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
+from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -111,7 +115,7 @@ def main(repos_list):
                 util.add(TF_devs_stats, dev_stats)
 
     TF_devs_stats.to_csv(workingFolder + '/TF_devs_windows_stats.csv',
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     print("Process Successful Finished")
 
     print("Computing Averages")
@@ -121,7 +125,7 @@ def main(repos_list):
         avgs = data[3:].mean()
         util.add(averages,avgs)
     averages.to_csv(workingFolder + '/TF_devs_windows_stats_AVG.csv',
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     print("Computation DONE!")
 
 if __name__ == "__main__":

@@ -1,21 +1,21 @@
 ### IMPORT SYSTEM MODULES
 import csv
-import numpy
 import os
-import pandas
-import scipy
 import sys
 
+import effectsize
 import matplotlib.pyplot as plt
-from sipconfig import format
+import numpy
+import pandas
 import rpy2.robjects as robjects
+import scipy
 import seaborn as sns
 import statsmodels.api as sm
 from rpy2.robjects.packages import importr
+from sipconfig import format
 
 import Settings as cfg
 import Utilities as util
-import effectsize
 
 
 def getLife(dev, organization):
@@ -337,7 +337,7 @@ def test_breaks_duration_normality(repos_list, output_file_name, mode):
                           lil_all, p_lil_all, lil_all_NC, p_lil_all_NC, lil_all_I, p_lil_all_I])
 
     data_table.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
-               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 ### END of 1st ROUND OF REVIEWS ###
 
 def countOrganizationsAffected(repos_list, output_file_name, mode):
@@ -363,7 +363,7 @@ def countOrganizationsAffected(repos_list, output_file_name, mode):
 
         repo_inactivity_affected_list.to_csv(os.path.join(whoHasBeenInactive_folder, organization + '_inactivity_affected.csv'),
                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                                        line_terminator='\n')
+                                        lineterminator='\n')
         inactivity_affected_list = pandas.concat([inactivity_affected_list, repo_inactivity_affected_list], ignore_index=True)
 
         non_coding_affected = pandas.concat([non_coding_affected, repo_non_coding_affected], ignore_index=True)
@@ -372,22 +372,22 @@ def countOrganizationsAffected(repos_list, output_file_name, mode):
         still_gone_affected = pandas.concat([still_gone_affected, repo_still_gone], ignore_index=True)
 
     affected_summary.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
-                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     non_coding_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'non_coding_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                            line_terminator='\n')
+                            lineterminator='\n')
     inactive_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'inactive_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                            line_terminator='\n')
+                            lineterminator='\n')
     gone_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'gone_affected.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                            line_terminator='\n')
+                            lineterminator='\n')
     still_gone_affected.to_csv(os.path.join(cfg.main_folder, mode.upper(), 'still_gone_affected.csv'),
                          sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                         line_terminator='\n')
+                         lineterminator='\n')
     inactivity_affected_list.to_csv(os.path.join(whoHasBeenInactive_folder, 'SUMMARY_affected.csv'),
                          sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                         line_terminator='\n')
+                         lineterminator='\n')
 
 def countOrganizationsTransitions(repos_list, output_file_name, mode):
     transitions_summary = pandas.DataFrame(columns=['Project', '#breaks', 'A_to_NC', 'NC_to_A', 'A_to_I', 'I_to_A', 'NC_to_I', 'I_to_NC', 'I_to_G', 'G_to_A', 'G_to_NC'])
@@ -405,7 +405,7 @@ def countOrganizationsTransitions(repos_list, output_file_name, mode):
     util.add(transitions_summary, aggregated_row)
 
     transitions_summary.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
-                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                               sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     return transitions_summary
 
 def countAffected(repo, workingFolder, mode):
@@ -588,7 +588,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
 
         organization = proj['Project'].split('/')[0]
         matrix.to_csv(os.path.join(destinationFolder, organization + '_markov.csv'),
-                      sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                      sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     #Total_row = TotalTransitionsPercentages(transitions_summary)
     #util.add(chains_list, Total_row)
     last_row = ['AVG']
@@ -596,7 +596,7 @@ def organizationsTransitionsPercentages(transitions_summary_file_name, output_fi
     print(chains_list, len(last_row), len(chains_list.columns), last_row)
     util.add(chains_list, last_row)
     chains_list.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
-                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 def breaksDistributionStats(repos_list, output_file_name, mode):
     breaks_stats = pandas.DataFrame(columns=['Project', 'mean', 'st_dev', 'var', 'median', 'breaks_devlife_corr'])
@@ -631,7 +631,7 @@ def breaksDistributionStats(repos_list, output_file_name, mode):
         projects_counts.append(breaks_lifetime.BpY)
 
     breaks_stats.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
     ###
     # labels = [repo.split('/')[0] for repo in repos_list]
@@ -737,7 +737,7 @@ def breaksDurationsDescriptive(repos_list, output_file_name, mode):
                     numpy.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
     data = pandas.DataFrame(columns=['organization',
@@ -821,7 +821,7 @@ def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
                     numpy.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 def breaksDurationsPlot(repos_list, output_file_name, mode):
     data = pandas.DataFrame(columns=['organization', 'status', 'duration'])
@@ -846,7 +846,7 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
             util.add(data, [organization, 'inactive', dev_avg])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data.csv'),
-                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
     #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
     #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
@@ -897,7 +897,7 @@ def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
             util.add(data, [organization, 'inactive', dev_avg])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data_both.csv'),
-                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
     #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
     #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
@@ -954,7 +954,7 @@ def breaksOccurrencesPlotNotNormalized(repos_list, output_file_name, mode):
             util.add(data, [dev_row.organization, 'gone', dev_row.Gs])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_occurrences_not_normalized_data.csv'),
-                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
@@ -1032,7 +1032,7 @@ def breaksOccurrencesPlot(repos_list, output_file_name, mode):
             util.add(data, [dev_row.organization, 'gone', dev_row.Gs])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_occurrences_data.csv'),
-                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
@@ -1104,7 +1104,7 @@ def meanDifferenceTest(repos_list, output_file_name, mode):
     data = data.assign(sig=reject)
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name+'.csv'),
-                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 def TotalTransitionsPercentages(transitions_summary):
     ''' Calculates the Chain for all the TF '''
@@ -1275,7 +1275,7 @@ def writeDevslist(mode, repos_list):
             util.add(allDevs, [d['login'], repo])
 
     allDevs.to_csv(os.path.join(output_folder, 'devs_full_list.csv'),
-                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 
 def generateInvolvementTable(repos_list, output_file_name, mode):
@@ -1317,7 +1317,7 @@ def generateInvolvementTable(repos_list, output_file_name, mode):
                     util.add(involvementTable, row)
         involvementTable.to_csv(os.path.join(output_folder, organization+'_'+output_file_name+'.csv'),
                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                       line_terminator='\n')
+                       lineterminator='\n')
 
 def aggregateInvolvementTable(repos_list, output_file_name, mode):
     involvement_tables_folder = os.path.join(cfg.main_folder, mode.upper(), 'involvementTables')
@@ -1353,7 +1353,7 @@ def aggregateInvolvementTable(repos_list, output_file_name, mode):
 
     aggregatedInvolvementData.to_csv(os.path.join(output_folder, output_file_name+'.csv'),
                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                            line_terminator='\n')
+                            lineterminator='\n')
 
 def main(repos_list, mode):
     ''' MAIN FUNCTION '''

@@ -1,11 +1,15 @@
 ### IMPORT EXCEPTION MODULES
-from requests.exceptions import Timeout
-from github import GithubException
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas, csv, numpy
+import csv
+import logging
+import os
+import sys
 from datetime import datetime
+
+import numpy
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
+from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -104,9 +108,9 @@ def main(repos_list):
             util.add(TF_devs_stats, dev_stats)
 
     projects_stats.to_csv(workingFolder + '/projects_pauses_stats.csv',
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     TF_devs_stats.to_csv(workingFolder + '/TF_devs_pauses_stats.csv',
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))

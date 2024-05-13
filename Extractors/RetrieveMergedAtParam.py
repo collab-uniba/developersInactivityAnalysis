@@ -1,18 +1,21 @@
 # FIXME This file needs to be removed after the first commit in the new branch because it is integrated in PullRequestsExtractor
 
 ### IMPORT EXCEPTION MODULES
-from requests.exceptions import Timeout
-from github import GithubException
-from github.GithubException import IncompletableObject
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas
+import logging
+import os
+import sys
 from datetime import datetime
+
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
+from github.GithubException import IncompletableObject
+from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
 import Utilities as util
+
 
 def get_missing_param(gith, organization):  # developers is a previously used param representing the list of core developers
     logging.info('Starting Param Extraction')
@@ -54,7 +57,7 @@ def get_missing_param(gith, organization):  # developers is a previously used pa
                                 if (len(new_prs_data) > 0):
                                     new_prs_data.to_csv(tmp_PR_file,
                                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False,
-                                                        quoting=None, line_terminator='\n')
+                                                        quoting=None, lineterminator='\n')
                                 exception_thrown = True
                                 pass
                             except Timeout:
@@ -62,7 +65,7 @@ def get_missing_param(gith, organization):  # developers is a previously used pa
                                 if (len(new_prs_data) > 0):
                                     new_prs_data.to_csv(tmp_PR_file,
                                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False,
-                                                        quoting=None, line_terminator='\n')
+                                                        quoting=None, lineterminator='\n')
                                 exception_thrown = True
                                 pass
                             except:
@@ -70,9 +73,9 @@ def get_missing_param(gith, organization):  # developers is a previously used pa
                                 if (len(new_prs_data) > 0):
                                     new_prs_data.to_csv(tmp_PR_file,
                                                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False,
-                                                        quoting=None, line_terminator='\n')
+                                                        quoting=None, lineterminator='\n')
                                 raise
-                    new_prs_data.to_csv(PR_file, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                    new_prs_data.to_csv(PR_file, sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
         folder_count += 1
         logging.info('Missing Param Extraction COMPLETE for {} of {} Folders'.format(folder_count, len(os.listdir(workingFolder))))
 

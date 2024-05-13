@@ -1,16 +1,20 @@
 ### IMPORT EXCEPTION MODULES
-from requests.exceptions import Timeout
-from github import GithubException
-from github.GithubException import IncompletableObject
-
-### IMPORT SYSTEM MODULES
-from github import Github
-import os, sys, logging, pandas, csv
+import csv
+import logging
+import os
+import sys
 from datetime import datetime
+
+import pandas
+### IMPORT SYSTEM MODULES
+from github import Github, GithubException
+from github.GithubException import IncompletableObject
+from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
 import Utilities as util
+
 
 def mergeCodingActivities(organization):
     organization_folder = os.path.join(cfg.main_folder, organization)
@@ -57,7 +61,7 @@ def buildCodingActivitiesLists(destination_folder):
     if not coding_activities_data.empty:
         coding_activities_data.to_csv(os.path.join(destination_folder, out_coding_list_filename),
                                       sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                                      line_terminator='\n')
+                                      lineterminator='\n')
 
 def buildHistoryTables(organization):
     organization_folder = os.path.join(cfg.main_folder, organization)
@@ -108,7 +112,7 @@ def buildTable(destination_folder):
         coding_history_table = pandas.DataFrame(u_data, columns=column_names)
         coding_history_table.to_csv(os.path.join(destination_folder, out_coding_history_filename),
                              sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None,
-                             line_terminator='\n')
+                             lineterminator='\n')
 
 def writePauses(organization):
     organization_folder = os.path.join(cfg.main_folder, organization)
