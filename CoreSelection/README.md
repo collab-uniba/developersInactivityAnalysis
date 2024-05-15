@@ -19,21 +19,19 @@ At the end of the execution proceed with step 3 below
 
 Extract commit author information (id;name;email;login;commits).
 
-Run `LoginIdentifier.py path/to/repositories.txt`
-- Requires: A80_results/<repo>/Cstats.csv 
-- Input: file with the list of GitHub repositories to analyze
+Run `LoginIdentifier.py `
+- Requires: A80_results/<repo>/Cstats.csv, text file with the list of GitHub repositories to analyze
 - Output: A80_results/<repo>/login_map.csv
-- Example: `python LoginIdentifier.py ../Resources/repositories.txt`
+- Example: `python LoginIdentifier.py`
 
 ## Step 4
 
 Find aliases among committers.
 
-Run `UnmaskAliases.py path/to/repositories.txt`
-- Requires: A80_results/<repo>/login_map.csv
-- Input file with the list of GitHub repositories to analyze
+Run `UnmaskAliases.py`
+- Requires: A80_results/<repo>/login_map.csv,  text file with the list of GitHub repositories to analyze
 - Output: A80_results/<repo>/unmasking_results.csv
-- Example: `python UnmaskAliases.py ../Resources/repositories.txt`
+- Example: `python UnmaskAliases.py`
 
 ## Step 5
 
