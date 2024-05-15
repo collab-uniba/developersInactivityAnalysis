@@ -4,6 +4,7 @@ import pandas
 from github import Github
 sys.path.append('../')
 import Utilities as util
+import Settings as cfg
 
 ### MAIN FUNCTION
 def main(url, token):
@@ -74,20 +75,13 @@ if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py repoName(format: organization/project) tokenNumber
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    if len(sys.argv) < 2:
-        print("Error: Not enough arguments. Please provide the list of projects file.")
-        sys.exit(1)
-    else:
-        repoFile = sys.argv[1]
-        # Reading the list of projects file and
-        # iterating over the list of projects
-        with open(repoFile, 'r') as f:
-            for line in f:
-                repoUrl = line.strip()
-                token = util.getRandomToken()
-                print('Processing: {} with token: {}'.format(repoUrl, token))
-                main(repoUrl, token)
-        print('Done')
+    repoFile = '../' + cfg.repos_file
+    # Reading the list of projects file and
+    # iterating over the list of projects
+    with open(repoFile, 'r') as f:
+        for line in f:
+            repoUrl = line.strip()
+            token = util.getRandomToken()
+            print('Processing: {} with token: {}'.format(repoUrl, token))
+            main(repoUrl, token)
+    print('Done')
