@@ -2,8 +2,10 @@ import csv
 import os
 import pickle
 import sys
+sys.path.append('../')
 from collections import Counter
 from itertools import combinations, product
+import Settings as cfg
 
 import pandas
 
@@ -108,7 +110,7 @@ def merge(a, b, rule):
             labels[d_alias_map[a]].append(rule)
             # if both have same email and already in the alias map, check whether they are in two different clusters
             # if so, we first need to merge them
-            if rule is 'EMAIL' and d_alias_map[b] < d_alias_map[a]:
+            if rule == 'EMAIL' and d_alias_map[b] < d_alias_map[a]:
                 c_b = clusters.pop(d_alias_map[b])
                 c_a = clusters.pop(d_alias_map[a])
                 clusters[d_alias_map[b]] = sorted(c_a.union(c_b))
@@ -195,7 +197,7 @@ def unmask(devsMap, out_dir):
         name = user['name']
         email = user['email']
 
-        if name is "github" and email is "noreply@github.com":
+        if name == "github" and email == "noreply@github.com":
             continue
 
         unmask[uid] = uid
@@ -534,18 +536,11 @@ if __name__ == '__main__':
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py repoName (format: organization/repo)
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    if len(sys.argv) < 2:
-        print("Error: Not enough arguments. Please provide the list of projects file.")
-        sys.exit(1)
-    else:
-        repoFile = sys.argv[1]
-        # Reading the list of projects file and
-        # iterating over the list of projects
-        with open(repoFile, 'r') as f:
-            for line in f:
-                repoUrl = line.strip()
-                main(repoUrl)
-        print('Done!')
+    repoFile = '../' + cfg.repos_file
+    # Reading the list of projects file and
+    # iterating over the list of projects
+    with open(repoFile, 'r') as f:
+        for line in f:
+            repoUrl = line.strip()
+            main(repoUrl)
+    print('Done!')
