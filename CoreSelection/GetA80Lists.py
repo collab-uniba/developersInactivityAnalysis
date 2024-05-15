@@ -104,5 +104,5 @@ if __name__ == "__main__":
     repos_list=util.getReposList()
     getA80(repos_list)
     getA80mod(repos_list)
-    #getA80api(repos_list)
+    getA80api(repos_list)
     print('Done.')
