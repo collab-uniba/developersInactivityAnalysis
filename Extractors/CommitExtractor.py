@@ -5,10 +5,12 @@ from github.GithubException import IncompletableObject
 
 ### IMPORT SYSTEM MODULES
 from github import Github
-import os, sys, logging, pandas, csv
+import os, logging, pandas, csv
 from datetime import datetime
 
 ### IMPORT CUSTOM MODULES
+import sys
+sys.path.append('../')
 import Settings as cfg
 import Utilities as util
 
@@ -136,15 +138,15 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                                     util.add(commits_data, [sha, author_id, date])
                     if (len(commits_data) > 0):
                         commits_data.to_csv(os.path.join(workingFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 except IncompletableObject:
                     logging.warning('Github Exception 400: Returned object contains no URL. SHA: {}'.format(sha))
                     util.add(excluded_commits, [sha])
                     if (len(commits_data) > 0):
                         commits_data.to_csv(os.path.join(workingFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     excluded_commits.to_csv(os.path.join(workingFolder, tmpExcludedCommits),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
@@ -153,7 +155,7 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                     logging.warning('Exception Occurred While Getting COMMITS: Github {}'.format(ghe))
                     if (len(commits_data) > 0):
                         commits_data.to_csv(os.path.join(workingFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
@@ -162,7 +164,7 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                     logging.warning('Exception Occurred While Getting COMMITS: Timeout')
                     if (len(commits_data) > 0):
                         commits_data.to_csv(os.path.join(workingFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
@@ -172,9 +174,9 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                     util.add(excluded_commits, [sha])
                     if (len(commits_data) > 0):
                         commits_data.to_csv(os.path.join(workingFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     excluded_commits.to_csv(os.path.join(workingFolder, tmpExcludedCommits),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     exception_thrown = True
@@ -183,7 +185,7 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                     logging.warning('Execution Interrupted While Getting COMMITS')
                     if (len(commits_data) > 0):
                         commits_data.to_csv(os.path.join(workingFolder, outputFileName),
-                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                     with open(os.path.join(workingFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page:{}'.format(page))
                     raise
@@ -208,7 +210,7 @@ def writeCommitHistoryTable(workingFolder, commits_data):
         user_id = u
         cur_user_data = [user_id]
         date_commit_count = pandas.to_datetime(commits_data[['date']][commits_data['author_id'] == u].pop('date'),
-                                               format="%Y-%m-%d").dt.date.value_counts()
+                                               format="%Y-%m-%d %H:%M:%S%z").dt.date.value_counts()
         # ITERATE FROM DAY1 --> DAYN (D)
         for d in column_names[1:]:
             # IF U COMMITTED DURING D THEN U[D]=1 ELSE U(D)=0
@@ -221,7 +223,7 @@ def writeCommitHistoryTable(workingFolder, commits_data):
 
     commit_table = pandas.DataFrame(u_data, columns=column_names)
     commit_table.to_csv(os.path.join(workingFolder, cfg.commit_history_table_file_name),
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     logging.info("Commit History Table Written")
     return commit_table
 
@@ -232,12 +234,12 @@ def writePauses(workingFolder, commit_table):
     # Calcola days between commits, if commits are in adjacent days count 1
     pauses_duration_list = []
     pauses_dates_list = []
-    for index, u in commit_table.iterrows():
-        row = [u[0]]  # User_id
-        current_pause_dates = [u[0]]  # User_id
+    for _, u in commit_table.iterrows():
+        row = [u.iloc[0]] #[u[0]]  # User_id
+        current_pause_dates = [u.iloc[0]] # [u[0]]  # User_id
         commit_dates = []
         for i in range(1, len(u)):
-            if (u[i] > 0):
+            if (u.iloc[i] > 0): # if (u[i] > 0):
                 commit_dates.append(commit_table.columns[i])
         for i in range(0, len(commit_dates) - 1):
             period = util.daysBetween(commit_dates[i], commit_dates[i + 1])
@@ -288,7 +290,7 @@ def mergeProjectsCommits(path, main_project_name):  # No filter on core_devs_df.
                 commits_data = pandas.concat([commits_data, project_commits], ignore_index=True)
 
     commits_data.to_csv(os.path.join(path, cfg.commit_list_file_name),
-                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                        sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
     logging.info('All the Organization commits have been merged with '.format(main_project_name))
 
 ### MAIN FUNCTION
@@ -297,10 +299,6 @@ def main(gitRepoName, token):
     splitRepoName = gitRepoName.split('/')
     organization = splitRepoName[0]
     project = splitRepoName[1]
-
-    os.makedirs(cfg.logs_folder, exist_ok=True)
-    logfile = cfg.logs_folder+"/Commit_Extraction_"+organization+".log"
-    logging.basicConfig(filename=logfile, level=logging.INFO)
 
     g = Github(token)
     try:
@@ -360,13 +358,18 @@ if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py repoName(format: organization/project) tokenNumber
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    gitRepoName = sys.argv[1]
-    try:
-        token = util.getToken(int(sys.argv[2]))
-    except:
-        token = sys.argv[2]
-        pass
-    main(gitRepoName, token)
+    os.makedirs(cfg.logs_folder, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M')
+    logfile = cfg.logs_folder+f"/Commit_Extraction-{timestamp}.log"
+    logging.basicConfig(filename=logfile, level=logging.INFO)
+    
+    repoUrls = '../' + cfg.repos_file
+    with open(repoUrls) as f:
+        repoUrls = f.readlines()
+        for repoUrl in repoUrls:
+            gitRepoName = repoUrl.replace('https://github.com/', '').strip()
+            token = util.getRandomToken()
+            print('Running Commit Extraction for {}'.format(gitRepoName))
+            main(gitRepoName, token)
+            print('Commit Extraction for {} Completed'.format(gitRepoName))
+        print('Done.')
