@@ -1,16 +1,22 @@
 ### IMPORT SECTION
-import Settings as cfg
-import pandas, numpy, os
-from github import Github
+import os
 import random
+
+import numpy
+import pandas
+from github import Github
+
+import Settings as cfg
+
 
 ### MODULE FUNCTIONS
 def waitRateLimit(ghub):
     ### IMPORT REQUIRED MODULES
-    from requests.exceptions import Timeout
-    from github import GithubException
-    from datetime import datetime
     import time
+    from datetime import datetime
+
+    from github import GithubException
+    from requests.exceptions import Timeout
 
     exception_thrown = True
     while (exception_thrown):
@@ -73,9 +79,11 @@ def getToken(index):
     token = tokensList[index - 1]
     return token
 
-def getRandomToken():
+def getRandomToken(last_token=None):
     """Return a random token from the tokens list"""
     tokensList = getTokensList()
+    if last_token:
+        tokensList = [token for token in tokensList if token != last_token]
     token = random.choice(tokensList)
     return token
 
@@ -112,13 +120,15 @@ def getLastActivitiesPageRead(log_file):
 
 def daterange(start_date, end_date):
     """Iterates on the dates in a range"""
-    from datetime import datetime
     from datetime import timedelta  # , date
+    from datetime import datetime
 
+    # Fix: add %z to the datetime.strptime to avoid the following error:
+    # "ValueError: unconverted data remains: +00:00"
     if type(start_date) == str:
-        start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+        start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S%z')
     if type(end_date) == str:
-        end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S%z')
 
     for n in range(int((end_date - start_date).days + 2)):
         yield start_date + timedelta(n)
@@ -147,7 +157,7 @@ def parse_TF_results(results_folder, destination_folder):
             record = True
     print(TF_devs)
     TF_devs.to_csv(os.path.join(destination_folder,'TF_devs_names.csv'),
-                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                   sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 def map_name_login(results_folder, repo_name, destination_folder):
     # Find TF login from Names
@@ -169,7 +179,7 @@ def map_name_login(results_folder, repo_name, destination_folder):
         if (len(TF_name_login_map) == len(TF_names_list)):
             break;
     TF_name_login_map.to_csv(os.path.join(destination_folder,'TF_devs.csv'),
-                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, line_terminator='\n')
+                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
 def unmask_TF_routine():
     repos = getReposList()
