@@ -24,16 +24,16 @@ def getCommitExtractionStatus(folder, statusFile):
     if(statusFile in os.listdir(folder)):
         with open(os.path.join(folder, statusFile)) as f:
             content = f.readline().strip()
-        status,ref_date = content.split(';')
+        status, _ = content.split(';')
     return status
 
-def runCommitExtractionRoutine(g, organizationFolder, organization, project):
+def runCommitExtractionRoutine(g, token, organizationFolder, organization, project):
     workingFolder = (os.path.join(organizationFolder, project))
     os.makedirs(workingFolder, exist_ok=True)
 
     logging.info('Commit Extraction for {}'.format(project))
 
-    util.waitRateLimit(g)
+    g, token = util.waitRateLimit(g, token)
     repoName = organization + '/' + project
     repo = g.get_repo(repoName)
 
@@ -43,8 +43,8 @@ def runCommitExtractionRoutine(g, organizationFolder, organization, project):
 
     fileStatus = getCommitExtractionStatus(workingFolder, "_extractionStatus.tmp")
     if (fileStatus != COMPLETE):
-        util.waitRateLimit(g)
-        updateCommitListFile(g, repoName, project_start_dt, collection_day, workingFolder)
+        g, token = util.waitRateLimit(g, token)
+        g, token = updateCommitListFile(g, token, repoName, project_start_dt, collection_day, workingFolder)
     try:
         commits_data = pandas.read_csv(os.path.join(workingFolder, cfg.commit_list_file_name), sep=cfg.CSV_separator)
 
@@ -58,8 +58,9 @@ def runCommitExtractionRoutine(g, organizationFolder, organization, project):
         writePauses(workingFolder, commit_table)
     except:
         logging.info("No Commits for {}".format(project))
+    return g, token
 
-def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
+def updateCommitListFile(g, token, repoName, start_date, end_date, workingFolder):
     """Writes the list of the commits fro the given repository"""
 
     outputFileName = cfg.commit_list_file_name
@@ -77,7 +78,7 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
         while (exception_thrown):
             exception_thrown = False
 
-            util.waitRateLimit(g)
+            g, token = util.waitRateLimit(g, token)
             repo = g.get_repo(repoName)
 
             commits = repo.get_commits(since=start_date, until=end_date)  # Fake users to be filtered out (author_id NOT IN (SELECT id from users where fake=1))
@@ -127,12 +128,12 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
                     for page in range(last_page_read, last_page + 1):
                         commits_page = commits.get_page(page)
                         for commit in commits_page:
-                            util.waitRateLimit(g)
+                            g, token = util.waitRateLimit(g, token)
                             sha = commit.sha
                             if ((sha not in commits_data.sha.tolist()) and (sha not in excluded_commits.sha.tolist())):
                                 if (
                                 commit.author):  ### If author is NoneType, that means the author is no longer active in GitHub
-                                    util.waitRateLimit(g)
+                                    g, token = util.waitRateLimit(g, token)
                                     author_id = commit.author.login  ### HERE IS THE DIFFERENCE
                                     date = commit.commit.author.date
                                     util.add(commits_data, [sha, author_id, date])
@@ -192,6 +193,7 @@ def updateCommitListFile(g, repoName, start_date, end_date, workingFolder):
         logging.info("Commit Extraction Complete")
         with open(os.path.join(workingFolder, tmpStatusFile), "w") as statusSaver:
             statusSaver.write('COMPLETE;{}'.format(cfg.data_collection_date))
+    return g, token
 
 def writeCommitHistoryTable(workingFolder, commits_data):
     """Writes the commit history in form of a table of days x developers. Each cell contains the number of commits"""
@@ -318,12 +320,12 @@ def main(gitRepoName, token):
     organizationFolder = os.path.join(organizationsFolder, organization)
     os.makedirs(organizationsFolder, exist_ok=True)
 
-    runCommitExtractionRoutine(g, organizationFolder, organization, project)
+    g, token = runCommitExtractionRoutine(g, token, organizationFolder, organization, project)
     #core_devs_df = findCoreDevelopers(organizationFolder, project)
     #core_devs_list = core_devs_df.dev.tolist()
     #logging.info('Commit Extraction COMPLETE for the Main Project: {}! {} Core developers found.'.format(project, len(core_devs_list)))
 
-    util.waitRateLimit(g)
+    g, token = util.waitRateLimit(g, token)
     org = g.get_organization(organization)
     org_repos = org.get_repos(type='all')
 
@@ -334,11 +336,11 @@ def main(gitRepoName, token):
 
     repo_num = 0 ### Only for Log
     for repo in org_repos:
-        util.waitRateLimit(g)
+        g, token = util.waitRateLimit(g, token)
         project_name = repo.name
         if project_name != project:
             repo_num += 1 ### Only for Log
-            runCommitExtractionRoutine(g, organizationFolder, organization, project_name)
+            g, token = runCommitExtractionRoutine(g, token, organizationFolder, organization, project_name)
     logging.info('Commit Extraction COMPLETE for {} of {} Side Projects'.format(repo_num,num_repos))
 
     logging.info('Merging the Commits in the WHOLE {} Organization'.format(organization))
