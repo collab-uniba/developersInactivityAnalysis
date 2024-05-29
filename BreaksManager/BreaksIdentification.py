@@ -6,6 +6,7 @@ import datetime as dt
 import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
 import pandas
@@ -116,7 +117,8 @@ def main(repos_list, mode):
     workingFolder = cfg.main_folder
 
     for gitRepoName in repos_list:
-        organization, project = gitRepoName.split('/')
+        slug = gitRepoName.replace('https://github.com/', '')
+        organization, project = slug.split('/')
 
         logfile = cfg.logs_folder + "/Breaks_Identification_" + organization + ".log"
         logging.basicConfig(filename=logfile, level=logging.INFO)
