@@ -1,11 +1,9 @@
 ### IMPORT EXCEPTION MODULES
 
 ### IMPORT SYSTEM MODULES
-import csv
-import datetime as dt
 import os
 import sys
-from datetime import datetime
+sys.path.append('../')
 
 import pandas
 
@@ -24,7 +22,8 @@ def main(repos_list):
     out_commits_filename = 'missing_commits_list.csv'
 
     for gitRepoName in repos_list:
-        organization, project = gitRepoName.split('/')
+        slug = gitRepoName.replace('https://github.com/', '')
+        organization, _ = slug.split('/')
         organization_folder = os.path.join(workingFolder, organization)
 
         organization_prs_as_issues = pandas.DataFrame(columns=['id', 'date', 'author'])
