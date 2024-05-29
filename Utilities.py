@@ -4,52 +4,65 @@ import random
 
 import numpy
 import pandas
-from github import Github
+from datetime import datetime, timezone
+from github import Github, GithubException
+import time
+from requests.exceptions import Timeout
 
 import Settings as cfg
 
 
-### MODULE FUNCTIONS
-def waitRateLimit(ghub):
-    ### IMPORT REQUIRED MODULES
-    import time
-    from datetime import datetime
+# ### MODULE FUNCTIONS
+# def waitRateLimit(ghub):
+#     exception_thrown = True
+#     while (exception_thrown):
+#         exception_thrown = False
+#         try:
+#             search_limit = ghub.get_rate_limit().search.remaining
+#             core_limit = ghub.get_rate_limit().core.remaining
 
-    from github import GithubException
-    from requests.exceptions import Timeout
+#             S_reset = ghub.get_rate_limit().search.reset
+#             ttw = 0
+#             now = datetime.now(timezone.utc)
+#             if (search_limit <= 5):
+#                 S_reset = ghub.get_rate_limit().search.reset
+#                 #ttw = (S_reset - now).total_seconds() + 300
+#                 ttw = 3600
+#                 print('Waiting {} for limit reset', ttw)
+#             if (core_limit <= 500):
+#                 C_reset = ghub.get_rate_limit().core.reset
+#                 #ttw = (C_reset - now).total_seconds() + 300
+#                 ttw = 3600
+#                 print('Waiting {} for limit reset', ttw)
+#             time.sleep(ttw)### originally ttw. Setting 1 hour for testing exceptions
+#         except GithubException as ghe:
+#             print('Exception Occurred While Getting Rate Limits: Github', ghe)
+#             exception_thrown = True
+#             pass
+#         except Timeout as toe:
+#             print('Exception Occurred While Getting Rate Limits: Timeout', toe)
+#             exception_thrown = True
+#             pass
+#         except:
+#             print('Execution Interrupted: Unknown Reason')
+#             raise
 
-    exception_thrown = True
-    while (exception_thrown):
-        exception_thrown = False
+# modified by @bateman to handle multiple tokens and reduce the waiting time
+def waitRateLimit(ghub, last_token=None):
+    new_token = last_token
+    while True:
         try:
+            new_token = getRandomToken(last_token)
+            ghub = Github(new_token)
             search_limit = ghub.get_rate_limit().search.remaining
             core_limit = ghub.get_rate_limit().core.remaining
 
-            S_reset = ghub.get_rate_limit().search.reset
-            ttw = 0
-            now = datetime.utcnow()
-            if (search_limit <= 5):
-                S_reset = ghub.get_rate_limit().search.reset
-                #ttw = (S_reset - now).total_seconds() + 300
-                ttw = 3600
-                print('Waiting {} for limit reset', ttw)
-            if (core_limit <= 500):
-                C_reset = ghub.get_rate_limit().core.reset
-                #ttw = (C_reset - now).total_seconds() + 300
-                ttw = 3600
-                print('Waiting {} for limit reset', ttw)
-            time.sleep(ttw)### originally ttw. Setting 1 hour for testing exceptions
+            if (search_limit > 5) and (core_limit > 500):
+                return ghub, new_token
+            else:
+                print('Token close to depletion, finding another one')
         except GithubException as ghe:
             print('Exception Occurred While Getting Rate Limits: Github', ghe)
-            exception_thrown = True
-            pass
-        except Timeout as toe:
-            print('Exception Occurred While Getting Rate Limits: Timeout', toe)
-            exception_thrown = True
-            pass
-        except:
-            print('Execution Interrupted: Unknown Reason')
-            raise
 
 def getReposList():
     """Return the repos name list at the chosen index."""
