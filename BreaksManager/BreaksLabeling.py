@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
 import pandas
@@ -79,7 +80,7 @@ def get_issue_events_dev(organizationFolder, developer_login):
 
 def get_action_timeline(action_name, action_table, column_names):
     cur_action_data = [action_name]
-    date_action_count = pandas.to_datetime(action_table[['date']].pop('date'), format="%Y-%m-%d").dt.date.value_counts()
+    date_action_count = pandas.to_datetime(action_table[['date']].pop('date'), format="%Y-%m-%d %H:%M:%S%z").dt.date.value_counts()
     # ITERATE FROM DAY1 --> DAYN (D)
     for d in column_names[1:]:
         # IF U COMMITTED DURING D THEN U[D]=1 ELSE U(D)=0
@@ -247,7 +248,8 @@ def splitBreak(break_limits, action_days, th):
 ### MAIN FUNCTION
 def main(repos_list, mode):
     for gitRepoName in repos_list:
-        organization, main_project = gitRepoName.split('/')
+        slug = gitRepoName.replace('https://github.com/', '')
+        organization, _ = slug.split('/')
 
         logfile = cfg.logs_folder + "/Breaks_Labeling_" + organization + ".log"
         logging.basicConfig(filename=logfile, level=logging.INFO)
@@ -289,6 +291,10 @@ def main(repos_list, mode):
 
                     if len(break_actions) > 0:  # There are other activities: the Break is Non-coding
                         break_detail = splitBreak(break_dates, action_days, threshold)
+                        # Exclude columns where all entries are NA
+                        labeled_breaks = labeled_breaks.dropna(axis=1, how='all')
+                        break_detail = break_detail.dropna(axis=1, how='all')
+                        # Concatenate DataFrames
                         labeled_breaks = pandas.concat([labeled_breaks, break_detail], ignore_index=True)
                     else:  # No other activities: the Break is Inactive or Gone
                         if break_duration > cfg.gone_threshold:
