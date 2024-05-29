@@ -29,7 +29,7 @@ def getActivityExtractionStatus(folder, statusFile):
         status, _ = content.split(';')
     return status
 
-def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used param representing the list of core developers
+def get_prs_repo(gith, token, outputFolder, repo):   # developers is a previously used param representing the list of core developers
     outputFileName = "prs_repo.csv"
     tmpSavefile = '_prs_save_file.log'
     tmpStatusFile = "_prs_extraction_status.tmp"
@@ -59,7 +59,7 @@ def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used 
                         issue_id = issue.id
                         if (issue_id not in prs_data.id.tolist()):
                             if (issue.user):
-                                util.waitRateLimit(gith)
+                                gith, token = util.waitRateLimit(gith, token)
                                 util.add(prs_data, [issue_id, issue.as_issue().id, issue.created_at, issue.user.login, issue.state, issue.closed_at, issue.merged, issue.merged_at, issue.number])
                     with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page_read:{}'.format(page))
@@ -94,10 +94,12 @@ def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used 
                     prs_data.to_csv(os.path.join(outputFolder,outputFileName),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
+    return gith, token
 
-def get_repo_activities(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers
+def get_repo_activities(gith, token, outputFolder, repo):  # developers is a previously used param representing the list of core developers
     logging.info('Starting Issue/PullRequests Extraction')
-    get_prs_repo(gith, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+    gith, token = get_prs_repo(gith, token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+    return gith, token
 
 ### MAIN FUNCTION
 def main(gitRepoName, token):
@@ -118,7 +120,7 @@ def main(gitRepoName, token):
 
     workingFolder = cfg.main_folder
 
-    util.waitRateLimit(g)
+    g, token = util.waitRateLimit(g, token)
     org = g.get_organization(organization)
     org_repos = org.get_repos(type='all')
 
@@ -129,7 +131,7 @@ def main(gitRepoName, token):
 
     repo_num = 0  ### Only for Log
     for repo in org_repos:
-        util.waitRateLimit(g)
+        g, token = util.waitRateLimit(g, token)
         project = repo.name
         repo_num += 1  ### Only for Log
 
@@ -140,7 +142,7 @@ def main(gitRepoName, token):
         outputFolder = os.path.join(workingFolder, repo_name, 'Other_Activities')
         os.makedirs(outputFolder, exist_ok=True)
 
-        get_repo_activities(g, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+        g, token = get_repo_activities(g, token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
         logging.info('Commit Extraction COMPLETE for {} of {} Side Projects'.format(repo_num, num_repos))
     logging.info('Commit Extraction SUCCESSFULLY COMPLETED')
 
