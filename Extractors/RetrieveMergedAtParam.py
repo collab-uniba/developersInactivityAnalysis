@@ -4,12 +4,12 @@
 import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
 import pandas
 ### IMPORT SYSTEM MODULES
 from github import Github, GithubException
-from github.GithubException import IncompletableObject
 from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
@@ -41,7 +41,7 @@ def get_missing_param(gith, organization):  # developers is a previously used pa
                             columns=['id', 'issue_id', 'date', 'creator_login',
                                      'status', 'closed_at', 'merged', 'merged_at', 'number'])
 
-                    for index, pr in prs_data.iterrows():
+                    for _, pr in prs_data.iterrows():
                         pr_number = pr['number']
                         logging.info("Getting Param for PR n. {}".format(pr_number))
                         if 'merged_at' in pr.keys():
@@ -81,11 +81,7 @@ def get_missing_param(gith, organization):  # developers is a previously used pa
 
 ### MAIN FUNCTION
 def main(gitRepoName, token):
-    organization, project = gitRepoName.split('/')
-
-    os.makedirs(cfg.logs_folder, exist_ok=True)
-    logfile = cfg.logs_folder + "/Retrieve_Merged_at_" + organization + ".log"
-    logging.basicConfig(filename=logfile, level=logging.INFO)
+    organization, _ = gitRepoName.split('/')
 
     g = Github(token)
     try:
@@ -106,14 +102,16 @@ def main(gitRepoName, token):
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
+    
+    os.makedirs(cfg.logs_folder, exist_ok=True)
+    timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H:%M')
+    logfile = cfg.logs_folder+f"/Retrive_Merged_Param_Extraction_{timestamp}.log"
+    logging.basicConfig(filename=logfile, level=logging.INFO)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py repoName(format: organization/project) tokenNumber
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    gitRepoName = sys.argv[1]
-    try:
-        token = util.getToken(int(sys.argv[2]))
-    except:
-        token = sys.argv[2]
-        pass
-    main(gitRepoName, token)
+    repoUrls = util.getReposList()
+    for repoUrl in repoUrls:
+        gitRepoName = repoUrl.replace('https://github.com/', '').strip()
+        token = util.getRandomToken()
+        logging.info("Starting Retrive merged at param extraction for {}".format(gitRepoName))
+        main(gitRepoName, token)
+    print("Done")
