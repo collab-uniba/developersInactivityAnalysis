@@ -3,6 +3,7 @@ import csv
 import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
 import pandas
@@ -97,8 +98,8 @@ def buildTable(destination_folder):
         for u in devs_list:
             user_id = u
             cur_user_data = [user_id]
-            date_count = pandas.to_datetime(coding_data[['date']][coding_data['author'] == u].pop('date'),
-                                            format="%Y-%m-%d").dt.date.value_counts()
+            date_count = pandas.to_datetime(coding_data[['date']][coding_data['author'] == u].pop('date'), 
+                                            format="%Y-%m-%d %H:%M:%S%z").dt.date.value_counts()
             # ITERATE FROM DAY1 --> DAYN (D)
             for d in column_names[1:]:
                 # IF U COMMITTED DURING D THEN U[D]=1 ELSE U(D)=0
@@ -139,12 +140,12 @@ def computePauses(destination_folder):
         # Calcola days between coding activities, if activities are in adjacent days count 1
         pauses_duration_list = []
         pauses_dates_list = []
-        for index, u in coding_table.iterrows():
-            row = [u[0]]  # User_id
-            current_pause_dates = [u[0]]  # User_id
+        for _, u in coding_table.iterrows():
+            row = [u.iloc[0]]  # User_id
+            current_pause_dates = [u.iloc[0]]   # User_id
             coding_dates = []
             for i in range(1, len(u)):
-                if (u[i] > 0):
+                if (u.iloc[i] > 0):
                     coding_dates.append(coding_table.columns[i])
             for i in range(0, len(coding_dates) - 1):
                 period = util.daysBetween(coding_dates[i], coding_dates[i + 1])
@@ -181,10 +182,8 @@ def computePauses(destination_folder):
 def main(repos_list):
 
     for gitRepoName in repos_list:
-        organization, project = gitRepoName.split('/')
-
-        logfile = cfg.logs_folder + "/Coding_Table_Pause_Builder.log"
-        logging.basicConfig(filename=logfile, level=logging.INFO)
+        slug = gitRepoName.replace('https://github.com/', '')
+        organization, _ = slug.split('/')
 
         mergeCodingActivities(organization)
         logging.info('Coding Activities Merged for {}'.format(organization))
@@ -201,5 +200,10 @@ if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
 
+    os.makedirs(cfg.logs_folder, exist_ok=True)
+    timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H:%M')
+    logfile = cfg.logs_folder+f"/Coding_Table_Pause_Builder_{timestamp}.log"
+    logging.basicConfig(filename=logfile, level=logging.INFO)
+    
     repos_list = util.getReposList()
     main(repos_list)
