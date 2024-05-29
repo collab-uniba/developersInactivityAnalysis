@@ -5,6 +5,7 @@
 import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
 import pandas
@@ -25,7 +26,7 @@ def getActivityExtractionStatus(folder, statusFile):
     if(statusFile in os.listdir(folder)):
         with open(os.path.join(folder, statusFile)) as f:
             content = f.readline().strip()
-        status,ref_date = content.split(';')
+        status, _ = content.split(';')
     return status
 
 def get_prs_repo(gith, outputFolder, repo):   # developers is a previously used param representing the list of core developers
@@ -103,10 +104,6 @@ def main(gitRepoName, token):
     ### SET THE PROJECT
     organization, project = gitRepoName.split('/')
 
-    os.makedirs(cfg.logs_folder, exist_ok=True)
-    logfile = cfg.logs_folder+"/Activities_Extraction_"+organization+".log"
-    logging.basicConfig(filename=logfile, level=logging.INFO)
-
     g = Github(token)
     try:
         g.get_rate_limit()
@@ -150,14 +147,16 @@ def main(gitRepoName, token):
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
+    
+    os.makedirs(cfg.logs_folder, exist_ok=True)
+    timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H:%M')
+    logfile = cfg.logs_folder+f"/Pull_Request_Extraction_{timestamp}.log"
+    logging.basicConfig(filename=logfile, level=logging.INFO)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py repoName(format: organization/project) tokenNumber
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    gitRepoName = sys.argv[1]
-    try:
-        token = util.getToken(int(sys.argv[2]))
-    except:
-        token = sys.argv[2]
-        pass
-    main(gitRepoName, token)
+    repoUrls = util.getReposList()
+    for repoUrl in repoUrls:
+        gitRepoName = repoUrl.replace('https://github.com/', '').strip()
+        token = util.getRandomToken()
+        logging.info("Starting Pull Requests extraction for {}".format(gitRepoName))
+        main(gitRepoName, token)
+    print("Done")
