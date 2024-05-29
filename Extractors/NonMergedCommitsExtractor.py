@@ -28,10 +28,10 @@ def getExtractionStatus(folder, statusFile):
     if(statusFile in os.listdir(folder)):
         with open(os.path.join(folder, statusFile)) as f:
             content = f.readline().strip()
-        status,ref_date = content.split(';')
+        status, _ = content.split(';')
     return status
 
-def extract_commits(gith, organization, repo_name, pr_number):
+def extract_commits(gith, token, organization, repo_name, pr_number):
     outputFolder = os.path.join(cfg.main_folder, organization, repo_name, 'MissingCommits')
     os.makedirs(outputFolder, exist_ok=True)
     outputFileName = "{}_commits.csv".format(pr_number)
@@ -50,7 +50,7 @@ def extract_commits(gith, organization, repo_name, pr_number):
             exception_thrown = False
 
             ### Get Commits
-            util.waitRateLimit(gith)
+            gith, token = util.waitRateLimit(gith, token)
             repo = gith.get_repo(organization + '/' + repo_name)
             commits = repo.get_pull(pr_number).get_commits()
 
@@ -104,7 +104,7 @@ def extract_commits(gith, organization, repo_name, pr_number):
                         sha = commit.sha
                         if (sha not in commits_data.sha.tolist()) and (sha not in excluded_commits.sha.tolist()):
                             if (commit.author):
-                                util.waitRateLimit(gith)
+                                gith, token = util.waitRateLimit(gith, token)
                                 author_id = commit.author.login
                                 date = commit.commit.author.date
                                 util.add(commits_data, [sha, author_id, date])
@@ -168,9 +168,10 @@ def extract_commits(gith, organization, repo_name, pr_number):
     logging.info("Commit Extraction Complete")
     with open(os.path.join(outputFolder, tmpStatusFile), "w") as statusSaver:
                 statusSaver.write('COMPLETE;{}'.format(cfg.data_collection_date))
+    return gith, token
 
 
-def get_missing_commits(gith, organization):  # developers is a previously used param representing the list of core developers
+def get_missing_commits(gith, token, organization):  # developers is a previously used param representing the list of core developers
     logging.info('Starting Issue/PullRequests Extraction')
     workingFolder = os.path.join(cfg.main_folder, organization)
     tmp_folder_status_file = "_folder_status.tmp"
@@ -184,26 +185,26 @@ def get_missing_commits(gith, organization):  # developers is a previously used 
                 repo = folder
                 if (not os.path.lexists(os.path.join(current_folder, 'Other_Activities', tmp_folder_status_file))) or (getExtractionStatus(os.path.join(current_folder, 'Other_Activities'), tmp_folder_status_file)!=COMPLETE): # TODO: Remove line, not fundamental
                     prs_data = pandas.read_csv(PR_file, sep=cfg.CSV_separator)
-                    for index, pr in prs_data.iterrows():
+                    for _, pr in prs_data.iterrows():
                         if pr['status'] == 'open' and pr['date'] < cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} OPEN".format(pr_number))
-                            extract_commits(gith, organization, repo, pr_number)
+                            gith, token = extract_commits(gith, token, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                         if pr['status'] == 'closed' and pr['merged'] == False and pr['date'] < cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} CLOSED NOT MERGED".format(pr_number))
-                            extract_commits(gith, organization, repo, pr_number)
+                            gith, token = extract_commits(gith, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                         if pr['status'] == 'closed' and pr['merged'] == True and pr['date'] < cfg.data_collection_date and pr['closed_at'] >= cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} CLOSED AFTER EXTRACTION".format(pr_number))
-                            extract_commits(gith, organization, repo, pr_number)
+                            gith, token = extract_commits(gith, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                         if pr['status'] == 'closed' and pr['merged'] == True and pr['date'] < cfg.data_collection_date and pr['closed_at'] < cfg.data_collection_date and pr['merged_at'] >= cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} MERGED AFTER EXTRACTION".format(pr_number))
-                            extract_commits(gith, organization, repo, pr_number)
+                            gith, token =  extract_commits(gith, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                     with open(os.path.join(current_folder, 'Other_Activities', tmp_folder_status_file), "w") as statusSaver:
                         statusSaver.write('COMPLETE;{}'.format(cfg.data_collection_date))
@@ -212,7 +213,7 @@ def get_missing_commits(gith, organization):  # developers is a previously used 
 
 ### MAIN FUNCTION
 def main(gitRepoName, token):
-    organization, project = gitRepoName.split('/')
+    organization, _ = gitRepoName.split('/')
 
     g = Github(token)
     try:
@@ -226,7 +227,7 @@ def main(gitRepoName, token):
     print("Running the Missing Commits Extraction. \n Connection Done. \n Logging in {}".format(logfile))
     logging.info("Missing Commits Extraction Started for {}.".format(organization))
 
-    get_missing_commits(g, organization)
+    get_missing_commits(g, token, organization)
 
     logging.info('Missing Commit Extraction SUCCESSFULLY COMPLETED')
 
