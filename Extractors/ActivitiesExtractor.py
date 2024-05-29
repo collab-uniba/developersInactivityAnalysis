@@ -2,6 +2,7 @@
 import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
 import pandas
@@ -21,10 +22,10 @@ def getActivityExtractionStatus(folder, statusFile):
     if(statusFile in os.listdir(folder)):
         with open(os.path.join(folder, statusFile)) as f:
             content = f.readline().strip()
-        status,ref_date = content.split(';')
+        status, _ = content.split(';')
     return status
 
-def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers
+def get_issues_comments_repo(gith, token, outputFolder, repo):  # developers is a previously used param representing the list of core developers
     outputFileName = cfg.issue_comments_list_file_name
     tmpSavefile = '_issues_comments_save_file.log'
     tmpCompletedIssues = "_issues_comments_completed_issues.tmp"
@@ -66,26 +67,26 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                 final_issues_page = int(num_issues / cfg.items_per_page)
 
                 for issues_page in range(last_issues_page, final_issues_page + 1):
-                    util.waitRateLimit(gith)
+                    gith, token = util.waitRateLimit(gith, token)
                     current_issues_page = issues.get_page(issues_page)
                     for issue in current_issues_page:
-                        util.waitRateLimit(gith)
+                        gith, token = util.waitRateLimit(gith, token)
                         issue_id = issue.id
                         if (issue_id not in completed_issues.id.tolist()):
                             if (issue_id != last_issue):
                                 last_page = 0
                             else:
                                 last_page = last_comments_page
-                            util.waitRateLimit(gith)
+                            gith, token = util.waitRateLimit(gith, token)
                             issues_comments = issue.get_comments()
                             num_items = issues_comments.totalCount
                             final_page = int(num_items / cfg.items_per_page)
 
                             for page in range(last_page, final_page + 1):
-                                util.waitRateLimit(gith)
+                                gith, token = util.waitRateLimit(gith, token)
                                 issues_comments_page = issues_comments.get_page(page)
                                 for comment in issues_comments_page:
-                                    util.waitRateLimit(gith)
+                                    gith, token = util.waitRateLimit(gith, token)
                                     comment_id = comment.id
                                     if (comment_id not in issues_comments_data.id.tolist()):
                                         if (comment.user):
@@ -141,8 +142,9 @@ def get_issues_comments_repo(gith, outputFolder, repo):  # developers is a previ
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
+    return gith, token
 
-def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers
+def get_pulls_comments_repo(gith, token, outputFolder, repo):  # developers is a previously used param representing the list of core developers
     outputFileName = cfg.pulls_comments_list_file_name
     tmpSavefile = '_pulls_comments_save_file.log'
     tmpCompletedPulls = "_pulls_comments_completed_pulls.tmp"
@@ -182,26 +184,26 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                 final_pulls_page = int(num_pulls / cfg.items_per_page)
 
                 for pulls_page in range(last_pulls_page, final_pulls_page + 1):
-                    util.waitRateLimit(gith)
+                    gith, token = util.waitRateLimit(gith, token)
                     current_pulls_page = pulls.get_page(pulls_page)
                     for pull in current_pulls_page:
-                        util.waitRateLimit(gith)
+                        gith, token = util.waitRateLimit(gith, token)
                         pull_id = pull.id
                         if (pull_id not in completed_pulls.id.tolist()):
                             if (pull_id != last_pull):
                                 last_page = 0
                             else:
                                 last_page = last_comments_page
-                            util.waitRateLimit(gith)
+                            gith, token = util.waitRateLimit(gith, token)
                             pulls_comments = pull.get_comments()
                             num_items = pulls_comments.totalCount
                             final_page = int(num_items / cfg.items_per_page)
 
                             for page in range(last_page, final_page + 1):
-                                util.waitRateLimit(gith)
+                                gith, token = util.waitRateLimit(gith, token)
                                 pulls_comments_page = pulls_comments.get_page(page)
                                 for comment in pulls_comments_page:
-                                    util.waitRateLimit(gith)
+                                    gith, token = util.waitRateLimit(gith, token)
                                     comment_id = comment.id
                                     if (comment_id not in pulls_comments_data.id.tolist()):
                                         if (comment.user):
@@ -257,9 +259,10 @@ def get_pulls_comments_repo(gith, outputFolder, repo):  # developers is a previo
                     completed_pulls.to_csv(os.path.join(outputFolder, tmpCompletedPulls),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
+    return gith, token
 
 
-def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers
+def get_issue_events_repo(gith, token, outputFolder, repo):  # developers is a previously used param representing the list of core developers
     outputFileName = cfg.issue_events_list_file_name
     tmpSavefile = '_issue_events_save_file.log'
     tmpCompletedIssues = "_issue_events_completed_issues.tmp"
@@ -300,26 +303,26 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                 final_issues_page = int(num_issues / cfg.items_per_page)
 
                 for issues_page in range(last_issues_page, final_issues_page + 1):
-                    util.waitRateLimit(gith)
+                    gith, token = util.waitRateLimit(gith, token)
                     current_issues_page = issues.get_page(issues_page)
                     for issue in current_issues_page:
-                        util.waitRateLimit(gith)
+                        gith, token = util.waitRateLimit(gith, token)
                         issue_id = issue.id
                         if (issue_id not in completed_issues.id.tolist()):
                             if (issue_id != last_issue):
                                 last_page = 0
                             else:
                                 last_page = last_events_page
-                            util.waitRateLimit(gith)
+                            gith, token = util.waitRateLimit(gith, token)
                             issue_events = issue.get_events()
                             num_items = issue_events.totalCount
                             final_page = int(num_items / cfg.items_per_page)
 
                             for page in range(last_page, final_page + 1):
-                                util.waitRateLimit(gith)
+                                gith, token = util.waitRateLimit(gith, token)
                                 issues_events_page = issue_events.get_page(page)
                                 for event in issues_events_page:
-                                    util.waitRateLimit(gith)
+                                    gith, token = util.waitRateLimit(gith, token)
                                     event_id = event.id
                                     if (event_id not in issues_events_data.id.tolist()):
                                         event_label = event.event
@@ -386,9 +389,10 @@ def get_issue_events_repo(gith, outputFolder, repo):  # developers is a previous
                     completed_issues.to_csv(os.path.join(outputFolder, tmpCompletedIssues),
                                             sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
+    return gith, token
 
 
-def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previously used param representing the list of core developers
+def get_issues_prs_repo(gith, token, outputFolder, repo):   # developers is a previously used param representing the list of core developers
     outputFileName = cfg.issue_pr_list_file_name
     tmpSavefile = '_issues_prs_save_file.log'
     #tmpCompletedIssues = "_issues_prs_completed_issues.tmp"
@@ -419,7 +423,7 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                         issue_id = issue.id
                         if (issue_id not in issues_prs_data.id.tolist()):
                             if (issue.user):
-                                util.waitRateLimit(gith)
+                                gith, token = util.waitRateLimit(gith, token)
                                 util.add(issues_prs_data, [issue_id, issue.created_at, issue.user.login])
                     with open(os.path.join(outputFolder, tmpSavefile), "w") as statusSaver:
                         statusSaver.write('last_page_read:{}'.format(page))
@@ -454,28 +458,25 @@ def get_issues_prs_repo(gith, outputFolder, repo):   # developers is a previousl
                     issues_prs_data.to_csv(os.path.join(outputFolder,outputFileName),
                                            sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
                 raise
+    return gith, token
 
-def get_repo_activities(gith, outputFolder, repo):  # developers is a previously used param representing the list of core developers
+def get_repo_activities(gith, token, outputFolder, repo):  # developers is a previously used param representing the list of core developers
     logging.info('Starting Issue/PullRequests Extraction')
-    get_issues_prs_repo(gith, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+    get_issues_prs_repo(gith, token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
 
     logging.info('Starting Issues Comments Extraction')
-    get_issues_comments_repo(gith, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+    get_issues_comments_repo(gith,token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
 
     logging.info('Starting Pull Comments Extraction')
-    get_pulls_comments_repo(gith, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+    get_pulls_comments_repo(gith, token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
 
     logging.info('Starting Issue Events Extraction')
-    get_issue_events_repo(gith, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+    get_issue_events_repo(gith, token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
 
 ### MAIN FUNCTION
 def main(gitRepoName, token):
     ### SET THE PROJECT
     organization, project = gitRepoName.split('/')
-
-    os.makedirs(cfg.logs_folder, exist_ok=True)
-    logfile = cfg.logs_folder+"/Activities_Extraction_"+organization+".log"
-    logging.basicConfig(filename=logfile, level=logging.INFO)
 
     g = Github(token)
     try:
@@ -490,11 +491,12 @@ def main(gitRepoName, token):
     logging.info("Activity Extraction Started for {}.".format(organization))
 
     workingFolder = cfg.main_folder
+    tfFolder = cfg.TF_report_folder
 
-    devs_df = pandas.read_csv(os.path.join(workingFolder, gitRepoName, cfg.TF_developers_file), sep=cfg.CSV_separator)
+    devs_df = pandas.read_csv(os.path.join(tfFolder, project, cfg.TF_developers_file), sep=cfg.CSV_separator) # workingFolder, gitRepoName
     devs = devs_df.login.tolist()
 
-    util.waitRateLimit(g)
+    g, token = util.waitRateLimit(g, token)
     org = g.get_organization(organization)
     org_repos = org.get_repos(type='all')
 
@@ -505,7 +507,7 @@ def main(gitRepoName, token):
 
     repo_num = 0  ### Only for Log
     for repo in org_repos:
-        util.waitRateLimit(g)
+        g, token = util.waitRateLimit(g, token)
         project = repo.name
         repo_num += 1  ### Only for Log
 
@@ -516,21 +518,23 @@ def main(gitRepoName, token):
         outputFolder = os.path.join(workingFolder, repo_name, 'Other_Activities')
         os.makedirs(outputFolder, exist_ok=True)
 
-        get_repo_activities(g, outputFolder, repo)  # developers is a previously used param representing the list of core developers
+        get_repo_activities(g, token, outputFolder, repo)  # developers is a previously used param representing the list of core developers
         logging.info('Activities Extraction COMPLETE for {} of {} Side Projects'.format(repo_num, num_repos))
     logging.info('Activities Extraction SUCCESSFULLY COMPLETED')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
+    
+    os.makedirs(cfg.logs_folder, exist_ok=True)
+    timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H:%M')
+    logfile = cfg.logs_folder+f"/Activities_Extraction_{timestamp}.log"
+    logging.basicConfig(filename=logfile, level=logging.INFO)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py repoName(format: organization/project) tokenNumber
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    gitRepoName = sys.argv[1]
-    try:
-        token = util.getToken(int(sys.argv[2]))
-    except:
-        token = sys.argv[2]
-        pass
-    main(gitRepoName, token)
+    repoUrls = util.getReposList()
+    for repoUrl in repoUrls:
+        gitRepoName = repoUrl.replace('https://github.com/', '').strip()
+        token = util.getRandomToken()
+        logging.info("Starting Activity Extraction for {}".format(gitRepoName))
+        main(gitRepoName, token)
+    print("Done.")
