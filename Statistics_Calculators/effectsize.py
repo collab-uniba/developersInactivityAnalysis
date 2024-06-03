@@ -1,10 +1,6 @@
 """
 Source: https://github.com/neilernst/cliffsDelta/blob/master/cliffsDelta.py
 """
-from __future__ import division
-
-import scipy
-import numpy
 
 def cliffsDelta(lst1, lst2, **dull):
 
