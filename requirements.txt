@@ -8,3 +8,4 @@ PyYAML
 scipy
 seaborn
 jupyter
+statsmodels
