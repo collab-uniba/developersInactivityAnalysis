@@ -23,10 +23,12 @@ Refer to this [README.md](TruckFactor/README.md) file.
 
 ### CommitExtractor.py
 
+
 #### Params
 
-- `gitRepoName`: repository name in the form of organization/repository
-- `tokenNo`: number of the token to use from the tokens file (`Resources/tokens.txt`) or the token itself
+Uses the tokens defined in `Resources/tokens.txt` and the list of repository urls in `Resources/repositories.txt`, as defined in the `Settings.py` file.
+
+- None.
 
 #### Requirements
 
@@ -34,11 +36,7 @@ Refer to this [README.md](TruckFactor/README.md) file.
 
 #### Execution
 
-`python3 CommitExtractor.py collab-uniba/developersBreaksAnalysis [1...n]`
-
-or
-
-`python3 CommitExtractor.py collab-uniba/developersBreaksAnalysis myTokenString`
+`python CommitExtractor.py`
 
 
 #### Output
@@ -60,8 +58,7 @@ if you came here from point 2 of core selection you can now perform step 3 follo
 
 #### Params
 
-- `gitRepoName`: repository name in the form of organization/repository
-- `tokenNo`: number of the token to use from the tokens file (`Resources/tokens.txt`) or the token itself
+- None
 
 #### Requirements
 
@@ -69,11 +66,8 @@ if you came here from point 2 of core selection you can now perform step 3 follo
 
 #### Execution
 
-`python ActivitiesExtractor.py collab-uniba/developersBreaksAnalysis [1...n]`
+`python ActivitiesExtractor.py`
 
-or
-
-`python ActivitiesExtractor.py collab-uniba/developersBreaksAnalysis myTokenString`
 
 #### Output
 
@@ -85,13 +79,22 @@ or
   - `issues_prs_repo.csv`: List of the issue and pull request creations in the format: <id; date; creator_login>
   - `pulls_comments_repo.csv`: List of the pull request comments in the format: <id; date; creator_login>
 
+
+### PullRequestExtractor.py
+
+### NonMergedCommitsExtractor.py
+
+### MissingStuffCollector.py
+
+### CodingTableBuilder.py
+
 ---
 
 ### BreaksIdentification.py
 
 #### Params
 
-- `mode`: insert one of following modes ['tf', 'a80', 'a80mod', 'a80api']
+- `mode`: enter one of following modes ['tf', 'a80', 'a80mod', 'a80api']
 
 #### Requirements
 
@@ -101,19 +104,7 @@ or
 
 #### Execution
 
-`python3 BreaksIdentification.py tf`
-
-or
-
-`python3 BreaksIdentification.py a80`
-
-or
-
-`python3 BreaksIdentification.py a80mod`
-
-or
-
-`python3 BreaksIdentification.py a80api`
+`python BreaksIdentification.py tf | a80 | a80mod | a80api`
 
 #### Output
 
@@ -159,7 +150,7 @@ The goal is to select all the *breaks* (*pauses* that are larger than usual) ass
 
 #### Params
 
-- `mode`: insert one of following modes ['tf', 'a80', 'a80mod', 'a80api']
+- `mode`: choose one of following modes ['tf', 'a80', 'a80mod', 'a80api']
 
 #### Requirements
 
@@ -167,19 +158,7 @@ The goal is to select all the *breaks* (*pauses* that are larger than usual) ass
 
 #### Execution
 
-`python3 BreaksLabeling.py tf`
-
-or
-
-`python3 BreaksLabeling.py a80`
-
-or
-
-`python3 BreaksLabeling.py a80mod`
-
-or
-
-`python3 BreaksLabeling.py a80api`
+`python BreaksLabeling.py tf | a80 | a80mod | a80api`
 
 #### Output
 
