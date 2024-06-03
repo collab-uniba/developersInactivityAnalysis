@@ -27,13 +27,13 @@ def getFarOutThreshold(values, dev): ### If it is satisfying, move the function 
     return th
 
 def addToBreaksList(pauses, currentBreaks, th):
-    for i, p in pauses.iterrows():
+    for _, p in pauses.iterrows():
         if (p['len'] > th) and (p['dates'] not in currentBreaks.dates.tolist()):
             util.add(currentBreaks, [p['len'], p['dates'], th])
     return currentBreaks
 
 def cleanClearBreaks(clearBreaks, breaks):
-    for i, b in breaks.iterrows():
+    for _, b in breaks.iterrows():
         clearBreaks = clearBreaks[clearBreaks.dates != b['dates']] # If it was in the long_breaks list, remove ot from there
     return clearBreaks
 
@@ -101,9 +101,9 @@ def identifyBreaks(pauses_dates_list, developer, window, shift):
                     try:
                         avg_th = int(round(mean_th, 0))
                     except:
-                        print("ERROR while calculating the AVG Tfov. Setting to 7")
+                        print(f"Warning: mean_th for {developer} is {mean_th}, setting AVG Tfov to 7")
                         avg_th = 7
-                    for i, p in clear_breaks.iterrows():
+                    for _, p in clear_breaks.iterrows():
                         print('adding remaining clear breaks from the list')
                         if(p['dates'] not in breaks_df.dates.tolist() and p['len'] > avg_th):
                             util.add(breaks_df, [p['len'], p['dates'], avg_th])
@@ -115,6 +115,10 @@ def identifyBreaks(pauses_dates_list, developer, window, shift):
 ### MAIN FUNCTION
 def main(repos_list, mode):
     workingFolder = cfg.main_folder
+    
+    if mode not in cfg.supported_modes:
+        print('ERROR: Not valid mode! ({})'.format(cfg.supported_modes))
+        sys.exit(0)
 
     for gitRepoName in repos_list:
         slug = gitRepoName.replace('https://github.com/', '')
