@@ -2,17 +2,17 @@
 import csv
 import os
 import sys
+sys.path.append('../')
 
 import effectsize
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import pandas
-import rpy2.robjects as robjects
-import scipy
+#import rpy2.robjects as robjects
+import scipy as sp
 import seaborn as sns
 import statsmodels.api as sm
-from rpy2.robjects.packages import importr
-from sipconfig import format
+#from rpy2.robjects.packages import importr
 
 import Settings as cfg
 import Utilities as util
@@ -38,7 +38,7 @@ def sort_by_len_of_breaks(repos_list, metric):
 ### Sort the list by Length of Breaks
     repos_dict = {}
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         breaks_list = []
         for file in os.listdir(breaks_folder):
@@ -48,9 +48,9 @@ def sort_by_len_of_breaks(repos_list, metric):
                 #Does not consider the (NOW)s because we don't know how long il will actually last
                 breaks_list.append(dev_breaks[dev_breaks.label == 'ACTIVE'].len.mean())
         if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian(breaks_list)
+            repos_dict[repo] = np.nanmedian(breaks_list)
         else:
-            repos_dict[repo] = numpy.nanmean(breaks_list)
+            repos_dict[repo] = np.nanmean(breaks_list)
 
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
@@ -58,7 +58,7 @@ def sort_by_len_of_NC_breaks(repos_list, mode, metric):
 ### Sort the list by Length of Breaks
     repos_dict = {}
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC_list = []
         for file in os.listdir(breaks_folder):
@@ -68,9 +68,9 @@ def sort_by_len_of_NC_breaks(repos_list, mode, metric):
                 #Does not consider the (NOW)s because we don't know how long il will actually last
                 NC_list.append(dev_breaks[dev_breaks.label == 'NON_CODING'].len.mean())
         if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian([x for x in NC_list if x != 0])
+            repos_dict[repo] = np.nanmedian([x for x in NC_list if x != 0])
         else:
-            repos_dict[repo] = numpy.nanmean([x for x in NC_list if x != 0])
+            repos_dict[repo] = np.nanmean([x for x in NC_list if x != 0])
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
 def sort_by_len_of_NC_breaks_both(repos_list, mode, metric):
@@ -93,9 +93,9 @@ def sort_by_len_of_NC_breaks_both(repos_list, mode, metric):
                     I_list.append(current_dev_I.len.mean())
 
         if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian([x for x in NC_list if x != 0])
+            repos_dict[repo] = np.nanmedian([x for x in NC_list if x != 0])
         else:
-            repos_dict[repo] = numpy.nanmean([x for x in NC_list if x != 0])
+            repos_dict[repo] = np.nanmean([x for x in NC_list if x != 0])
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
 def sort_by_number_of_contributors(repos_list, mode):
@@ -110,14 +110,14 @@ def sort_by_number_of_contributors(repos_list, mode):
 
                 #Does not consider the (NOW)s because we don't know how long il will actually last
                 num_NC_list.append(len(dev_breaks[dev_breaks.label == 'NON_CODING']))
-        repos_dict[repo] = numpy.median(num_NC_list)
+        repos_dict[repo] = np.median(num_NC_list)
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
 def sort_by_num_of_NC_breaks(repos_list, mode, metric):
 ### Sort the list by Number of Breaks
     repos_dict = {}
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC_list = []
         for file in os.listdir(breaks_folder):
@@ -126,9 +126,9 @@ def sort_by_num_of_NC_breaks(repos_list, mode, metric):
 
                 NC_list.append(len(dev_breaks[dev_breaks.label == 'NON_CODING']))
         if metric == 'median':
-            repos_dict[repo] = numpy.nanmedian([x for x in NC_list if x != 0])
+            repos_dict[repo] = np.nanmedian([x for x in NC_list if x != 0])
         else:
-            repos_dict[repo] = numpy.nanmean([x for x in NC_list if x != 0])
+            repos_dict[repo] = np.nanmean([x for x in NC_list if x != 0])
     return {k: v for k, v in sorted(repos_dict.items(), key=lambda item: item[1])}.keys()
 
 def test_breaks_duration_normality(repos_list, output_file_name, mode):
@@ -144,7 +144,7 @@ def test_breaks_duration_normality(repos_list, output_file_name, mode):
     all_durations_list = []
 
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC_list = []
         I_list = []
@@ -623,11 +623,11 @@ def breaksDistributionStats(repos_list, output_file_name, mode):
                 util.add(breaks_lifetime, [BpY, dev_life])
 
         util.add(breaks_stats, [repo,
-                           numpy.mean(breaks_lifetime.BpY.tolist()),
-                           numpy.std(breaks_lifetime.BpY.tolist()),
-                           numpy.var(breaks_lifetime.BpY.tolist()),
-                           numpy.median(breaks_lifetime.BpY.tolist()),
-                           numpy.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])[1][0]])
+                           np.mean(breaks_lifetime.BpY.tolist()),
+                           np.std(breaks_lifetime.BpY.tolist()),
+                           np.var(breaks_lifetime.BpY.tolist()),
+                           np.median(breaks_lifetime.BpY.tolist()),
+                           np.corrcoef(breaks_lifetime['BpY'], breaks_lifetime['life'])[1][0]])
         projects_counts.append(breaks_lifetime.BpY)
 
     breaks_stats.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
@@ -639,7 +639,7 @@ def breaksDistributionStats(repos_list, output_file_name, mode):
     # projects_counts.reverse()
     # plt.boxplot(projects_counts)
     # labels.reverse()
-    # plt.xticks(numpy.arange(1, len(repos_list) + 1), labels, rotation=20)
+    # plt.xticks(np.arange(1, len(repos_list) + 1), labels, rotation=20)
     # plt.grid(False)
     # plt.ylabel("Pauses per Year")
     # plt.savefig(cfg.main_folder + '/' + output_file_name, dpi=600)
@@ -665,7 +665,7 @@ def breaksDurationsDescriptive(repos_list, output_file_name, mode):
     I_all = []
     G_all = []
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
 
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC_len_list = []
@@ -683,28 +683,28 @@ def breaksDurationsDescriptive(repos_list, output_file_name, mode):
         util.add(data, [organization,
                         min(NC_len_list) if len(NC_len_list) > 0 else 'NA',
                         max(NC_len_list) if len(NC_len_list) > 0 else 'NA',
-                        numpy.mean(NC_len_list) if len(NC_len_list) > 0 else 'NA',
-                        numpy.std(NC_len_list) if len(NC_len_list) > 0 else 'NA',
-                        numpy.var(NC_len_list) if len(NC_len_list) > 0 else 'NA',
-                        numpy.percentile(NC_len_list, 25) if len(NC_len_list) > 0 else 'NA',
-                        numpy.median(NC_len_list) if len(NC_len_list) > 0 else 'NA',
-                        numpy.percentile(NC_len_list, 75) if len(NC_len_list) > 0 else 'NA',
+                        np.mean(NC_len_list) if len(NC_len_list) > 0 else 'NA',
+                        np.std(NC_len_list) if len(NC_len_list) > 0 else 'NA',
+                        np.var(NC_len_list) if len(NC_len_list) > 0 else 'NA',
+                        np.percentile(NC_len_list, 25) if len(NC_len_list) > 0 else 'NA',
+                        np.median(NC_len_list) if len(NC_len_list) > 0 else 'NA',
+                        np.percentile(NC_len_list, 75) if len(NC_len_list) > 0 else 'NA',
                         min(I_len_list) if len(I_len_list) > 0 else 'NA',
                         max(I_len_list) if len(I_len_list) > 0 else 'NA',
-                        numpy.mean(I_len_list) if len(I_len_list) > 0 else 'NA',
-                        numpy.std(I_len_list) if len(I_len_list) > 0 else 'NA',
-                        numpy.var(I_len_list) if len(I_len_list) > 0 else 'NA',
-                        numpy.percentile(I_len_list, 25) if len(I_len_list) > 0 else 'NA',
-                        numpy.median(I_len_list) if len(I_len_list) > 0 else 'NA',
-                        numpy.percentile(I_len_list, 75) if len(I_len_list) > 0 else 'NA',
+                        np.mean(I_len_list) if len(I_len_list) > 0 else 'NA',
+                        np.std(I_len_list) if len(I_len_list) > 0 else 'NA',
+                        np.var(I_len_list) if len(I_len_list) > 0 else 'NA',
+                        np.percentile(I_len_list, 25) if len(I_len_list) > 0 else 'NA',
+                        np.median(I_len_list) if len(I_len_list) > 0 else 'NA',
+                        np.percentile(I_len_list, 75) if len(I_len_list) > 0 else 'NA',
                         min(G_len_list) if len(G_len_list) > 0 else 'NA',
                         max(G_len_list) if len(G_len_list) > 0 else 'NA',
-                        numpy.mean(G_len_list) if len(G_len_list) > 0 else 'NA',
-                        numpy.std(G_len_list) if len(G_len_list) > 0 else 'NA',
-                        numpy.var(G_len_list) if len(G_len_list) > 0 else 'NA',
-                        numpy.percentile(G_len_list, 25) if len(G_len_list) > 0 else 'NA',
-                        numpy.median(G_len_list) if len(G_len_list) > 0 else 'NA',
-                        numpy.percentile(G_len_list, 75) if len(G_len_list) > 0 else 'NA'])
+                        np.mean(G_len_list) if len(G_len_list) > 0 else 'NA',
+                        np.std(G_len_list) if len(G_len_list) > 0 else 'NA',
+                        np.var(G_len_list) if len(G_len_list) > 0 else 'NA',
+                        np.percentile(G_len_list, 25) if len(G_len_list) > 0 else 'NA',
+                        np.median(G_len_list) if len(G_len_list) > 0 else 'NA',
+                        np.percentile(G_len_list, 75) if len(G_len_list) > 0 else 'NA'])
 
         NC_all += NC_len_list
         I_all += I_len_list
@@ -713,28 +713,28 @@ def breaksDurationsDescriptive(repos_list, output_file_name, mode):
     util.add(data, ['Total',
                     min(NC_all) if len(NC_all) > 0 else 'NA',
                     max(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.mean(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.std(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.var(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.percentile(NC_all, 25) if len(NC_all) > 0 else 'NA',
-                    numpy.median(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.percentile(NC_all, 75) if len(NC_all) > 0 else 'NA',
+                    np.mean(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.std(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.var(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.percentile(NC_all, 25) if len(NC_all) > 0 else 'NA',
+                    np.median(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.percentile(NC_all, 75) if len(NC_all) > 0 else 'NA',
                     min(I_all) if len(I_all) > 0 else 'NA',
                     max(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.mean(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.std(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.var(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.percentile(I_all, 25) if len(I_all) > 0 else 'NA',
-                    numpy.median(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.percentile(I_all, 75) if len(I_all) > 0 else 'NA',
+                    np.mean(I_all) if len(I_all) > 0 else 'NA',
+                    np.std(I_all) if len(I_all) > 0 else 'NA',
+                    np.var(I_all) if len(I_all) > 0 else 'NA',
+                    np.percentile(I_all, 25) if len(I_all) > 0 else 'NA',
+                    np.median(I_all) if len(I_all) > 0 else 'NA',
+                    np.percentile(I_all, 75) if len(I_all) > 0 else 'NA',
                     min(G_all) if len(G_all) > 0 else 'NA',
                     max(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.mean(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.std(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.var(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.percentile(G_all, 25) if len(G_all) > 0 else 'NA',
-                    numpy.median(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
+                    np.mean(G_all) if len(G_all) > 0 else 'NA',
+                    np.std(G_all) if len(G_all) > 0 else 'NA',
+                    np.var(G_all) if len(G_all) > 0 else 'NA',
+                    np.percentile(G_all, 25) if len(G_all) > 0 else 'NA',
+                    np.median(G_all) if len(G_all) > 0 else 'NA',
+                    np.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
@@ -749,7 +749,7 @@ def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
     I_all = []
     G_all = []
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
 
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC = []
@@ -767,28 +767,28 @@ def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
         util.add(data, [organization,
                         min(NC) if len(NC) > 0 else 'NA',
                         max(NC) if len(NC) > 0 else 'NA',
-                        numpy.mean(NC) if len(NC) > 0 else 'NA',
-                        numpy.std(NC) if len(NC) > 0 else 'NA',
-                        numpy.var(NC) if len(NC) > 0 else 'NA',
-                        numpy.percentile(NC, 25) if len(NC) > 0 else 'NA',
-                        numpy.median(NC) if len(NC) > 0 else 'NA',
-                        numpy.percentile(NC, 75) if len(NC) > 0 else 'NA',
+                        np.mean(NC) if len(NC) > 0 else 'NA',
+                        np.std(NC) if len(NC) > 0 else 'NA',
+                        np.var(NC) if len(NC) > 0 else 'NA',
+                        np.percentile(NC, 25) if len(NC) > 0 else 'NA',
+                        np.median(NC) if len(NC) > 0 else 'NA',
+                        np.percentile(NC, 75) if len(NC) > 0 else 'NA',
                         min(I) if len(I) > 0 else 'NA',
                         max(I) if len(I) > 0 else 'NA',
-                        numpy.mean(I) if len(I) > 0 else 'NA',
-                        numpy.std(I) if len(I) > 0 else 'NA',
-                        numpy.var(I) if len(I) > 0 else 'NA',
-                        numpy.percentile(I, 25) if len(I) > 0 else 'NA',
-                        numpy.median(I) if len(I) > 0 else 'NA',
-                        numpy.percentile(I, 75) if len(I) > 0 else 'NA',
+                        np.mean(I) if len(I) > 0 else 'NA',
+                        np.std(I) if len(I) > 0 else 'NA',
+                        np.var(I) if len(I) > 0 else 'NA',
+                        np.percentile(I, 25) if len(I) > 0 else 'NA',
+                        np.median(I) if len(I) > 0 else 'NA',
+                        np.percentile(I, 75) if len(I) > 0 else 'NA',
                         min(G) if len(G) > 0 else 'NA',
                         max(G) if len(G) > 0 else 'NA',
-                        numpy.mean(G) if len(G) > 0 else 'NA',
-                        numpy.std(G) if len(G) > 0 else 'NA',
-                        numpy.var(G) if len(G) > 0 else 'NA',
-                        numpy.percentile(G, 25) if len(G) > 0 else 'NA',
-                        numpy.median(G) if len(G) > 0 else 'NA',
-                        numpy.percentile(G, 75) if len(G) > 0 else 'NA'])
+                        np.mean(G) if len(G) > 0 else 'NA',
+                        np.std(G) if len(G) > 0 else 'NA',
+                        np.var(G) if len(G) > 0 else 'NA',
+                        np.percentile(G, 25) if len(G) > 0 else 'NA',
+                        np.median(G) if len(G) > 0 else 'NA',
+                        np.percentile(G, 75) if len(G) > 0 else 'NA'])
 
         NC_all += NC
         I_all += I
@@ -797,28 +797,28 @@ def breaksOccurrencesDescriptive(repos_list, output_file_name, mode):
     util.add(data, ['Total',
                     min(NC_all) if len(NC_all) > 0 else 'NA',
                     max(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.mean(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.std(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.var(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.percentile(NC_all, 25) if len(NC_all) > 0 else 'NA',
-                    numpy.median(NC_all) if len(NC_all) > 0 else 'NA',
-                    numpy.percentile(NC_all, 75) if len(NC_all) > 0 else 'NA',
+                    np.mean(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.std(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.var(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.percentile(NC_all, 25) if len(NC_all) > 0 else 'NA',
+                    np.median(NC_all) if len(NC_all) > 0 else 'NA',
+                    np.percentile(NC_all, 75) if len(NC_all) > 0 else 'NA',
                     min(I_all) if len(I_all) > 0 else 'NA',
                     max(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.mean(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.std(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.var(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.percentile(I_all, 25) if len(I_all) > 0 else 'NA',
-                    numpy.median(I_all) if len(I_all) > 0 else 'NA',
-                    numpy.percentile(I_all, 75) if len(I_all) > 0 else 'NA',
+                    np.mean(I_all) if len(I_all) > 0 else 'NA',
+                    np.std(I_all) if len(I_all) > 0 else 'NA',
+                    np.var(I_all) if len(I_all) > 0 else 'NA',
+                    np.percentile(I_all, 25) if len(I_all) > 0 else 'NA',
+                    np.median(I_all) if len(I_all) > 0 else 'NA',
+                    np.percentile(I_all, 75) if len(I_all) > 0 else 'NA',
                     min(G_all) if len(G_all) > 0 else 'NA',
                     max(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.mean(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.std(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.var(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.percentile(G_all, 25) if len(G_all) > 0 else 'NA',
-                    numpy.median(G_all) if len(G_all) > 0 else 'NA',
-                    numpy.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
+                    np.mean(G_all) if len(G_all) > 0 else 'NA',
+                    np.std(G_all) if len(G_all) > 0 else 'NA',
+                    np.var(G_all) if len(G_all) > 0 else 'NA',
+                    np.percentile(G_all, 25) if len(G_all) > 0 else 'NA',
+                    np.median(G_all) if len(G_all) > 0 else 'NA',
+                    np.percentile(G_all, 75) if len(G_all) > 0 else 'NA'])
 
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), output_file_name + '.csv'),
                         sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
@@ -827,7 +827,7 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
     data = pandas.DataFrame(columns=['organization', 'status', 'duration'])
 
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
 
         breaks_folder = os.path.join(cfg.main_folder, organization, cfg.labeled_breaks_folder_name, mode.upper())
         NC_list = []
@@ -848,8 +848,8 @@ def breaksDurationsPlot(repos_list, output_file_name, mode):
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
-    #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
-    #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
+    #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(np.mean(NC_list)))
+    #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(np.mean(I_list)))
 
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
@@ -899,8 +899,8 @@ def breaksDurationsPlotBoth(repos_list, output_file_name, mode):
     data.to_csv(os.path.join(cfg.main_folder, mode.upper(), '_tmp_breaks_durations_data_both.csv'),
                    sep=cfg.CSV_separator, na_rep=cfg.CSV_missing, index=False, quoting=None, lineterminator='\n')
 
-    #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(numpy.mean(NC_list)))
-    #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(numpy.mean(I_list)))
+    #print('NC: ' + str(min(NC_list)) + ' - ' + str(max(NC_list)) + ' Avg: ' + str(np.mean(NC_list)))
+    #print('I: ' + str(min(I_list)) + ' - ' + str(max(I_list)) + ' Avg: ' + str(np.mean(I_list)))
 
     plt.figure(figsize=(10, 8))
     pal = [sns.color_palette('Set1')[5], sns.color_palette('Set1')[8], sns.color_palette('Set1')[0]]
@@ -922,7 +922,7 @@ def breaksOccurrencesPlotNotNormalized(repos_list, output_file_name, mode):
     dataframes = []
     sorted_index = reversed([x.split('/')[0] for x in repos_list])
     for repo in repos_list:
-        organization, project = repo.split('/')
+        organization, _ = repo.split('/')
 
         labels = ['dev', 'organization', 'NCs', 'Is', 'Gs']
         inactivities_df = pandas.DataFrame(columns=labels)
@@ -1049,7 +1049,7 @@ def meanDifferenceTest(repos_list, output_file_name, mode):
     data = pandas.DataFrame(columns=['project', 'non_coding', 'inactive', 'both', 'w', 'p', 'Cliff d', 'effect size',
                                      'GRB'])
     pvals = list()
-    rcompanion = importr('rcompanion')
+    #rcompanion = importr('rcompanion')
     for repo in repos_list:
         organization, project = repo.split('/')
 
@@ -1081,15 +1081,21 @@ def meanDifferenceTest(repos_list, output_file_name, mode):
 
         ### MAKE TEST
         try:
-            w_val, w_p = scipy.stats.wilcoxon(NC_common_list, I_common_list, correction = True)
+            w_val, w_p = sp.stats.wilcoxon(NC_common_list, I_common_list, correction = True)
             d, size = effectsize.cliffsDelta(NC_common_list, I_common_list)
-            Y = robjects.FloatVector(NC_common_list + I_common_list)
+            #Y = robjects.FloatVector(NC_common_list + I_common_list)
+            # Robust rank-based comparison (requires custom implementation)
+            Y = NC_common_list + I_common_list  
             nc_factor = ['Non coding'] * len(NC_common_list)
             i_factor = ['Inactive'] * len(I_common_list)
-            Group = robjects.FactorVector(nc_factor + i_factor)
+            # Group = robjects.FactorVector(nc_factor + i_factor)
+            Group = nc_factor + i_factor
             # https://rdrr.io/cran/rcompanion/man/wilcoxonRG.html
-            grb = rcompanion.wilcoxonRG(x=Y, g=Group)
-            grb = str(grb).strip().split('\n')[1]
+            #grb = rcompanion.wilcoxonRG(x=Y, g=Group)
+            #grb = str(grb).strip().split('\n')[1]
+            # Compute rank-based comparison
+            grb = np.mean([y for y, g in zip(Y, Group) if g == 'Non coding']) - np.mean([y for y, g in zip(Y, Group) if g == 'Inactive'])
+    
         except:
             print('{} W not available. NC: {}, I: {}, Common: {}'.format(project, NC_devs, I_devs, common_devs))
             w_val = d = size = None
@@ -1279,7 +1285,7 @@ def writeDevslist(mode, repos_list):
 
 
 def generateInvolvementTable(repos_list, output_file_name, mode):
-    output_folder = os.path.join(cfg.main_folder, mode.upper(), 'involvementTables')
+    output_folder = os.path.join('..', mode.upper() + '_Results', 'involvementTables')
     os.makedirs(output_folder, exist_ok=True)
 
     for repo in repos_list:
@@ -1320,8 +1326,8 @@ def generateInvolvementTable(repos_list, output_file_name, mode):
                        lineterminator='\n')
 
 def aggregateInvolvementTable(repos_list, output_file_name, mode):
-    involvement_tables_folder = os.path.join(cfg.main_folder, mode.upper(), 'involvementTables')
-    output_folder = os.path.join(cfg.main_folder, mode.upper())
+    involvement_tables_folder = os.path.join('..', mode.upper() + '_Results', 'involvementTables')
+    output_folder = os.path.join('..', mode.upper() + '_Results')
 
     main_repo_map = {}
     for repoName in repos_list:
@@ -1340,8 +1346,8 @@ def aggregateInvolvementTable(repos_list, output_file_name, mode):
             commits_in_other_projects = orgInvolvementTable[dev].loc[orgInvolvementTable['repo'] != main_repo].sum()
             diff = commits_in_main_project - commits_in_other_projects
             total_commits = orgInvolvementTable[dev].sum()
-            percent_main = commits_in_main_project/total_commits*100
-            percent_others = commits_in_other_projects/total_commits*100
+            percent_main = 0 if total_commits == 0 else commits_in_main_project/total_commits*100
+            percent_others = 0 if total_commits == 0 else commits_in_other_projects/total_commits*100
 
             percent_others_mod = 0 if num_other_projects == 0 else (commits_in_other_projects/total_commits*100)/num_other_projects
 
@@ -1361,7 +1367,7 @@ def main(repos_list, mode):
 
     writeDevslist(mode, repos_list)
 
-    outputFolder = os.path.join(cfg.main_folder, mode.upper())
+    outputFolder = os.path.join('..', mode.upper() + '_Results')
     os.makedirs(outputFolder, exist_ok=True)
 
     # Final Revision
@@ -1395,22 +1401,17 @@ def main(repos_list, mode):
     #TFsBreaksOccurrencesPlot(repos_list, 'TFsBreaksOccurrences')
     #TFsBreaksDurationsPlot(repos_list, 'TFsDurationsDistributions')
 
-    print("That's it, man!")
+    print(f"{mode} done.")
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
 
-    ### ARGUMENTS MANAGEMENT
-    # python script.py gitCloneURL
-    # A80api
-    print('Arguments: {} --> {}'.format(len(sys.argv), str(sys.argv)))
-    mode = sys.argv[1]
-    if mode.lower() not in cfg.supported_modes:
-        print('ERROR: Not valid mode! ({})'.format(cfg.supported_modes))
-        sys.exit(0)
-    print('Selected Mode: ', mode.upper())
-
     repos_list=util.getReposList()
-    main(repos_list, mode)
+    temp = []
+    for r in repos_list:
+        temp.append(r.replace('https://github.com/', ''))
+    repos_list = temp
+    for mode in cfg.supported_modes:
+        main(repos_list, mode)
 
