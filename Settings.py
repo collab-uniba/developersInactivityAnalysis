@@ -3,7 +3,7 @@ items_per_page = 100  # The number of results in each page of the GitHub results
 tokens_file = "../Resources/tokens.txt"  # The relative path of the file containing the list of the github tokens
 
 ### Extraction Settings
-data_collection_date = "2020-01-15"  # The max date to consider for the commits and activities extraction
+data_collection_date = "2024-05-10"  # The max date to consider for the commits and activities extraction
 repos_file = "Resources/repositories.txt"  # The relative path of the file containing the list of the repos <organization/repo>
 main_folder = "../Organizations"  # The main folder where results will be archived
 logs_folder = "../logs"  # The folder where the logs will be archived
