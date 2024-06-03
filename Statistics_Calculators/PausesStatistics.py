@@ -1,15 +1,11 @@
 ### IMPORT EXCEPTION MODULES
 import csv
-import logging
 import os
 import sys
-from datetime import datetime
+sys.path.append('../')  
 
 import numpy
 import pandas
-### IMPORT SYSTEM MODULES
-from github import Github, GithubException
-from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
@@ -91,7 +87,8 @@ def main(repos_list):
     workingFolder = cfg.main_folder
     projects_stats = pandas.DataFrame(columns=['repo','avg_num_pauses','avg_pauses_per_year','avg_pause_len','avg_pause_len_var'])
     TF_devs_stats = pandas.DataFrame(columns=['dev','repo','num_pauses','dev_life_days','pauses_per_year','avg_pause_len','pause_len_var','min_pause_len','max_pause_len','Q1','Q3','IQR'])
-    for gitRepoName in repos_list:
+    for url in repos_list:
+        gitRepoName = url.replace('https://github.com/', '')
         organization, project = gitRepoName.split('/')
 
         # with open(workingFolder + '/' + organization + '/' + project + '/' + cfg.pauses_list_file_name, 'r') as f:
