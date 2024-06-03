@@ -7,3 +7,4 @@ GitPython
 PyYAML
 scipy
 seaborn
+jupyter
