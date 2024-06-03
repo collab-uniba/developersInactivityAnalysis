@@ -2,17 +2,20 @@ import os, pandas
 import matplotlib.pyplot as plt
 
 ### IMPORT CUSTOM MODULES
+import sys
+sys.path.append('../')
 import Settings as cfg
 import Utilities as util
 
-### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
+### THIS MODULE HAS BEEN USED FOR CHOICES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
 
 ### MAIN FUNCTION
 def main(repos_list):
     all_th = []
     all_breaks = []
-    for gitRepoName in repos_list:
-        organization, main_project = gitRepoName.split('/')
+    for url in repos_list:
+        gitRepoName = url.replace('https://github.com/', '')
+        organization, _ = gitRepoName.split('/')
         workingFolder = cfg.main_folder + '/' + organization
         breaksFolder = workingFolder + '/Dev_Breaks'
 
@@ -52,6 +55,3 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     repos_list = util.getReposList()
     main(repos_list)
-
-### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
-

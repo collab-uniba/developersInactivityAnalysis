@@ -1,29 +1,25 @@
 ### IMPORT EXCEPTION MODULES
 import csv
 import datetime as dt
-import logging
 import os
 import sys
+sys.path.append('../')
 from datetime import datetime
 
-import numpy
 import pandas
-### IMPORT SYSTEM MODULES
-from github import Github, GithubException
-from requests.exceptions import Timeout
 
 ### IMPORT CUSTOM MODULES
 import Settings as cfg
 import Utilities as util
 
-### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
+### THIS MODULE HAS BEEN USED FOR CHOICES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
 
 def getDeveloperStats(developer, organization, project, pauses_df, win):
     shift_days = 7
 
     stats = [developer, organization + '/' + project]
 
-    for index, row in pauses_df.iterrows():
+    for _, row in pauses_df.iterrows():
         dev = row['pauses'][0]
         no_pauses = len(row['pauses']) - 3
         if (dev == developer):
@@ -69,7 +65,7 @@ def getDeveloperStats(developer, organization, project, pauses_df, win):
 
                 if(win_pauses>=4):
                     win_th = util.getFarOutThreshold(win_pauses_list['len'])
-                    for i, p in win_pauses_list.iterrows():
+                    for _, p in win_pauses_list.iterrows():
                         if((p['len'] > win_th) and (p['dates'] not in breaks_df.dates.tolist())):
                             util.add(breaks_df, row)
 
@@ -135,5 +131,3 @@ if __name__ == "__main__":
     ### ARGUMENTS MANAGEMENT
     repos_list=util.getReposList()
     main(repos_list)
-
-### THIS MODULE HAS BEEN USED FOR CHOISES DURING THE DEVELOPMENT. NOT USED FOR THE PAPER ###
