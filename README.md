@@ -62,7 +62,7 @@ if you came here from point 2 of core selection you can now perform step 3 follo
 
 #### Requirements
 
-- Set files and folders names in the `Settings.py` file
+- Set of files and folders names in the `Settings.py` file
 
 #### Execution
 
@@ -82,11 +82,101 @@ if you came here from point 2 of core selection you can now perform step 3 follo
 
 ### PullRequestExtractor.py
 
+The script iterates over all repositories in a given organization to extract pull requests.
+
+#### Params
+
+- None
+
+#### Requirements
+
+- Set of files and folders names in the `Settings.py` file
+- `Resources/tokens.txt`
+- `Resources/repositories.txt`
+
+#### Execution
+
+`python PullRequestsExtractor.py`
+
+#### Output
+
+ * `logs/Pull_Request_Extraction_*.log`: log file
+ * `Organizations/<organization>/[<repo1>...<repoN>]/Other_Activities/prs_repo.csv`: CSV files containing pull request data for each repository
+
 ### NonMergedCommitsExtractor.py
+
+The script  automates the extraction of commits from non-merged pull requests in all the GitHub repositories of the organizations provided. 
+
+#### Params
+
+- None
+
+#### Requirements
+
+- Set of files and folders names in the `Settings.py` file
+- `Resources/tokens.txt`
+- `Resources/repositories.txt`
+
+#### Execution
+
+`python NonMergedCommitsExtractor.py`
+
+#### Output
+
+* `logs//Non_Merged_Commits_Extraction_*.log`: log file
+* `Organizations/<organization>/[<repo1>...<repoN>]/MissingCommits/<PR_number>_commits.csv`: a CSV file containing commit data for each non-merged PRs for each repository of the organization.
 
 ### MissingStuffCollector.py
 
+#### Params
+
+- None
+
+#### Requirements
+
+- Set of files and folders names in the `Settings.py` file
+- `Resources/repositories.txt`
+- `Organizations/<organization>/[<repo1>...<repoN>]/Other_Activities/prs_repo.csv`: CSV files containing pull request data for each repository
+
+#### Execution
+
+`python MissingStuffCollector.py`
+
+#### Output
+
+* `Organizations/<organization>/[<repo1>...<repoN>]/Other_Activities/prs_list.csv`: CSV file containing data on PRs
+* `Organizations/<organization>/[<repo1>...<repoN>]/MissingCommits/missing_commits_list.csv`: CSV file containing data on missing commits
+* `Organizations/<organization>/prs_list.csv`: An aggregated CSV at the organization level containing data on all missing commits
+
 ### CodingTableBuilder.py
+
+This script processes coding activities data from multiple repositories within an organization. It performs the following tasks:
+1. Merges coding activities (commits, pull requests, and missing commits) into a single list for each repository and the organization as a whole.
+2. Builds history tables that represent coding activities in a tabular format, with days as columns and developers as rows.
+3. Computes pauses in coding activities, identifying periods of inactivity for each developer and writing this data to CSV files.
+
+#### Params
+
+- None
+
+#### Requirements
+
+- `Resources/repositories.txt`
+- `Organizations/<organization>/<repo>/prs_list.csv`
+- `Organizations/<organization>/<repo>/missing_commits_list.csv`
+
+#### Execution
+
+`python CodingTableBuilder.py`
+
+#### Output
+
+* `logs/Coding_Table_Builder_*.log`: timestamped log file
+* `Organizations/<organization>/<repo>/coding_activities_list.csv`: Contains a consolidated list of coding activities (commits, pull requests, and missing commits) for the specified repository. Each entry includes the activity ID, date, and author.
+* `Organizations/<organization>/<repo>/coding_history_table.csv`: Represents coding activities in a tabular format, with days as columns and developers as rows. Each cell contains the number of coding activities performed by a developer on a specific day.
+* `Organizations/<organization>/<repo>/coding_pauses.csv`: Lists the lengths of pauses (periods of inactivity) for each developer. Each entry includes the developer's ID and the duration of each pause.
+* `Organizations/<organization>/<repo>/coding_pauses_dates.csv`: Contains the date intervals for each pause for each developer. Each entry includes the developer's ID and the start and end dates of each pause.
+
 
 ---
 
