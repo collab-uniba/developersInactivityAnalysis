@@ -194,17 +194,17 @@ def get_missing_commits(gith, token, organization):  # developers is a previousl
                         if pr['status'] == 'closed' and pr['merged'] == False and pr['date'] < cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} CLOSED NOT MERGED".format(pr_number))
-                            gith, token = extract_commits(gith, organization, repo, pr_number)
+                            gith, token = extract_commits(gith, token, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                         if pr['status'] == 'closed' and pr['merged'] == True and pr['date'] < cfg.data_collection_date and pr['closed_at'] >= cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} CLOSED AFTER EXTRACTION".format(pr_number))
-                            gith, token = extract_commits(gith, organization, repo, pr_number)
+                            gith, token = extract_commits(gith, token, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                         if pr['status'] == 'closed' and pr['merged'] == True and pr['date'] < cfg.data_collection_date and pr['closed_at'] < cfg.data_collection_date and pr['merged_at'] >= cfg.data_collection_date:
                             pr_number = pr['number']
                             logging.info("Getting COMMITS for PR n. {} MERGED AFTER EXTRACTION".format(pr_number))
-                            gith, token =  extract_commits(gith, organization, repo, pr_number)
+                            gith, token =  extract_commits(gith, token, organization, repo, pr_number)
                             logging.info('Missing Commit Extraction COMPLETE for PR n. {}'.format(pr_number))
                     with open(os.path.join(current_folder, 'Other_Activities', tmp_folder_status_file), "w") as statusSaver:
                         statusSaver.write('COMPLETE;{}'.format(cfg.data_collection_date))
@@ -224,19 +224,19 @@ def main(gitRepoName, token):
         return
     g.per_page = cfg.items_per_page
 
-    print("Running the Missing Commits Extraction. \n Connection Done. \n Logging in {}".format(logfile))
-    logging.info("Missing Commits Extraction Started for {}.".format(organization))
+    print("Running the Non-merged Commits Extraction. \n Connection Done. \n Logging in {}".format(logfile))
+    logging.info("Non-merged Commits Extraction Started for {}.".format(organization))
 
     get_missing_commits(g, token, organization)
 
-    logging.info('Missing Commit Extraction SUCCESSFULLY COMPLETED')
+    logging.info('Non-merged Commit Extraction SUCCESSFULLY COMPLETED')
 
 if __name__ == "__main__":
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     os.chdir(THIS_FOLDER)
     
     os.makedirs(cfg.logs_folder, exist_ok=True)
-    timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H:%M')
+    timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H%M')
     logfile = cfg.logs_folder+f"/Non_Merged_Commits_Extraction_{timestamp}.log"
     logging.basicConfig(filename=logfile, level=logging.INFO)
 
@@ -244,6 +244,6 @@ if __name__ == "__main__":
     for repoUrl in repoUrls:
         gitRepoName = repoUrl.replace('https://github.com/', '').strip()
         token = util.getRandomToken()
-        logging.info("Starting Non-merged commits extraction for {}".format(gitRepoName))
+        logging.info("Starting non-merged commits extraction for {}".format(gitRepoName))
         main(gitRepoName, token)
     print("Done")
