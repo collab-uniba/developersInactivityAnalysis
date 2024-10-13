@@ -11,6 +11,7 @@ A80MOD_Results/
 A80API_Results/
 Local_Repositories/
 TRASH/
+Metric/*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
