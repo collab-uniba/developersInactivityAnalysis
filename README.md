@@ -1,13 +1,13 @@
-# Will you come back to contribute? Investigating the inactivitiy of OSS developers in GitHub
+# Will you come back to contribute? Investigating the inactivity of OSS developers in GitHub
 [![DOI](https://zenodo.org/badge/183011533.svg)](https://zenodo.org/badge/latestdoi/183011533)
 
 ### Setup
 
-Use the `main` branch, not `master`.
+Use the `productivity` branch for the latest updates.
 
 Add to the root a folder named `Resources/` with the following files: 
 - `repositories.txt` containing the list of projects (one per line) to be analyzed, in the following format `org/repo_name` (e.g., `atom/atom); 
-- `tokens.txt` (optional) containinig the list of GH tokens to be used;
+- `tokens.txt` (optional) containing the list of GH tokens to be used;
 
 ### Sampling of developers
 
